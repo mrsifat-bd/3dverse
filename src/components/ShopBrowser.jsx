@@ -1,23 +1,24 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Flame } from 'lucide-react'
 import { searchProducts, sortProducts } from '@/lib/products'
-import { CATEGORIES } from '@/lib/config'
 import ProductGrid from './ProductGrid'
 import { Select } from './ui/select'
 
 // Client-side browser over a product list fetched on the server.
-export default function ShopBrowser({ products, initialQuery = '', initialCategory = 'all' }) {
+export default function ShopBrowser({ products, categories = [], initialQuery = '', initialCategory = 'all', initialPopular = false }) {
   const [query, setQuery] = useState(initialQuery)
   const [category, setCategory] = useState(initialCategory)
-  const [sort, setSort] = useState('newest')
+  const [sort, setSort] = useState('popular')
+  const [popularOnly, setPopularOnly] = useState(initialPopular)
 
   const visible = useMemo(() => {
     let list = products
+    if (popularOnly) list = list.filter((p) => p.is_popular)
     if (category !== 'all') list = list.filter((p) => p.category === category)
     list = searchProducts(list, query)
     return sortProducts(list, sort)
-  }, [products, query, category, sort])
+  }, [products, query, category, sort, popularOnly])
 
   return (
     <div>
@@ -35,20 +36,28 @@ export default function ShopBrowser({ products, initialQuery = '', initialCatego
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPopularOnly((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-95 ${popularOnly ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40 hover:text-clay'}`}
+          >
+            <Flame className="h-4 w-4" /> Popular
+          </button>
           <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category">
             <option value="all">All categories</option>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c.slug} value={c.slug}>{c.name}</option>
             ))}
           </Select>
           <Select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
+            <option value="popular">Popular first</option>
             <option value="newest">Newest</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
           </Select>
         </div>
       </div>
-      <ProductGrid products={visible} />
+      <ProductGrid products={visible} animateKey={`${category}|${sort}|${popularOnly}`} />
     </div>
   )
 }

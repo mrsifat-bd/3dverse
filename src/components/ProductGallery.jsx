@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Image from 'next/image'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export default function ProductGallery({ images, name }) {
@@ -10,11 +11,22 @@ export default function ProductGallery({ images, name }) {
   return (
     <div>
       <div className="relative aspect-square overflow-hidden rounded-3xl border border-line bg-paper">
-        {list[active] ? (
-          <Image src={list[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-stone">No image</div>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={active}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="absolute inset-0"
+          >
+            {list[active] ? (
+              <Image src={list[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-stone">No image</div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
       {list.length > 1 && (
         <div className="mt-4 flex flex-wrap gap-3">

@@ -9,3 +9,4 @@ export const isSupabaseConfigured = Boolean(url && anonKey)
 export const supabase = isSupabaseConfigured ? createClient(url, anonKey) : null
 
 export const PRODUCTS_BUCKET = 'product-images'
+export const AVATARS_BUCKET = 'avatars'

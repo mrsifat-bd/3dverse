@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2, Plus } from 'lucide-react'
 import { createProduct, updateProduct, uploadImage } from '@/lib/adminProducts'
-import { CATEGORIES } from '@/lib/config'
+import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
+import { getPublicCategories } from '@/lib/categories'
 import { slugify } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,14 +23,25 @@ export default function ProductForm({ initial }) {
     slug: initial?.slug || '',
     price: initial?.price ?? '',
     description: initial?.description || '',
-    category: initial?.category || CATEGORIES[0].slug,
+    category: initial?.category || FALLBACK_CATEGORIES[0].slug,
     tags: Array.isArray(initial?.tags) ? initial.tags.join(', ') : initial?.tags || '',
     in_stock: initial?.in_stock ?? true,
+    is_popular: initial?.is_popular ?? false,
+    weight_kg: initial?.weight_kg ?? 0.5,
+    discount_percent: initial?.discount_percent ?? 0,
+    production_cost: initial?.production_cost ?? '',
+    review_url: initial?.review_url || '',
+    extra_link: initial?.extra_link || '',
+    extra_link_label: initial?.extra_link_label || '',
   })
   const [images, setImages] = useState(Array.isArray(initial?.image_url) ? initial.image_url : [])
+  const [faqs, setFaqs] = useState(Array.isArray(initial?.faqs) ? initial.faqs : [])
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+
+  useEffect(() => { getPublicCategories().then((c) => { if (c && c.length) setCategories(c) }).catch(() => {}) }, [])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -58,7 +70,7 @@ export default function ProductForm({ initial }) {
     e.preventDefault()
     setSaving(true)
     setError('')
-    const payload = { ...form, slug: form.slug || slugify(form.name), image_url: images }
+    const payload = { ...form, slug: form.slug || slugify(form.name), image_url: images, faqs }
     try {
       if (editing) await updateProduct(initial.id, payload)
       else await createProduct(payload)
@@ -91,6 +103,12 @@ export default function ProductForm({ initial }) {
         </div>
       </div>
 
+      <div className="space-y-1.5 rounded-xl border border-dashed border-line bg-line/20 p-3">
+        <Label htmlFor="production_cost">Production cost (৳) — private 🔒</Label>
+        <Input id="production_cost" type="number" min="0" step="0.01" value={form.production_cost} onChange={(e) => set('production_cost', e.target.value)} placeholder="Your internal cost" />
+        <p className="text-xs text-stone">Internal only — never shown on the website or sent to any visitor. For your own reference when orders come in.</p>
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="description">Description</Label>
         <Textarea id="description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={5} />
@@ -100,8 +118,13 @@ export default function ProductForm({ initial }) {
         <div className="space-y-1.5">
           <Label htmlFor="category">Category</Label>
           <Select id="category" className="w-full rounded-lg" value={form.category} onChange={(e) => set('category', e.target.value)}>
-            {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+            {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="weight_kg">Weight (kg)</Label>
+          <Input id="weight_kg" type="number" min="0" step="0.05" value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} placeholder="0.5" />
+          <p className="text-xs text-stone">Used to calculate the delivery charge at checkout.</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="tags">Tags (comma-separated)</Label>
@@ -109,9 +132,38 @@ export default function ProductForm({ initial }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Switch id="in_stock" checked={form.in_stock} onCheckedChange={(v) => set('in_stock', v)} />
-        <Label htmlFor="in_stock">In stock (ready to print)</Label>
+      <div className="flex flex-wrap items-center gap-6">
+        <div className="flex items-center gap-3">
+          <Switch id="in_stock" checked={form.in_stock} onCheckedChange={(v) => set('in_stock', v)} />
+          <Label htmlFor="in_stock">In stock (ready to print)</Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <Switch id="is_popular" checked={form.is_popular} onCheckedChange={(v) => set('is_popular', v)} />
+          <Label htmlFor="is_popular">Mark as popular (shows first)</Label>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="discount_percent">Discount (% off)</Label>
+          <Input id="discount_percent" type="number" min="0" max="99" step="1" value={form.discount_percent} onChange={(e) => set('discount_percent', e.target.value)} placeholder="0" />
+          <p className="text-xs text-stone">Leave 0 for no discount. e.g. 20 = 20% off.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="review_url">Review video link (YouTube)</Label>
+          <Input id="review_url" type="url" value={form.review_url} onChange={(e) => set('review_url', e.target.value)} placeholder="https://youtube.com/watch?v=…" />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="extra_link">Custom link (URL)</Label>
+          <Input id="extra_link" type="url" value={form.extra_link} onChange={(e) => set('extra_link', e.target.value)} placeholder="https://…" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="extra_link_label">Custom link label</Label>
+          <Input id="extra_link_label" value={form.extra_link_label} onChange={(e) => set('extra_link_label', e.target.value)} placeholder="e.g. See 3D model" />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -132,6 +184,38 @@ export default function ProductForm({ initial }) {
           </label>
         </div>
         <p className="text-xs text-stone">First image is the main photo. Compress large images before uploading.</p>
+      </div>
+
+      <div className="space-y-3 border-t border-line pt-6">
+        <div className="flex items-center justify-between">
+          <Label>FAQs (collapsible section on the product page)</Label>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFaqs((p) => [...p, { q: '', a: '' }])}>
+            <Plus className="h-4 w-4" /> Add FAQ
+          </Button>
+        </div>
+        {faqs.length === 0 && (
+          <p className="text-xs text-stone">No FAQs yet. Add question/answer pairs — only the questions show, and they expand on click.</p>
+        )}
+        {faqs.map((f, idx) => (
+          <div key={idx} className="space-y-2 rounded-xl border border-line p-3">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Question (headline)"
+                value={f.q}
+                onChange={(e) => setFaqs((p) => p.map((x, i) => (i === idx ? { ...x, q: e.target.value } : x)))}
+              />
+              <Button type="button" variant="ghost" size="icon" aria-label="Remove FAQ" onClick={() => setFaqs((p) => p.filter((_, i) => i !== idx))}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <Textarea
+              placeholder="Answer"
+              rows={2}
+              value={f.a}
+              onChange={(e) => setFaqs((p) => p.map((x, i) => (i === idx ? { ...x, a: e.target.value } : x)))}
+            />
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center gap-3 pt-2">

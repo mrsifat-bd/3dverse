@@ -4,16 +4,20 @@ import { slugify } from './format'
 // Admin CRUD + image upload. All calls require an authenticated session;
 // RLS on the server enforces that anonymous users cannot write.
 
+// Admin reads go through security-definer RPCs (gated by is_admin) so the
+// internal production_cost is returned to admins only. Customers calling these
+// RPCs get an exception; they can never read production_cost via the table
+// either (SELECT on that column is revoked from the authenticated role).
 export async function listProducts() {
-  const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+  const { data, error } = await supabase.rpc('admin_products')
   if (error) throw error
   return data || []
 }
 
 export async function getProduct(id) {
-  const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase.rpc('admin_product', { p_id: id })
   if (error) throw error
-  return data
+  return Array.isArray(data) ? data[0] || null : data || null
 }
 
 function normalise(payload) {
@@ -31,17 +35,36 @@ function normalise(payload) {
           .filter(Boolean),
     image_url: Array.isArray(payload.image_url) ? payload.image_url : [],
     in_stock: Boolean(payload.in_stock),
+    is_popular: Boolean(payload.is_popular),
+    weight_kg: payload.weight_kg === '' || payload.weight_kg == null ? 0.5 : Number(payload.weight_kg),
+    discount_percent: Math.max(0, Math.min(99, Math.round(Number(payload.discount_percent) || 0))),
+    review_url: payload.review_url?.trim() || '',
+    extra_link: payload.extra_link?.trim() || '',
+    extra_link_label: payload.extra_link_label?.trim() || '',
+    faqs: Array.isArray(payload.faqs)
+      ? payload.faqs
+          .filter((f) => f && (f.q || '').trim())
+          .map((f) => ({ q: (f.q || '').trim(), a: (f.a || '').trim() }))
+      : [],
+    // Internal, admin-only. Written under the authenticated role; never exposed publicly.
+    production_cost:
+      payload.production_cost === '' || payload.production_cost == null
+        ? null
+        : Number(payload.production_cost),
   }
 }
 
+// Writes return only `id`: after the production_cost lockdown the authenticated
+// role has no SELECT on that column, so a full `.select()` representation would
+// be denied. The admin form only needs to know the write succeeded.
 export async function createProduct(payload) {
-  const { data, error } = await supabase.from('products').insert(normalise(payload)).select().single()
+  const { data, error } = await supabase.from('products').insert(normalise(payload)).select('id').single()
   if (error) throw error
   return data
 }
 
 export async function updateProduct(id, payload) {
-  const { data, error } = await supabase.from('products').update(normalise(payload)).eq('id', id).select().single()
+  const { data, error } = await supabase.from('products').update(normalise(payload)).eq('id', id).select('id').single()
   if (error) throw error
   return data
 }

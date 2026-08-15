@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -25,11 +25,29 @@ const buttonVariants = cva(
   }
 )
 
+// When asChild is true, merge the button classes onto the single child element
+// (e.g. a Next.js <Link>) instead of rendering a wrapping <button>. This keeps
+// the flex + gap + centering classes on the real anchor so icons stay inline
+// with their labels rather than stacking above them.
 const Button = React.forwardRef(function Button(
-  { className, variant, size, asChild, ...props },
+  { className, variant, size, asChild = false, children, ...props },
   ref
 ) {
-  return <button ref={ref} className={cn(buttonVariants({ variant, size, className }))} {...props} />
+  const classes = cn(buttonVariants({ variant, size, className }))
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      className: cn(classes, children.props.className),
+      ref,
+      ...props,
+    })
+  }
+
+  return (
+    <button ref={ref} className={classes} {...props}>
+      {children}
+    </button>
+  )
 })
 
 export { Button, buttonVariants }

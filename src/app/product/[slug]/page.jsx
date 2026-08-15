@@ -2,11 +2,18 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { getProductBySlug, getRelatedProducts, getAllSlugs } from '@/lib/products'
-import { formatPrice, allImages, firstImage } from '@/lib/format'
-import { categoryName, BUSINESS, SITE_URL } from '@/lib/config'
+import { formatPrice, allImages, firstImage, hasDiscount, effectivePrice } from '@/lib/format'
+import { categoryName, SITE_URL, REVIEW_URL } from '@/lib/config'
+import { getSettings } from '@/lib/settings'
 import ProductGallery from '@/components/ProductGallery'
 import ProductCard from '@/components/ProductCard'
-import BuyButton from '@/components/BuyButton'
+import AddToCartButton from '@/components/AddToCartButton'
+import BuyNowButton from '@/components/BuyNowButton'
+import LikeButton from '@/components/LikeButton'
+import WishlistButton from '@/components/WishlistButton'
+import LeadTracker from '@/components/LeadTracker'
+import ProductFaq from '@/components/ProductFaq'
+import ProductReviews from '@/components/ProductReviews'
 
 export const revalidate = 60
 
@@ -26,6 +33,7 @@ export async function generateMetadata({ params }) {
   return {
     title: product.name,
     description: product.description?.slice(0, 160),
+    alternates: { canonical: `/product/${product.slug}` },
     openGraph: {
       title: product.name,
       description: product.description?.slice(0, 160),
@@ -40,7 +48,11 @@ export default async function ProductPage({ params }) {
   if (!product) notFound()
 
   const related = await getRelatedProducts(product)
+  const settings = await getSettings()
   const images = allImages(product)
+  const reviewUrl =
+    product.review_url ||
+    (product.category === 'medical-bone-models' ? settings.review_url || REVIEW_URL : null)
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -49,10 +61,10 @@ export default async function ProductPage({ params }) {
     description: product.description,
     image: images,
     category: categoryName(product.category),
-    brand: { '@type': 'Brand', name: BUSINESS.name },
+    brand: { '@type': 'Brand', name: settings.business_name },
     offers: {
       '@type': 'Offer',
-      price: product.price,
+      price: effectivePrice(product),
       priceCurrency: 'BDT',
       availability: product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
       url: `${SITE_URL}/product/${product.slug}`,
@@ -61,7 +73,8 @@ export default async function ProductPage({ params }) {
 
   return (
     <div className="container py-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <LeadTracker product={{ id: product.id, name: product.name, slug: product.slug, category: product.category }} />
 
       <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs text-stone" aria-label="Breadcrumb">
         <Link href="/" className="hover:text-clay">Home</Link><span>/</span>
@@ -78,7 +91,15 @@ export default async function ProductPage({ params }) {
             {categoryName(product.category)}
           </Link>
           <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink">{product.name}</h1>
-          <p className="mt-4 text-2xl font-semibold text-ink">{formatPrice(product.price)}</p>
+          <div className="mt-4 flex flex-wrap items-baseline gap-3">
+            <p className="text-2xl font-semibold text-ink">{formatPrice(effectivePrice(product))}</p>
+            {hasDiscount(product) && (
+              <>
+                <p className="text-lg text-stone line-through">{formatPrice(product.price)}</p>
+                <span className="rounded-full bg-clay px-2.5 py-0.5 text-xs font-medium text-paper">{product.discount_percent}% OFF</span>
+              </>
+            )}
+          </div>
           <p className="mt-1 text-xs text-stone">{product.in_stock ? 'In stock · ready to print' : 'Made to order · ask for lead time'}</p>
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-stone">{product.description}</p>
 
@@ -90,12 +111,45 @@ export default async function ProductPage({ params }) {
             </div>
           )}
 
-          <div className="mt-8">
-            <BuyButton product={product} full />
-            <p className="mt-3 text-center text-xs text-stone">Opens WhatsApp with your order details pre-filled. No payment needed online.</p>
+          <div className="mt-8 space-y-3">
+            <AddToCartButton product={product} full />
+            <div className="flex gap-3">
+              <BuyNowButton product={product} full />
+              <WishlistButton productId={product.id} variant="inline" />
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              <LikeButton productId={product.id} />
+              <span className="text-xs font-medium text-clay">Cash on Delivery available</span>
+            </div>
+            {reviewUrl && (
+              <a
+                href={reviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-clay/40 hover:text-clay"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.76-1.77C19.28 5.1 12 5.1 12 5.1s-7.28 0-8.84.43A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.76 1.77C4.72 18.9 12 18.9 12 18.9s7.28 0 8.84-.43a2.5 2.5 0 0 0 1.76-1.77C23 15.2 23 12 23 12zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" /></svg>
+                Watch a review video
+              </a>
+            )}
+            {product.extra_link && (
+              <a
+                href={product.extra_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-clay/40 hover:text-clay"
+              >
+                {product.extra_link_label || 'Learn more'}
+              </a>
+            )}
+            <p className="text-center text-xs text-stone">Pay the product price on delivery. Only the delivery charge is prepaid via bKash at checkout.</p>
           </div>
         </div>
       </div>
+
+      <ProductFaq faqs={product.faqs} />
+
+      <ProductReviews productId={product.id} />
 
       {related.length > 0 && (
         <section className="mt-20">

@@ -1,3 +1,5 @@
+'use client'
+import { motion } from 'framer-motion'
 import ProductCard from './ProductCard'
 import { Skeleton } from './ui/skeleton'
 
@@ -18,7 +20,12 @@ export function ProductGridSkeleton({ count = 8 }) {
   )
 }
 
-export default function ProductGrid({ products }) {
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
+const itemVariants = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }
+
+// `animateKey` re-triggers the entrance when it changes (e.g. shop filter/sort),
+// so filtered results fade in smoothly instead of snapping.
+export default function ProductGrid({ products, animateKey }) {
   if (!products.length) {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-paper py-16 text-center">
@@ -27,10 +34,19 @@ export default function ProductGrid({ products }) {
     )
   }
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <motion.div
+      key={animateKey}
+      className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+      variants={gridVariants}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-40px' }}
+    >
       {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
+        <motion.div key={p.id} variants={itemVariants} transition={{ duration: 0.4, ease: 'easeOut' }}>
+          <ProductCard product={p} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }

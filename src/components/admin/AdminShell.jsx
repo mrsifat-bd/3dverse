@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, LogOut, Home, Loader2 } from 'lucide-react'
+import { LayoutDashboard, Package, Tags, ShoppingBag, MessageSquare, Users, Mail, Settings, LogOut, Home, Loader2, Calculator } from 'lucide-react'
 import { useAuth, signIn, signOut } from '@/hooks/useAuth'
 import { BUSINESS } from '@/lib/config'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,13 @@ import { Label } from '@/components/ui/label'
 const nav = [
   { href: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/products', label: 'Products', Icon: Package },
+  { href: '/admin/categories', label: 'Categories', Icon: Tags },
+  { href: '/admin/cost-estimator', label: 'Cost Estimator', Icon: Calculator },
+  { href: '/admin/orders', label: 'Orders', Icon: ShoppingBag },
+  { href: '/admin/comments', label: 'Reviews', Icon: MessageSquare },
+  { href: '/admin/leads', label: 'Leads', Icon: Users },
+  { href: '/admin/subscribers', label: 'Subscribers', Icon: Mail },
+  { href: '/admin/settings', label: 'Settings', Icon: Settings },
 ]
 
 function CenterCard({ children }) {
@@ -54,33 +61,34 @@ export default function AdminShell({ children }) {
   if (!session) return <LoginForm />
 
   return (
-    <div className="container grid gap-8 py-10 md:grid-cols-[220px_1fr]">
-      <aside className="h-fit rounded-2xl border border-line bg-paper p-4 md:sticky md:top-24">
-        <p className="px-2 pb-3 font-display text-lg font-semibold text-ink">{BUSINESS.name} admin</p>
-        <nav className="space-y-1">
+    <div className="container grid gap-6 py-6 md:grid-cols-[220px_1fr] md:gap-8 md:py-10">
+      <aside className="h-fit rounded-2xl border border-line bg-paper p-3 md:sticky md:top-24 md:p-4">
+        <p className="hidden px-2 pb-3 font-display text-lg font-semibold text-ink md:block">{BUSINESS.name} admin</p>
+        {/* Horizontal scroll strip on mobile, vertical sidebar on desktop. */}
+        <nav className="flex gap-1.5 overflow-x-auto pb-1 md:flex-col md:gap-0 md:space-y-1.5 md:overflow-x-visible md:pb-0">
           {nav.map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                pathname.startsWith(href) ? 'bg-clay/10 font-medium text-clay' : 'text-ink/80 hover:bg-line/50'
+                'flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-all duration-200 md:gap-3 md:py-2.5',
+                pathname.startsWith(href) ? 'bg-clay/10 font-medium text-clay' : 'text-ink/80 hover:bg-line/50 md:hover:translate-x-0.5'
               )}
             >
-              <Icon className="h-4 w-4" /> {label}
+              <Icon className="h-4 w-4 shrink-0" /> {label}
             </Link>
           ))}
         </nav>
-        <div className="mt-4 space-y-1 border-t border-line pt-4">
-          <Link href="/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink/80 hover:bg-line/50">
-            <Home className="h-4 w-4" /> View site
+        <div className="mt-3 flex gap-1.5 overflow-x-auto border-t border-line pt-3 md:mt-4 md:flex-col md:gap-0 md:space-y-1.5 md:overflow-x-visible md:pt-4">
+          <Link href="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm text-ink/80 transition-all duration-200 hover:bg-line/50 md:gap-3 md:py-2.5 md:hover:translate-x-0.5">
+            <Home className="h-4 w-4 shrink-0" /> View site
           </Link>
-          <button onClick={() => signOut()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink/80 hover:bg-line/50">
-            <LogOut className="h-4 w-4" /> Sign out
+          <button onClick={() => signOut()} className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm text-ink/80 transition-all duration-200 hover:bg-line/50 md:w-full md:gap-3 md:py-2.5 md:hover:translate-x-0.5">
+            <LogOut className="h-4 w-4 shrink-0" /> Sign out
           </button>
         </div>
       </aside>
-      <div>{children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }

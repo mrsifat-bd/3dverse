@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --cream: 244 241 234;
+    --paper: 251 250 247;
+    --ink: 44 42 38;
+    --stone: 138 133 119;
+    --line: 231 226 214;
+    --clay: 192 96 58;
+    --clay-dark: 164 78 45;
+    --destructive: 180 54 31;
+  }
+  .dark {
+    --cream: 23 21 15;
+    --paper: 32 30 23;
+    --ink: 241 236 225;
+    --stone: 168 161 146;
+    --line: 56 52 43;
+    --clay: 217 120 75;
+    --clay-dark: 192 96 58;
+    --destructive: 229 101 76;
+  }
   html {
     scroll-behavior: smooth;
   }
@@ -12,13 +32,82 @@
   ::selection {
     @apply bg-clay/20;
   }
+  /* Smooth, tasteful transitions on interactive elements. */
+  a,
+  button,
+  select,
+  input,
+  textarea,
+  [role='switch'] {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity, filter;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
+  /* Frosted glass surface (translucent + blur). */
+  .glass {
+    @apply border border-line/70 bg-paper/60 backdrop-blur-xl;
+  }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition-colors duration-200 hover:bg-clay-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50;
+    @apply inline-flex items-center justify-center gap-2.5 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition-all duration-200 hover:-translate-y-0.5 hover:bg-clay-dark hover:shadow-lg hover:shadow-clay/20 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-colors duration-200 hover:bg-line/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40;
+    @apply inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:bg-line/60 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40;
   }
+  /* Gentle lift + shadow for cards on hover. */
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5;
+  }
+}
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-float-in { animation: float-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Subtle staggered entrance used by admin cards / quick actions. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-in, .fade-up, .logo-spin { animation: none !important; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+
+/* Slowly rotating 3D logo box for loading states. */
+@keyframes logo-spin { to { transform: rotateY(360deg); } }
+.logo-spin { animation: logo-spin 2.4s linear infinite; transform-style: preserve-3d; }
+
+/* Extremely subtle float for the contact hero visual. */
+@keyframes float-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.float-slow { animation: float-slow 7s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .float-slow { animation: none; } }
+
+/* Print: show only the invoice sheet, hide the rest of the admin UI. */
+@media print {
+  body * { visibility: hidden !important; }
+  .invoice-print-area, .invoice-print-area * { visibility: visible !important; }
+  .invoice-print-area {
+    position: absolute !important;
+    left: 0; top: 0; width: 100% !important;
+    margin: 0 !important; padding: 0 !important;
+    background: #fff !important;
+  }
+  .no-print { display: none !important; }
+  .invoice-sheet { max-width: 100% !important; box-shadow: none !important; }
 }
