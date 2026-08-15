@@ -24,7 +24,7 @@ export default function InvoicePreview({ invoice, order }) {
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-black">
-            <Image src="/logo-invoice.png" alt="3D Verse" width={48} height={48} className="h-12 w-12 object-cover" />
+            <Image src="/logo-mark.png" alt="3D Verse" width={48} height={48} className="h-12 w-12 object-contain" />
           </span>
           <div>
             <div className="font-display text-2xl font-semibold leading-none text-ink">{b.name}</div>

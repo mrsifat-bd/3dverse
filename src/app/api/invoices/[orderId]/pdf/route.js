@@ -35,7 +35,7 @@ export async function GET(req, { params }) {
   let logo = null
   try {
     const origin = new URL(req.url).origin
-    const r = await fetch(`${origin}/logo-invoice.png`, { cache: 'no-store' })
+    const r = await fetch(`${origin}/logo-mark.png`, { cache: 'no-store' })
     if (r.ok) logo = 'data:image/png;base64,' + Buffer.from(await r.arrayBuffer()).toString('base64')
   } catch {}
 
