@@ -367,6 +367,7 @@ export default function OrdersTable() {
                             <p className="text-xs uppercase tracking-wide text-stone">Delivery to</p>
                             <p className="mt-1 text-sm font-medium text-ink">{order.customer_name} · {order.customer_phone}</p>
                             <p className="text-sm text-stone">{order.customer_address}</p>
+                            {order.police_station && <p className="text-sm text-stone">Thana: <span className="text-ink">{order.police_station}</span></p>}
                             {order.note && <p className="mt-1 text-sm text-stone">Note: {order.note}</p>}
                           </div>
 
@@ -551,6 +552,7 @@ export default function OrdersTable() {
                 <div className="flex justify-between gap-3"><span className="text-stone">Customer</span><span className="font-medium text-ink">{confirmOrder.customer_name}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">Phone</span><span className="font-medium text-ink">{confirmOrder.customer_phone}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">Address</span><span className="ml-4 text-right font-medium text-ink">{confirmOrder.customer_address}</span></div>
+                {confirmOrder.police_station && <div className="flex justify-between gap-3"><span className="text-stone">Thana</span><span className="ml-4 text-right font-medium text-ink">{confirmOrder.police_station}</span></div>}
                 <div className="flex justify-between gap-3"><span className="text-stone">Items</span><span className="ml-4 text-right font-medium text-ink">{(confirmOrder.items || []).map((i) => `${i.name} ×${i.qty}`).join(', ')}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">COD</span><span className="font-medium text-ink">{formatPrice(confirmOrder.cod_amount)}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">Weight</span><span className="font-medium text-ink">{confirmOrder.weight_kg} KG</span></div>

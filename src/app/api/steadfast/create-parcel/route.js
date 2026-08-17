@@ -53,11 +53,14 @@ export async function POST(req) {
   const itemDesc = (order.items || []).map((i) => `${i.name} x${i.qty}`).join(', ').slice(0, 250)
   const invoice = order.order_number || `DV-${String(order.id).slice(0, 8)}`
 
+  // Include the police station (thana, district) in the courier address.
+  const fullAddress = [order.customer_address, order.police_station].filter((s) => s && String(s).trim()).join(', ').slice(0, 250)
+
   const result = await createConsignment({
     invoice,
     recipient_name: order.customer_name,
     recipient_phone: order.customer_phone,
-    recipient_address: order.customer_address,
+    recipient_address: fullAddress,
     cod_amount: cod,
     note: order.note,
     item_description: itemDesc,

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import PoliceStationSelect from '@/components/PoliceStationSelect'
 
 let keySeq = 0
 const newKey = () => `line-${++keySeq}`
@@ -19,7 +20,7 @@ const newKey = () => `line-${++keySeq}`
 export default function NewOrderForm() {
   const router = useRouter()
   const [form, setForm] = useState({
-    customer_name: '', customer_phone: '', customer_address: '', note: '',
+    customer_name: '', customer_phone: '', customer_address: '', police_station: '', note: '',
     delivery_charge: 0, discount: 0, weight_kg: 0.5, status: 'new',
   })
   const [lines, setLines] = useState([])
@@ -67,6 +68,7 @@ export default function NewOrderForm() {
     try { const { data } = await supabase.auth.getSession(); actor = data?.session?.user?.email || '' } catch {}
     const res = await adminCreateOrder({
       customer_name: form.customer_name, customer_phone: form.customer_phone, customer_address: form.customer_address,
+      police_station: form.police_station,
       note: form.note, delivery_charge: form.delivery_charge, discount: form.discount, weight_kg: form.weight_kg,
       status: form.status, actor,
       items: lines.map((l) => ({ product_id: l.product_id, name: l.name, slug: l.slug, unit_price: l.unit_price, qty: l.qty })),
@@ -119,7 +121,11 @@ export default function NewOrderForm() {
         </div>
         <div className="mt-4 space-y-1.5">
           <Label htmlFor="caddr">Delivery address</Label>
-          <Textarea id="caddr" rows={2} placeholder="House/road, area, thana, district" value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} required />
+          <Textarea id="caddr" rows={2} placeholder="House/road, area" value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} required />
+        </div>
+        <div className="mt-4 space-y-1.5">
+          <Label htmlFor="police_station">Police station (thana)</Label>
+          <PoliceStationSelect value={form.police_station} onChange={(v) => set('police_station', v)} />
         </div>
         <div className="mt-4 space-y-1.5">
           <Label htmlFor="cnote">Note (optional)</Label>

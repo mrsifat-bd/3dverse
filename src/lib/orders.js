@@ -124,7 +124,7 @@ export async function createOrder(input) {
 
 // Customer checkout: places the order via the security-definer place_order RPC
 // (server recomputes all money; COD = product subtotal, delivery prepaid via bKash).
-export async function placeOrder({ customer_name, customer_phone, customer_address, note, items, transaction_id }) {
+export async function placeOrder({ customer_name, customer_phone, customer_address, police_station, note, items, transaction_id }) {
   if (!isSupabaseConfigured) return { ok: false, error: 'Ordering is not available right now.' }
   const check = validateOrderInput({ customer_name, customer_phone, customer_address, items })
   if (!check.ok) return { ok: false, error: 'Please check your details and try again.', errors: check.errors }
@@ -139,6 +139,7 @@ export async function placeOrder({ customer_name, customer_phone, customer_addre
     p_note: (note || '').trim(),
     p_items: items.map((i) => ({ product_id: i.product_id, quantity: Math.max(1, Math.round(Number(i.quantity) || 1)) })),
     p_transaction_id: txn.value,
+    p_police_station: (police_station || '').trim(),
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true, ...data }
@@ -178,6 +179,7 @@ export async function adminCreateOrder(input) {
       customer_name: input.customer_name.trim(),
       customer_phone: normalisePhone(input.customer_phone),
       customer_address: input.customer_address.trim(),
+      police_station: (input.police_station || '').trim(),
       note: (input.note || '').trim(),
       items,
       subtotal: t.subtotal, delivery_charge, discount, total: t.total, cod_amount: t.cod_amount, weight_kg,

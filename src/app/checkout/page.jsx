@@ -10,6 +10,7 @@ import { getMyProfile } from '@/lib/profile'
 import { placeOrder, isValidBDPhone } from '@/lib/orders'
 import { validateBkashTransactionId, BKASH_FORMAT_OK_MESSAGE } from '@/lib/bkash'
 import { localDeliveryCharge } from '@/lib/delivery'
+import PoliceStationSelect from '@/components/PoliceStationSelect'
 import { formatPrice } from '@/lib/format'
 import { BKASH } from '@/lib/config'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,7 @@ export default function CheckoutPage() {
   const router = useRouter()
 
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({ customer_name: '', customer_phone: '', customer_address: '', note: '', transaction_id: '' })
+  const [form, setForm] = useState({ customer_name: '', customer_phone: '', customer_address: '', police_station: '', note: '', transaction_id: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [txnError, setTxnError] = useState('')
@@ -102,11 +103,13 @@ export default function CheckoutPage() {
     setError('')
     if (!isValidBDPhone(form.customer_phone)) { setError('Enter a valid 11-digit phone number.'); return }
     if (form.customer_name.trim().length < 2 || form.customer_address.trim().length < 10) { setError('Enter your full name and delivery address.'); return }
+    if (!form.police_station) { setError('Please select your police station (thana).'); return }
     setBusy(true)
     const r = await placeOrder({
       customer_name: form.customer_name,
       customer_phone: form.customer_phone,
       customer_address: form.customer_address,
+      police_station: form.police_station,
       note: form.note,
       transaction_id: form.transaction_id,
       items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
@@ -207,7 +210,12 @@ export default function CheckoutPage() {
               <div className="mt-5 space-y-4">
                 <div className="space-y-1.5"><Label htmlFor="name">Full name</Label><Input id="name" value={form.customer_name} onChange={(e) => set('customer_name', e.target.value)} autoComplete="name" /></div>
                 <div className="space-y-1.5"><Label htmlFor="phone">Phone</Label><Input id="phone" inputMode="tel" value={form.customer_phone} onChange={(e) => set('customer_phone', e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" /></div>
-                <div className="space-y-1.5"><Label htmlFor="addr">Delivery address</Label><Textarea id="addr" rows={3} value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} placeholder="House / road, area, thana, district" autoComplete="street-address" /></div>
+                <div className="space-y-1.5"><Label htmlFor="addr">Delivery address</Label><Textarea id="addr" rows={2} value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} placeholder="House / road, area" autoComplete="street-address" /></div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="police_station">Police station (thana) <span className="text-clay">*</span></Label>
+                  <PoliceStationSelect value={form.police_station} onChange={(v) => set('police_station', v)} />
+                  <p className="text-xs text-stone">Needed for courier delivery. Search by your thana or district.</p>
+                </div>
                 <div className="space-y-1.5"><Label htmlFor="note">Notes <span className="text-stone">(optional)</span></Label><Textarea id="note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} /></div>
               </div>
 
