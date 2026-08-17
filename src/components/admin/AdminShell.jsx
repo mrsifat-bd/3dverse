@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label'
 const nav = [
   { href: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/products', label: 'Products', Icon: Package },
-  { href: '/admin/categories', label: 'Categories', Icon: Tags },
   { href: '/admin/cost-estimator', label: 'Cost Estimator', Icon: Calculator },
   { href: '/admin/orders', label: 'Orders', Icon: ShoppingBag },
   { href: '/admin/comments', label: 'Reviews', Icon: MessageSquare },
