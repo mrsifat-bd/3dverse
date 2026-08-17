@@ -35,10 +35,12 @@ function OrderStatusBadge({ status }) {
   return <span className="inline-flex items-center rounded-full bg-clay/10 px-2.5 py-1 text-xs font-medium text-clay">{orderStatusLabel(status)}</span>
 }
 
+// bKash payment state (separate from format validation). Pending = orange
+// (never green), Paid = green, Rejected = red.
 const PAY_META = {
-  pending: { label: 'Payment pending', color: '#C99A4E' },
-  verified: { label: 'Payment verified', color: '#5B8A5B' },
-  rejected: { label: 'Payment rejected', color: '#9A6A62' },
+  pending: { label: 'Pending verification', color: '#C99A4E' },
+  verified: { label: 'Paid', color: '#5B8A5B' },
+  rejected: { label: 'Rejected', color: '#B4381F' },
 }
 function PaymentBadge({ status }) {
   const m = PAY_META[status] || PAY_META.pending
@@ -72,6 +74,7 @@ export default function OrdersTable() {
   const [rowError, setRowError] = useState('')
   const [payment, setPayment] = useState(null)
   const [payBusy, setPayBusy] = useState(false)
+  const [payConfirm, setPayConfirm] = useState(null) // { order, action: 'verify'|'reject', reason }
   const [invoice, setInvoice] = useState(null)
   const [invBusy, setInvBusy] = useState(false)
   const [payDraft, setPayDraft] = useState({ payment_status: 'unpaid', payment_method: 'cod', paid_amount: 0 })
@@ -155,9 +158,7 @@ export default function OrdersTable() {
     } catch (e) { setRowError(e.message) }
   }
 
-  async function onRejectPayment(order) {
-    const reason = window.prompt('Reason for rejecting the payment? (e.g. Invalid transaction ID, Wrong amount)')
-    if (reason === null) return
+  async function onRejectPayment(order, reason = '') {
     setPayBusy(true); setRowError('')
     try {
       await rejectDeliveryPayment(order.id, reason, await adminEmail())
@@ -165,6 +166,15 @@ export default function OrdersTable() {
       setPayment((p) => (p ? { ...p, status: 'rejected', rejection_reason: reason } : p))
       try { setEvents(await getOrderEvents(order.id)) } catch {}
     } catch (e) { setRowError(e.message) } finally { setPayBusy(false) }
+  }
+
+  // Confirm modal gate for the (manual) payment decision.
+  async function runPayConfirm() {
+    if (!payConfirm) return
+    const { order, action, reason } = payConfirm
+    if (action === 'verify') await onVerifyPayment(order)
+    else await onRejectPayment(order, reason)
+    setPayConfirm(null)
   }
 
   function draftTotals(order) {
@@ -372,10 +382,13 @@ export default function OrdersTable() {
                                 <div className="flex justify-between"><span className="text-stone">Transaction ID</span><span className="font-medium text-ink">{payment.transaction_id}</span></div>
                                 {payment.rejection_reason && <p className="text-xs text-destructive">Reason: {payment.rejection_reason}</p>}
                                 {order.payment_status === 'pending' && (
-                                  <div className="mt-2 flex gap-2">
-                                    <Button size="sm" onClick={() => onVerifyPayment(order)} disabled={payBusy}>{payBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify</Button>
-                                    <Button size="sm" variant="ghost" onClick={() => onRejectPayment(order)} disabled={payBusy}>Reject</Button>
-                                  </div>
+                                  <>
+                                    <p className="mt-2 text-xs text-stone">A valid-looking transaction ID is not proof of payment. Check bKash for {formatPrice(payment.amount)} to {payment.receiver_number} before marking as paid.</p>
+                                    <div className="mt-2 flex gap-2">
+                                      <Button size="sm" onClick={() => setPayConfirm({ order, action: 'verify', reason: '' })} disabled={payBusy}><CheckCircle2 className="h-3.5 w-3.5" /> Mark as Paid</Button>
+                                      <Button size="sm" variant="ghost" onClick={() => setPayConfirm({ order, action: 'reject', reason: '' })} disabled={payBusy}>Reject payment</Button>
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             ) : (
@@ -568,6 +581,40 @@ export default function OrdersTable() {
                 <InvoicePreview invoice={preview.invoice} order={preview.order} />
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Manual bKash payment decision — human verification only, never automatic. */}
+      <AnimatePresence>
+        {payConfirm && (
+          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !payBusy && setPayConfirm(null)}>
+            <motion.div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6" initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.18 }} onClick={(e) => e.stopPropagation()}>
+              {payConfirm.action === 'verify' ? (
+                <>
+                  <h2 className="font-display text-lg font-semibold text-ink">Have you manually verified this bKash payment?</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-stone">Only confirm after you have checked bKash yourself and received {formatPrice(payment?.amount)} at {payment?.receiver_number}. This marks the payment as <span className="font-medium text-ink">Paid</span> and confirms the order.</p>
+                  <div className="mt-3 space-y-1.5 rounded-xl border border-line bg-cream p-3 text-sm">
+                    <div className="flex justify-between gap-3"><span className="text-stone">Transaction ID</span><span className="font-medium text-ink">{payment?.transaction_id}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-stone">Amount</span><span className="font-medium text-ink">{formatPrice(payment?.amount)}</span></div>
+                  </div>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setPayConfirm(null)} disabled={payBusy}>Cancel</Button>
+                    <Button onClick={runPayConfirm} disabled={payBusy}>{payBusy ? <><Loader2 className="h-4 w-4 animate-spin" /> Confirming…</> : <><CheckCircle2 className="h-4 w-4" /> Confirm Payment</>}</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="font-display text-lg font-semibold text-ink">Reject this payment?</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-stone">The payment will be marked <span className="font-medium text-ink">Rejected</span>. Add a reason if you like (optional).</p>
+                  <Input className="mt-3" placeholder="e.g. Transaction ID does not match the received payment" value={payConfirm.reason || ''} onChange={(e) => setPayConfirm((p) => ({ ...p, reason: e.target.value }))} />
+                  <div className="mt-5 flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setPayConfirm(null)} disabled={payBusy}>Cancel</Button>
+                    <Button onClick={runPayConfirm} disabled={payBusy} style={{ backgroundColor: '#B4381F' }}>{payBusy ? <><Loader2 className="h-4 w-4 animate-spin" /> Rejecting…</> : <><Ban className="h-4 w-4" /> Reject payment</>}</Button>
+                  </div>
+                </>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

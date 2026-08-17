@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import { validateBkashTransactionId } from './bkash'
 
 // ---- Status vocabularies -------------------------------------------------
 
@@ -127,14 +128,17 @@ export async function placeOrder({ customer_name, customer_phone, customer_addre
   if (!isSupabaseConfigured) return { ok: false, error: 'Ordering is not available right now.' }
   const check = validateOrderInput({ customer_name, customer_phone, customer_address, items })
   if (!check.ok) return { ok: false, error: 'Please check your details and try again.', errors: check.errors }
-  if (!String(transaction_id || '').trim()) return { ok: false, error: 'Enter your bKash transaction ID.' }
+  // FORMAT validation only (the same rule the backend re-checks). A valid format
+  // is NOT a verified payment — an admin verifies the actual bKash payment later.
+  const txn = validateBkashTransactionId(transaction_id)
+  if (!txn.ok) return { ok: false, error: txn.error }
   const { data, error } = await supabase.rpc('place_order', {
     p_name: customer_name.trim(),
     p_phone: normalisePhone(customer_phone),
     p_address: customer_address.trim(),
     p_note: (note || '').trim(),
     p_items: items.map((i) => ({ product_id: i.product_id, quantity: Math.max(1, Math.round(Number(i.quantity) || 1)) })),
-    p_transaction_id: String(transaction_id).trim(),
+    p_transaction_id: txn.value,
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true, ...data }
@@ -271,20 +275,26 @@ export async function getDeliveryPayment(orderId) {
   return data
 }
 
+// Admin manually confirms the bKash payment after checking bKash themselves.
+// This is a human verification — never automatic. Records who/when/method.
 export async function verifyDeliveryPayment(orderId, adminEmail = '') {
   const now = new Date().toISOString()
-  const a = await supabase.from('delivery_payments').update({ status: 'verified', verified_at: now, verified_by: adminEmail }).eq('order_id', orderId)
+  const a = await supabase.from('delivery_payments')
+    .update({ status: 'verified', verified_at: now, verified_by: adminEmail, verification_method: 'manual', rejection_reason: null })
+    .eq('order_id', orderId)
   if (a.error) throw a.error
   const b = await supabase.from('orders').update({ payment_status: 'verified', status: 'confirmed' }).eq('id', orderId)
   if (b.error) throw b.error
-  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Delivery payment verified - order confirmed.', actor: adminEmail })
+  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Payment manually verified by admin (pending → paid) — order confirmed.', actor: adminEmail })
 }
 
 export async function rejectDeliveryPayment(orderId, reason = '', adminEmail = '') {
   const now = new Date().toISOString()
-  const a = await supabase.from('delivery_payments').update({ status: 'rejected', verified_at: now, verified_by: adminEmail, rejection_reason: reason }).eq('order_id', orderId)
+  const a = await supabase.from('delivery_payments')
+    .update({ status: 'rejected', verified_at: now, verified_by: adminEmail, verification_method: 'manual', rejection_reason: reason })
+    .eq('order_id', orderId)
   if (a.error) throw a.error
   const b = await supabase.from('orders').update({ payment_status: 'rejected' }).eq('id', orderId)
   if (b.error) throw b.error
-  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Delivery payment rejected' + (reason ? `: ${reason}` : ''), actor: adminEmail })
+  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Payment rejected by admin (pending → rejected)' + (reason ? `: ${reason}` : ''), actor: adminEmail })
 }

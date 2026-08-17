@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/components/CartProvider'
 import { getMyProfile } from '@/lib/profile'
 import { placeOrder, isValidBDPhone } from '@/lib/orders'
+import { validateBkashTransactionId, BKASH_FORMAT_OK_MESSAGE } from '@/lib/bkash'
 import { localDeliveryCharge } from '@/lib/delivery'
 import { formatPrice } from '@/lib/format'
 import { BKASH } from '@/lib/config'
@@ -27,8 +28,20 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({ customer_name: '', customer_phone: '', customer_address: '', note: '', transaction_id: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [txnError, setTxnError] = useState('')
   const [copied, setCopied] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // FORMAT check only — never a payment verification.
+  const txnCheck = validateBkashTransactionId(form.transaction_id)
+
+  function goToDetails() {
+    const r = validateBkashTransactionId(form.transaction_id)
+    if (!r.ok) { setTxnError(r.error); return }
+    set('transaction_id', r.value) // store the normalised ID
+    setTxnError('')
+    setStep(3)
+  }
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/login?next=/checkout')
@@ -151,13 +164,20 @@ export default function CheckoutPage() {
 
               <div className="mt-5 space-y-1.5">
                 <Label htmlFor="txn">bKash transaction ID <span className="text-clay">*</span></Label>
-                <Input id="txn" value={form.transaction_id} onChange={(e) => set('transaction_id', e.target.value.toUpperCase())} placeholder="e.g. 9F2K7XQ1AB" />
-                <p className="text-xs text-stone">Open bKash → Send Money → send ৳{delivery} to {BKASH.number}, then paste the Transaction ID here.</p>
+                <Input id="txn" value={form.transaction_id} aria-invalid={Boolean(txnError)}
+                  onChange={(e) => { set('transaction_id', e.target.value.toUpperCase()); if (txnError) setTxnError('') }}
+                  placeholder="e.g. 9F2K7XQ1AB" />
+                {/* Live FORMAT feedback — not a payment confirmation. */}
+                {form.transaction_id.trim() && txnCheck.ok && !txnError && (
+                  <p className="text-xs font-medium text-[#5B8A5B]">{BKASH_FORMAT_OK_MESSAGE}</p>
+                )}
+                {txnError && <p className="text-xs text-destructive">{txnError}</p>}
+                <p className="text-xs text-stone">Open bKash → Send Money → send ৳{delivery} to {BKASH.number}, then paste the Transaction ID here. We&apos;ll verify your payment manually before dispatch.</p>
               </div>
 
               <div className="mt-6 flex gap-3">
                 <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
-                <Button className="flex-1" onClick={() => setStep(3)} disabled={!form.transaction_id.trim()}>Continue to delivery info <ArrowRight className="h-4 w-4" /></Button>
+                <Button className="flex-1" onClick={goToDetails}>Continue to delivery info <ArrowRight className="h-4 w-4" /></Button>
               </div>
             </div>
           )}
