@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient'
 import { SITE_URL, isAdminEmail } from '@/lib/config'
+import { safeNext } from '@/lib/authRedirect'
 
 // Tracks the Supabase auth session (shared by customers and the admin area).
 export function useAuth() {
@@ -52,6 +53,24 @@ export async function signUp({ email, password, fullName, phone }) {
 
 export async function signOut() {
   return supabase.auth.signOut()
+}
+
+// Social login. Supabase (GoTrue) performs ALL server-side verification of the
+// provider token — signature, issuer, audience/client-id, expiry, nonce/PKCE —
+// and creates/links the identity. We never trust profile data from the browser.
+// redirectTo is a first-party path only (open-redirect safe). Only minimal
+// scopes are requested (email + basic profile).
+export async function signInWithProvider(provider, next) {
+  const path = safeNext(next, '')
+  const redirectTo = `${SITE_URL}/auth/callback${path ? `?next=${encodeURIComponent(path)}` : ''}`
+  return supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      scopes: provider === 'facebook' ? 'email' : undefined,
+      queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
+    },
+  })
 }
 
 export async function sendPasswordReset(email) {

@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import { signUp } from '@/hooks/useAuth'
 import { isValidBDPhone } from '@/lib/orders'
+import { safeNext } from '@/lib/authRedirect'
 import AuthCard from '@/components/auth/AuthCard'
+import SocialAuthButtons from '@/components/auth/SocialAuthButtons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,7 +27,7 @@ function SignupInner() {
     setError('')
     if (form.fullName.trim().length < 2) return setError('Please enter your full name.')
     if (!isValidBDPhone(form.phone)) return setError('Enter a valid 11-digit phone (e.g. 01712345678).')
-    if (form.password.length < 6) return setError('Password must be at least 6 characters.')
+    if (form.password.length < 8) return setError('Password must be at least 8 characters.')
     if (form.password !== form.confirm) return setError('Passwords do not match.')
     setBusy(true)
     const { data, error } = await signUp(form)
@@ -33,7 +35,7 @@ function SignupInner() {
     if (error) return setError(error.message)
     // If email confirmation is required, no session is returned.
     if (data?.session) {
-      router.push(next || '/account')
+      router.push(safeNext(next, '/account'))
       router.refresh()
     } else {
       setDone(true)
@@ -86,6 +88,7 @@ function SignupInner() {
           {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : 'Create account'}
         </Button>
       </form>
+      <SocialAuthButtons next={next} />
     </AuthCard>
   )
 }
