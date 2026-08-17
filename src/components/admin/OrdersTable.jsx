@@ -60,6 +60,25 @@ function CourierBadge({ order }) {
   )
 }
 
+// Visual state for an order card. Cancelled overrides everything. Colour only
+// SUPPORTS the status — the text badges always convey it too (accessibility).
+function orderVisual(order) {
+  const s = order.status
+  const p = order.payment_status
+  if (s === 'cancelled' || s === 'returned' || s === 'failed') return { label: s === 'cancelled' ? 'Cancelled' : orderStatusLabel(s), color: '#8A8577', tint: 'rgba(138,133,119,0.10)' }
+  if (p === 'rejected') return { label: 'Payment rejected', color: '#B4381F', tint: 'rgba(180,56,31,0.07)' }
+  if (p === 'pending') return { label: 'Pending verification', color: '#C99A4E', tint: 'rgba(201,154,78,0.10)' }
+  if (s === 'delivered') return { label: 'Paid & delivered', color: '#3F8F5A', tint: 'rgba(63,143,90,0.12)' }
+  if (p === 'verified') return { label: 'Delivery paid', color: '#5B8A5B', tint: 'rgba(91,138,91,0.07)' }
+  return { label: 'New', color: '#8A8577', tint: 'transparent' }
+}
+
+// Daily serial from the meaningful order number (3D-YYYYMMDD-024 -> #024).
+function orderSerial(order) {
+  const m = String(order.order_number || '').match(/(\d+)\s*$/)
+  return m ? `#${m[1]}` : ''
+}
+
 export default function OrdersTable() {
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
@@ -336,18 +355,23 @@ export default function OrdersTable() {
             const open = expandedId === order.id
             const t = open ? draftTotals(order) : { subtotal: order.subtotal, total: order.total, cod_amount: order.cod_amount }
             const created = Boolean(order.steadfast_consignment_id)
+            const v = orderVisual(order)
+            const serial = orderSerial(order)
+            const itemCount = (order.items || []).length
             return (
-              <div key={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper">
+              <div key={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper"
+                style={{ borderLeftWidth: 4, borderLeftColor: v.color, boxShadow: v.tint !== 'transparent' ? `inset 0 0 0 9999px ${v.tint}` : undefined }}>
                 {/* Row header */}
-                <button onClick={() => expand(order)} className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-line/40">
+                <button onClick={() => expand(order)} className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-line/30">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
+                      {serial && <span className="font-display text-sm font-bold" style={{ color: v.color }}>{serial}</span>}
                       <span className="font-display font-semibold text-ink">{order.order_number}</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: `${v.color}1f`, color: v.color }}>{v.label}</span>
                       <OrderStatusBadge status={order.status} />
-                      <PaymentBadge status={order.payment_status} />
                       <CourierBadge order={order} />
                     </div>
-                    <p className="mt-1 truncate text-sm text-stone">{order.customer_name} · {order.customer_phone} · {fmtDate(order.created_at)}</p>
+                    <p className="mt-1 truncate text-sm text-stone">{order.customer_name} · {order.customer_phone} · {itemCount} item{itemCount === 1 ? '' : 's'} · {fmtDate(order.created_at)}{order.police_station ? ` · ${order.police_station}` : ''}</p>
                   </div>
                   <span className="shrink-0 text-right">
                     <span className="block font-semibold text-ink">{formatPrice(order.cod_amount)}</span>
