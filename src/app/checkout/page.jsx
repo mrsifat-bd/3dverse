@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Copy, Check, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Loader2, Copy, Check, ArrowRight, ArrowLeft, ClipboardPaste } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/components/CartProvider'
 import { getMyProfile } from '@/lib/profile'
@@ -41,6 +41,19 @@ export default function CheckoutPage() {
     set('transaction_id', r.value) // store the normalised ID
     setTxnError('')
     setStep(3)
+  }
+
+  // Paste from clipboard on explicit user action, then run the same format check.
+  async function pasteTxn() {
+    try {
+      const text = await navigator.clipboard.readText()
+      const raw = String(text || '').trim().replace(/\s+/g, '').toUpperCase()
+      const r = validateBkashTransactionId(text)
+      set('transaction_id', r.ok ? r.value : raw)
+      setTxnError(!raw ? '' : r.ok ? '' : r.error)
+    } catch {
+      setTxnError('Clipboard access was blocked. Please paste manually.')
+    }
   }
 
   useEffect(() => {
@@ -164,9 +177,15 @@ export default function CheckoutPage() {
 
               <div className="mt-5 space-y-1.5">
                 <Label htmlFor="txn">bKash transaction ID <span className="text-clay">*</span></Label>
-                <Input id="txn" value={form.transaction_id} aria-invalid={Boolean(txnError)}
-                  onChange={(e) => { set('transaction_id', e.target.value.toUpperCase()); if (txnError) setTxnError('') }}
-                  placeholder="e.g. 9F2K7XQ1AB" />
+                <div className="relative">
+                  <Input id="txn" className="pr-[86px]" value={form.transaction_id} aria-invalid={Boolean(txnError)}
+                    onChange={(e) => { set('transaction_id', e.target.value.toUpperCase()); if (txnError) setTxnError('') }}
+                    placeholder="e.g. 9F2K7XQ1AB" />
+                  <button type="button" onClick={pasteTxn} aria-label="Paste transaction ID from clipboard"
+                    className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md border border-line bg-cream px-2 py-1.5 text-xs font-medium text-clay transition-colors hover:bg-clay/10">
+                    <ClipboardPaste className="h-3.5 w-3.5" /> Paste
+                  </button>
+                </div>
                 {/* Live FORMAT feedback — not a payment confirmation. */}
                 {form.transaction_id.trim() && txnCheck.ok && !txnError && (
                   <p className="text-xs font-medium text-[#5B8A5B]">{BKASH_FORMAT_OK_MESSAGE}</p>
