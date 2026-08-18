@@ -20,7 +20,7 @@ const newKey = () => `line-${++keySeq}`
 export default function NewOrderForm() {
   const router = useRouter()
   const [form, setForm] = useState({
-    customer_name: '', customer_phone: '', customer_address: '', police_station: '', note: '',
+    customer_name: '', customer_phone: '', customer_email: '', customer_address: '', police_station: '', note: '',
     delivery_charge: 0, discount: 0, weight_kg: 0.5, status: 'new',
   })
   const [lines, setLines] = useState([])
@@ -67,7 +67,7 @@ export default function NewOrderForm() {
     let actor = ''
     try { const { data } = await supabase.auth.getSession(); actor = data?.session?.user?.email || '' } catch {}
     const res = await adminCreateOrder({
-      customer_name: form.customer_name, customer_phone: form.customer_phone, customer_address: form.customer_address,
+      customer_name: form.customer_name, customer_phone: form.customer_phone, customer_email: form.customer_email, customer_address: form.customer_address,
       police_station: form.police_station,
       note: form.note, delivery_charge: form.delivery_charge, discount: form.discount, weight_kg: form.weight_kg,
       status: form.status, actor,
@@ -118,6 +118,10 @@ export default function NewOrderForm() {
             <Label htmlFor="cphone">Phone (11 digits)</Label>
             <Input id="cphone" inputMode="numeric" placeholder="01712345678" value={form.customer_phone} onChange={(e) => set('customer_phone', e.target.value.replace(/[^0-9]/g, ''))} required />
           </div>
+        </div>
+        <div className="mt-4 space-y-1.5">
+          <Label htmlFor="cemail">Email <span className="text-stone">(optional — enables order emails)</span></Label>
+          <Input id="cemail" type="email" placeholder="customer@email.com" value={form.customer_email} onChange={(e) => set('customer_email', e.target.value)} />
         </div>
         <div className="mt-4 space-y-1.5">
           <Label htmlFor="caddr">Delivery address</Label>

@@ -4,9 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import {
   Loader2, RefreshCw, Truck, ChevronDown, ExternalLink, CheckCircle2, AlertTriangle, PackagePlus, Trash2, Ban,
-  FileText, Download, Printer, Share2, ReceiptText, X, Plus,
+  FileText, Download, Printer, Share2, ReceiptText, X, Plus, Mail, Send, Circle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
+import { EMAIL_TASKS, getOrderEmailEvents, lastSentByType } from '@/lib/orderEmails'
+import { renderOrderEmail } from '@/lib/email/templates'
+import { useSettings } from '@/components/SettingsProvider'
 import {
   getOrders, updateOrder, deleteOrder, addOrderEvent, getOrderEvents, computeTotals,
   ORDER_STATUSES, orderStatusLabel, steadfastStatusLabel, trackingUrlFor,
@@ -94,6 +97,11 @@ export default function OrdersTable() {
   const [payment, setPayment] = useState(null)
   const [payBusy, setPayBusy] = useState(false)
   const [payConfirm, setPayConfirm] = useState(null) // { order, action: 'verify'|'reject', reason }
+  const settings = useSettings()
+  const [emailEvents, setEmailEvents] = useState([])
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailPreview, setEmailPreview] = useState(null) // { order, type, resend }
+  const [emailErr, setEmailErr] = useState('')
   const [invoice, setInvoice] = useState(null)
   const [invBusy, setInvBusy] = useState(false)
   const [payDraft, setPayDraft] = useState({ payment_status: 'unpaid', payment_method: 'cod', paid_amount: 0 })
@@ -125,10 +133,39 @@ export default function OrdersTable() {
     if (expandedId === order.id) { setExpandedId(null); return }
     setExpandedId(order.id)
     setDraft({ delivery_charge: Number(order.delivery_charge) || 0, discount: Number(order.discount) || 0, weight_kg: Number(order.weight_kg) || 0.5 })
-    setEvents([]); setPayment(null); setInvoice(null)
+    setEvents([]); setPayment(null); setInvoice(null); setEmailEvents([])
     try { setEvents(await getOrderEvents(order.id)) } catch {}
     try { setPayment(await getDeliveryPayment(order.id)) } catch {}
+    try { setEmailEvents(await getOrderEmailEvents(order.id)) } catch {}
     await loadInvoice(order.id)
+  }
+
+  // ---- Customer emails ---------------------------------------------------
+  function buildEmail(order, type) {
+    const code = order.steadfast_tracking_code || ''
+    return renderOrderEmail(type, order, {
+      trackingCode: code,
+      trackingUrl: code ? trackingUrlFor(code) : '',
+      reviewUrl: settings?.review_url || '',
+    })
+  }
+
+  async function sendOrderEmail() {
+    if (!emailPreview) return
+    const { order, type, resend } = emailPreview
+    setEmailBusy(true); setEmailErr('')
+    const r = await authFetch(`/api/orders/${order.id}/email`, { emailType: type, resend: Boolean(resend) })
+    setEmailBusy(false)
+    if (r.ok && r.data?.ok) {
+      try { setEmailEvents(await getOrderEmailEvents(order.id)) } catch {}
+      try { setEvents(await getOrderEvents(order.id)) } catch {}
+      setEmailPreview(null)
+    } else if (r.status === 409 && r.data?.alreadySent) {
+      setEmailPreview((p) => ({ ...p, resend: true }))
+      setEmailErr('This email was already sent. Confirm to send it again.')
+    } else {
+      setEmailErr(r.data?.error || 'Failed to send email. Please try again.')
+    }
   }
 
   async function loadInvoice(orderId) {
@@ -533,6 +570,49 @@ export default function OrdersTable() {
                             )}
                           </div>
 
+                          {/* Customer emails */}
+                          <div className="rounded-xl border border-line p-4">
+                            <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-clay" /><p className="font-display font-semibold text-ink">Customer emails</p></div>
+                            {!order.customer_email ? (
+                              <p className="mt-3 text-sm text-stone">No email address available for this customer.{order.user_id ? '' : ' Add an email on the order to notify them.'}</p>
+                            ) : (
+                              <>
+                                <p className="mt-1 text-xs text-stone">To: <span className="text-ink">{order.customer_email}</span></p>
+                                <div className="mt-3 space-y-3">
+                                  {EMAIL_TASKS.map((task) => {
+                                    const sent = lastSentByType(emailEvents)[task.type]
+                                    const warn = task.warn(order)
+                                    return (
+                                      <div key={task.type} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="min-w-0">
+                                            <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                                              {sent ? <CheckCircle2 className="h-4 w-4 text-[#5B8A5B]" /> : <Circle className="h-4 w-4 text-stone" />}
+                                              {task.label}
+                                            </p>
+                                            {sent ? (
+                                              <p className="mt-0.5 text-xs text-stone">Sent {fmtDate(sent.sent_at)}{sent.sent_by ? ` · by ${sent.sent_by}` : ''}</p>
+                                            ) : (
+                                              <p className="mt-0.5 text-xs text-stone">Not sent yet{warn ? ` · ${warn}` : ''}</p>
+                                            )}
+                                          </div>
+                                          {sent ? (
+                                            <div className="flex shrink-0 items-center gap-1.5">
+                                              <span className="inline-flex items-center gap-1 rounded-full bg-[#5B8A5B]/15 px-2 py-1 text-xs font-medium text-[#5B8A5B]"><CheckCircle2 className="h-3 w-3" /> Sent</span>
+                                              <Button size="sm" variant="ghost" onClick={() => { setEmailErr(''); setEmailPreview({ order, type: task.type, resend: true }) }}>Send again</Button>
+                                            </div>
+                                          ) : (
+                                            <Button size="sm" className="shrink-0" onClick={() => { setEmailErr(''); setEmailPreview({ order, type: task.type, resend: false }) }}><Send className="h-3.5 w-3.5" /> Send email</Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </>
+                            )}
+                          </div>
+
                           <div>
                             <p className="text-xs uppercase tracking-wide text-stone">Timeline</p>
                             <ul className="mt-2 space-y-2 text-sm">
@@ -641,6 +721,42 @@ export default function OrdersTable() {
                 </>
               )}
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Customer email preview + send */}
+      <AnimatePresence>
+        {emailPreview && (
+          <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !emailBusy && setEmailPreview(null)}>
+            <div className="mx-auto my-4 w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="rounded-2xl border border-line bg-paper p-5 shadow-2xl">
+                {(() => {
+                  const built = buildEmail(emailPreview.order, emailPreview.type)
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-display text-lg font-semibold text-ink">Email preview</h2>
+                        <Button size="sm" variant="ghost" onClick={() => setEmailPreview(null)} disabled={emailBusy}><X className="h-4 w-4" /></Button>
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm">
+                        <div className="flex gap-2"><span className="w-20 shrink-0 text-stone">Recipient</span><span className="font-medium text-ink">{emailPreview.order.customer_email}</span></div>
+                        <div className="flex gap-2"><span className="w-20 shrink-0 text-stone">Subject</span><span className="font-medium text-ink">{built?.subject}</span></div>
+                      </div>
+                      <div className="mt-3 overflow-hidden rounded-xl border border-line">
+                        <iframe title="Email preview" sandbox="" srcDoc={built?.html || ''} className="h-[400px] w-full bg-white" />
+                      </div>
+                      {emailErr && <p className="mt-2 text-sm text-destructive">{emailErr}</p>}
+                      {emailPreview.resend && <p className="mt-2 text-xs text-stone">This email may have already been sent to {emailPreview.order.customer_email}. Sending again will deliver a duplicate.</p>}
+                      <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setEmailPreview(null)} disabled={emailBusy}>Cancel</Button>
+                        <Button onClick={sendOrderEmail} disabled={emailBusy}>{emailBusy ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</> : <><Send className="h-4 w-4" /> {emailPreview.resend ? 'Send again' : 'Send email'}</>}</Button>
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

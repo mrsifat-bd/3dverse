@@ -179,6 +179,7 @@ export async function adminCreateOrder(input) {
       customer_name: input.customer_name.trim(),
       customer_phone: normalisePhone(input.customer_phone),
       customer_address: input.customer_address.trim(),
+      customer_email: (input.customer_email || '').trim().toLowerCase(),
       police_station: (input.police_station || '').trim(),
       note: (input.note || '').trim(),
       items,

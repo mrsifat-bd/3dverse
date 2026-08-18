@@ -41,6 +41,9 @@ function normalise(payload) {
     review_url: payload.review_url?.trim() || '',
     extra_link: payload.extra_link?.trim() || '',
     extra_link_label: payload.extra_link_label?.trim() || '',
+    // Internal, admin-only. The private link to the source 3D model file, for
+    // the admin to download later and print. Never exposed to the public.
+    model_source_url: payload.model_source_url?.trim() || '',
     faqs: Array.isArray(payload.faqs)
       ? payload.faqs
           .filter((f) => f && (f.q || '').trim())

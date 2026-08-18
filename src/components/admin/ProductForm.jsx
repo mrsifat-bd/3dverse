@@ -33,6 +33,7 @@ export default function ProductForm({ initial }) {
     review_url: initial?.review_url || '',
     extra_link: initial?.extra_link || '',
     extra_link_label: initial?.extra_link_label || '',
+    model_source_url: initial?.model_source_url || '',
   })
   const [images, setImages] = useState(Array.isArray(initial?.image_url) ? initial.image_url : [])
   const [faqs, setFaqs] = useState(Array.isArray(initial?.faqs) ? initial.faqs : [])
@@ -107,6 +108,18 @@ export default function ProductForm({ initial }) {
         <Label htmlFor="production_cost">Production cost (৳) — private 🔒</Label>
         <Input id="production_cost" type="number" min="0" step="0.01" value={form.production_cost} onChange={(e) => set('production_cost', e.target.value)} placeholder="Your internal cost" />
         <p className="text-xs text-stone">Internal only — never shown on the website or sent to any visitor. For your own reference when orders come in.</p>
+      </div>
+
+      <div className="space-y-1.5 rounded-xl border border-dashed border-line bg-line/20 p-3">
+        <Label htmlFor="model_source_url">3D model link — private 🔒</Label>
+        <Input id="model_source_url" type="url" value={form.model_source_url} onChange={(e) => set('model_source_url', e.target.value)} placeholder="https://… link to the source 3D model file" />
+        {form.model_source_url?.trim() && (
+          <a href={form.model_source_url.trim()} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-clay hover:underline">
+            Open / download model ↗
+          </a>
+        )}
+        <p className="text-xs text-stone">Internal only — the link to where you got this 3D model, so you can open it later to download and print. Never shown anywhere on the website or to any visitor.</p>
       </div>
 
       <div className="space-y-1.5">
