@@ -54,7 +54,9 @@ export default function ProductForm({ initial }) {
     try {
       const urls = []
       for (const file of files) urls.push(await uploadImage(file))
-      setImages((prev) => [...prev, ...urls])
+      // New uploads go to the FRONT so the latest photo becomes the main
+      // (card) image right away. Use "Set main" to change it afterwards.
+      setImages((prev) => [...urls, ...prev])
     } catch (err) {
       setError(err.message || 'Image upload failed')
     } finally {
@@ -65,6 +67,11 @@ export default function ProductForm({ initial }) {
 
   function removeImage(url) {
     setImages((prev) => prev.filter((u) => u !== url))
+  }
+
+  // Move an image to the front so it becomes the main (card) photo.
+  function makeMain(url) {
+    setImages((prev) => [url, ...prev.filter((u) => u !== url)])
   }
 
   async function submit(e) {
@@ -182,9 +189,17 @@ export default function ProductForm({ initial }) {
       <div className="space-y-2">
         <Label>Images</Label>
         <div className="flex flex-wrap gap-3">
-          {images.map((url) => (
-            <div key={url} className="relative h-24 w-24 overflow-hidden rounded-xl border border-line">
+          {images.map((url, idx) => (
+            <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
               <Image src={url} alt="" fill sizes="96px" className="object-cover" />
+              {idx === 0 ? (
+                <span className="absolute left-1 top-1 rounded-full bg-clay px-1.5 py-0.5 text-[10px] font-medium text-paper">Main</span>
+              ) : (
+                <button type="button" onClick={() => makeMain(url)} aria-label="Set as main photo"
+                  className="absolute left-1 top-1 rounded-full bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-paper hover:bg-clay">
+                  Set main
+                </button>
+              )}
               <button type="button" onClick={() => removeImage(url)} aria-label="Remove image"
                 className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-paper">
                 <X className="h-3.5 w-3.5" />
@@ -196,7 +211,7 @@ export default function ProductForm({ initial }) {
             <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
           </label>
         </div>
-        <p className="text-xs text-stone">First image is the main photo. Compress large images before uploading.</p>
+        <p className="text-xs text-stone">The image marked <span className="font-medium text-clay">Main</span> is what shows on product cards. New uploads become the Main photo automatically — or click <span className="font-medium">Set main</span> on any image. Compress large images before uploading.</p>
       </div>
 
       <div className="space-y-3 border-t border-line pt-6">
