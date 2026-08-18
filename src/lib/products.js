@@ -9,10 +9,20 @@ import { MOCK_PRODUCTS } from './mockData'
 const PUBLIC_COLUMNS =
   'id,name,slug,price,description,category,tags,image_url,in_stock,created_at,discount_percent,review_url,extra_link,extra_link_label,faqs,is_popular,weight_kg'
 
-const byNewest = (a, b) => new Date(b.created_at) - new Date(a.created_at)
-// Popular items first, then newest.
+// Products WITH a photo always rank above products without one, so the shop
+// never leads with empty placeholder cards.
+const hasImage = (p) => {
+  const img = p?.image_url
+  return Array.isArray(img) ? Boolean(img[0]) : Boolean(img)
+}
+const byImage = (a, b) => (hasImage(b) ? 1 : 0) - (hasImage(a) ? 1 : 0)
+
+const byNewest = (a, b) => byImage(a, b) || new Date(b.created_at) - new Date(a.created_at)
+// Photo products first, then popular, then newest.
 const byPopular = (a, b) =>
-  (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0) || new Date(b.created_at) - new Date(a.created_at)
+  byImage(a, b) ||
+  (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0) ||
+  new Date(b.created_at) - new Date(a.created_at)
 
 export async function getAllProducts() {
   if (!isSupabaseConfigured) return [...MOCK_PRODUCTS].sort(byPopular)
@@ -78,8 +88,8 @@ export function searchProducts(products, query) {
 export function sortProducts(products, sort) {
   const arr = [...products]
   switch (sort) {
-    case 'price-asc': return arr.sort((a, b) => a.price - b.price)
-    case 'price-desc': return arr.sort((a, b) => b.price - a.price)
+    case 'price-asc': return arr.sort((a, b) => byImage(a, b) || a.price - b.price)
+    case 'price-desc': return arr.sort((a, b) => byImage(a, b) || b.price - a.price)
     case 'newest': return arr.sort(byNewest)
     case 'popular':
     default: return arr.sort(byPopular)
