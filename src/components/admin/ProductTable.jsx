@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Pencil, Trash2, Plus, Loader2, Tags } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { listProducts, deleteProduct } from '@/lib/adminProducts'
+import { getAllCategories } from '@/lib/categories'
 import { formatPrice, firstImage } from '@/lib/format'
 import { categoryName, CATEGORIES } from '@/lib/config'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ export default function ProductTable() {
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
   const [category, setCategory] = useState('all')
+  const [categories, setCategories] = useState(CATEGORIES)
   const [confirmId, setConfirmId] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -29,6 +31,14 @@ export default function ProductTable() {
     }
   }
   useEffect(() => { load() }, [])
+
+  // Load the live category list from the DB so newly added categories show in
+  // the filter (the static config list would miss them). Falls back to config.
+  useEffect(() => {
+    getAllCategories()
+      .then((c) => { if (Array.isArray(c) && c.length) setCategories(c) })
+      .catch(() => {})
+  }, [])
 
   async function onDelete(id) {
     setDeleting(true)
@@ -74,7 +84,7 @@ export default function ProductTable() {
         </div>
         <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category" className="w-full sm:w-auto">
           <option value="all">All categories</option>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c.slug} value={c.slug}>{c.name}</option>
           ))}
         </Select>

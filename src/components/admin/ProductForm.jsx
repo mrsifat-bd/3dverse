@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, X, Loader2, Plus } from 'lucide-react'
 import { createProduct, updateProduct, uploadImage } from '@/lib/adminProducts'
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
-import { getPublicCategories } from '@/lib/categories'
+import { getAllCategories } from '@/lib/categories'
 import { slugify } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,7 +42,9 @@ export default function ProductForm({ initial }) {
   const [error, setError] = useState('')
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
 
-  useEffect(() => { getPublicCategories().then((c) => { if (c && c.length) setCategories(c) }).catch(() => {}) }, [])
+  // Admin form: load ALL categories (incl. brand-new empty ones) so a product
+  // can be assigned to a category right after it's created. Falls back to config.
+  useEffect(() => { getAllCategories().then((c) => { if (Array.isArray(c) && c.length) setCategories(c) }).catch(() => {}) }, [])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
