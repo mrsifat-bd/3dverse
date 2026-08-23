@@ -4,6 +4,7 @@ import { getSettings } from '@/lib/settings'
 import { getPublicCategories } from '@/lib/categories'
 import { SettingsProvider } from '@/components/SettingsProvider'
 import { CartProvider } from '@/components/CartProvider'
+import MotionProvider from '@/components/MotionProvider'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import DemoBanner from '@/components/DemoBanner'
@@ -65,16 +66,18 @@ export default async function RootLayout({ children }) {
       <body>
         <SettingsProvider settings={settings}>
           <CartProvider>
-            <div className="flex min-h-screen flex-col">
-              <DemoBanner />
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer categories={categories} />
-            </div>
-            <ScrollToTop />
-            <WhatsAppButton />
-            <SubscribePopup />
-            <PageViewTracker />
+            <MotionProvider>
+              <div className="flex min-h-screen flex-col">
+                <DemoBanner />
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer categories={categories} />
+              </div>
+              <ScrollToTop />
+              <WhatsAppButton />
+              <SubscribePopup />
+              <PageViewTracker />
+            </MotionProvider>
           </CartProvider>
         </SettingsProvider>
       </body>
