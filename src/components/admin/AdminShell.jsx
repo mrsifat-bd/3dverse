@@ -6,6 +6,7 @@ import { LayoutDashboard, Package, Tags, ShoppingBag, MessageSquare, Users, Mail
 import { useAuth, signIn, signOut } from '@/hooks/useAuth'
 import { BUSINESS } from '@/lib/config'
 import { cn } from '@/lib/utils'
+import NotificationBell from '@/components/admin/NotificationBell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -87,7 +88,13 @@ export default function AdminShell({ children }) {
           </button>
         </div>
       </aside>
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        <div className="mb-5 flex items-center gap-3">
+          <p className="font-display text-lg font-semibold text-ink md:hidden">{BUSINESS.name} admin</p>
+          <div className="ml-auto"><NotificationBell /></div>
+        </div>
+        {children}
+      </div>
     </div>
   )
 }

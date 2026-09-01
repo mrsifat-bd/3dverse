@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -82,6 +82,31 @@ function orderSerial(order) {
   return m ? `#${m[1]}` : ''
 }
 
+// Sort priority from the REAL backend status. Lower = higher up the list, so
+// orders that need attention float to the top and finished ones sink. Within
+// the same rank we keep newest-first (handled in the sort comparator).
+function statusRank(order) {
+  const s = order.status
+  const p = order.payment_status
+  if (s === 'cancelled') return 100
+  if (s === 'returned' || s === 'failed') return 95
+  if (s === 'delivered') return 80          // completed
+  if (p === 'rejected') return 0            // payment rejected — needs action now
+  switch (s) {
+    case 'new': return 10
+    case 'confirmed': return 20
+    case 'ready': return 30
+    case 'sent_to_steadfast': return 40
+    case 'shipped': return 50
+    default: return 15
+  }
+}
+function orderBucket(order) {
+  const r = statusRank(order)
+  return r < 80 ? 'active' : r >= 100 ? 'cancelled' : 'done'
+}
+const BUCKET_LABEL = { active: 'Active', done: 'Completed', cancelled: 'Cancelled' }
+
 export default function OrdersTable() {
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
@@ -126,7 +151,29 @@ export default function OrdersTable() {
     return { ok: res.ok, status: res.status, data: json }
   }
 
-  const visible = useMemo(() => (orders || []).filter((o) => filter === 'all' || o.status === filter), [orders, filter])
+  // Active orders first (by real status priority), completed/cancelled sink to
+  // the bottom; newest-first within the same rank.
+  const visible = useMemo(() => {
+    const arr = (orders || []).filter((o) => filter === 'all' || o.status === filter)
+    return [...arr].sort((a, b) => statusRank(a) - statusRank(b) || (new Date(b.created_at) - new Date(a.created_at)))
+  }, [orders, filter])
+
+  // Deep-link from a notification: /admin/orders?order=<id> auto-opens & scrolls.
+  const [deepLinked, setDeepLinked] = useState(false)
+  useEffect(() => {
+    if (deepLinked || !orders || orders.length === 0) return
+    const oid = new URLSearchParams(window.location.search).get('order')
+    setDeepLinked(true)
+    if (!oid) return
+    const target = orders.find((o) => o.id === oid)
+    if (!target) return
+    expand(target)
+    setTimeout(() => {
+      const el = document.querySelector(`[data-order-id="${oid}"]`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 200)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, deepLinked])
 
   async function expand(order) {
     setRowError('')
@@ -388,15 +435,25 @@ export default function OrdersTable() {
         <div className="rounded-2xl border border-dashed border-line bg-paper py-16 text-center text-sm text-stone">No orders yet. They appear when a customer submits the delivery form.</div>
       ) : (
         <div className="space-y-3">
-          {visible.map((order) => {
+          {visible.map((order, idx) => {
             const open = expandedId === order.id
             const t = open ? draftTotals(order) : { subtotal: order.subtotal, total: order.total, cod_amount: order.cod_amount }
             const created = Boolean(order.steadfast_consignment_id)
             const v = orderVisual(order)
             const serial = orderSerial(order)
             const itemCount = (order.items || []).length
+            // Subtle group separators (only in the unfiltered view).
+            const bucket = orderBucket(order)
+            const showHeader = filter === 'all' && bucket !== orderBucket(visible[idx - 1] || {})
             return (
-              <div key={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper"
+              <Fragment key={order.id}>
+              {showHeader && (
+                <div className={`flex items-center gap-3 ${idx === 0 ? '' : 'pt-3'}`}>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-stone">{BUCKET_LABEL[bucket]}</span>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+              )}
+              <div data-order-id={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper"
                 style={{ borderLeftWidth: 4, borderLeftColor: v.color, boxShadow: v.tint !== 'transparent' ? `inset 0 0 0 9999px ${v.tint}` : undefined }}>
                 {/* Row header */}
                 <button onClick={() => expand(order)} className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-line/30">
@@ -641,6 +698,7 @@ export default function OrdersTable() {
                   )}
                 </AnimatePresence>
               </div>
+              </Fragment>
             )
           })}
         </div>

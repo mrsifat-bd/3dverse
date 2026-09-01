@@ -135,6 +135,37 @@ export function reviewRequestEmail(order, { reviewUrl = '' } = {}) {
   return { subject: 'How Was Your 3D Verse Experience?', html: emailLayout(inner, 'We\'d love your feedback.') }
 }
 
+// Internal admin alert when a customer places a new order. Not part of
+// EMAIL_TYPES (those are customer-facing). Sent server-side to the admin.
+export function newOrderAdminEmail(order, { adminOrderUrl = '' } = {}) {
+  const m = money(order)
+  const cod = Number(order.cod_amount) || m.total
+  const row = (k, v) => v ? `<tr><td style="padding:3px 0;color:${STONE};white-space:nowrap;">${esc(k)}</td><td style="padding:3px 0 3px 14px;color:${INK};">${esc(v)}</td></tr>` : ''
+  const inner = `
+    <p style="margin:0 0 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${CLAY};font-weight:bold;">New order received</p>
+    <p style="margin:0 0 16px;font-size:16px;color:${INK};"><strong>${esc(order.order_number || '')}</strong> was just placed.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;background:${CREAM};border-radius:10px;">
+      <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          ${row('Customer', order.customer_name)}
+          ${row('Phone', order.customer_phone)}
+          ${row('Email', order.customer_email)}
+          ${row('Address', order.customer_address)}
+          ${row('Thana / PS', order.police_station)}
+          ${row('Placed', orderDate(order))}
+          ${row('Payment', (order.payment_status || 'pending'))}
+        </table>
+      </td></tr>
+    </table>
+    ${itemsTable(order)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 0;font-size:13px;color:${INK};">
+      <tr><td style="padding:2px 0;color:${STONE};">Delivery charge</td><td align="right">${taka(m.delivery)}</td></tr>
+      <tr><td style="padding:8px 0 0;font-weight:bold;">Amount to collect (COD)</td><td align="right" style="padding:8px 0 0;font-weight:bold;">${taka(cod)}</td></tr>
+    </table>
+    ${adminOrderUrl ? button('View Order', adminOrderUrl) : ''}`
+  return { subject: `New order ${order.order_number || ''} — 3D Verse`, html: emailLayout(inner, `New order from ${order.customer_name || 'a customer'}`) }
+}
+
 // Single entry point used by the API route and the preview.
 export function renderOrderEmail(type, order, opts = {}) {
   if (type === 'ORDER_CONFIRMED') return orderConfirmedEmail(order)
