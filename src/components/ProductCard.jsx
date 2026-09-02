@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { formatPrice, firstImage, hasDiscount, effectivePrice } from '@/lib/format'
 import { categoryName } from '@/lib/config'
 import { Badge } from './ui/badge'
 import WishlistButton from './WishlistButton'
+import ProductImage from './ProductImage'
 
 export default function ProductCard({ product }) {
   const image = firstImage(product)
@@ -13,17 +13,12 @@ export default function ProductCard({ product }) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1.5 hover:border-clay/40 hover:shadow-xl hover:shadow-black/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay/50 focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
     >
       <div className="relative aspect-square overflow-hidden bg-line/40">
-        {image ? (
-          <Image
-            src={image}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-stone">No image</div>
-        )}
+        <ProductImage
+          src={image}
+          alt={product.name}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
           {product.is_popular && (
             <span className="rounded-full bg-clay px-2.5 py-0.5 text-xs font-medium text-paper">★ Popular</span>

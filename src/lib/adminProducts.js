@@ -57,24 +57,41 @@ function normalise(payload) {
   }
 }
 
+// Best-effort: ask the server to revalidate the customer-facing product pages
+// so a newly created/edited product + image appear immediately (instead of
+// after the 60s ISR window). Never blocks or fails the write.
+async function pingRevalidate() {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    await fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    })
+  } catch {}
+}
+
 // Writes return only `id`: after the production_cost lockdown the authenticated
 // role has no SELECT on that column, so a full `.select()` representation would
 // be denied. The admin form only needs to know the write succeeded.
 export async function createProduct(payload) {
   const { data, error } = await supabase.from('products').insert(normalise(payload)).select('id').single()
   if (error) throw error
+  await pingRevalidate()
   return data
 }
 
 export async function updateProduct(id, payload) {
   const { data, error } = await supabase.from('products').update(normalise(payload)).eq('id', id).select('id').single()
   if (error) throw error
+  await pingRevalidate()
   return data
 }
 
 export async function deleteProduct(id) {
   const { error } = await supabase.from('products').delete().eq('id', id)
   if (error) throw error
+  await pingRevalidate()
 }
 
 // Uploads a File to the product-images bucket and returns its public URL.

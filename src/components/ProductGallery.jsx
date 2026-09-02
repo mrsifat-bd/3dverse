@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 export default function ProductGallery({ images, name }) {
   const [active, setActive] = useState(0)
   const [open, setOpen] = useState(false)
+  const [failed, setFailed] = useState({})
   const list = images.length ? images : [null]
   const hasImages = Boolean(list[0])
   const many = list.length > 1
@@ -55,8 +56,9 @@ export default function ProductGallery({ images, name }) {
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="absolute inset-0"
           >
-            {list[active] ? (
-              <Image src={list[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority />
+            {list[active] && !failed[active] ? (
+              <Image src={list[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority
+                onError={() => setFailed((f) => ({ ...f, [active]: true }))} />
             ) : (
               <div className="grid h-full w-full place-items-center text-stone">No image</div>
             )}
