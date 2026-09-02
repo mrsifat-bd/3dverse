@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence, animate, useMotionValue } from 'framer-motion'
 import {
-  Calculator, Layers, TrendingUp, Database, Zap, Clock, HardDrive, Save, Check, RotateCcw, Loader2,
+  Calculator, Layers, SlidersHorizontal, TrendingUp, Database, Zap, Clock, HardDrive,
+  Save, Check, RotateCcw, Loader2, Info,
 } from 'lucide-react'
 import {
   ESTIMATOR_DEFAULTS, computeEstimate, totalMinutes, getEstimatorDefaults, saveEstimatorDefaults,
@@ -49,6 +50,7 @@ const rise = (i = 0) => ({
 
 export default function CostEstimator() {
   const [config, setConfig] = useState(ESTIMATOR_DEFAULTS)
+  const [savedConfig, setSavedConfig] = useState(ESTIMATOR_DEFAULTS)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
@@ -62,7 +64,9 @@ export default function CostEstimator() {
 
   // Load persisted admin defaults on mount.
   useEffect(() => {
-    getEstimatorDefaults().then((c) => { setConfig(c); setLoaded(true) }).catch(() => setLoaded(true))
+    getEstimatorDefaults()
+      .then((c) => { setConfig(c); setSavedConfig(c); setLoaded(true) })
+      .catch(() => setLoaded(true))
   }, [])
 
   // Auto machine-cost rule: ticks itself on whenever total time exceeds the
@@ -77,8 +81,18 @@ export default function CostEstimator() {
   )
 
   const tm = totalMinutes(printHours, printMinutes)
+  const hasJobInput = (Number(filamentGrams) || 0) > 0 || tm > 0
   const shownSelling = useAnimatedNumber(results.selling)
   const [priceInt, priceDec] = shownSelling.toFixed(2).split('.')
+
+  // Cost-settings dirty tracking → unsaved-changes chip + accidental-loss guard.
+  const dirty = loaded && JSON.stringify(config) !== JSON.stringify(savedConfig)
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
 
   const handleNumberChange = (value, setter) => {
     if (value === '') { setter(undefined); return }
@@ -92,6 +106,7 @@ export default function CostEstimator() {
     try {
       const saved = await saveEstimatorDefaults(config)
       setConfig(saved)
+      setSavedConfig(saved)
       setJustSaved(true)
       setTimeout(() => setJustSaved(false), 2500)
     } catch (e) {
@@ -105,7 +120,7 @@ export default function CostEstimator() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <motion.div {...rise(0)} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div {...rise(0)} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2.5 font-display text-2xl font-semibold text-ink">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-clay/10 text-clay">
@@ -113,10 +128,23 @@ export default function CostEstimator() {
             </span>
             Cost Estimator
           </h1>
-          <p className="mt-1.5 text-sm text-stone">Live pricing for a print job. Edit the defaults below and save them for next time.</p>
+          <p className="mt-1.5 max-w-xl text-sm text-stone">
+            Price a single print in real time. Enter the job details, tune your cost settings, and save them as
+            defaults for next time.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={resetDefaults} title="Reset to original defaults">
+        <div className="flex flex-wrap items-center gap-2">
+          <AnimatePresence>
+            {dirty && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                className="inline-flex items-center gap-1 rounded-full bg-[#C99A4E]/15 px-2.5 py-1 text-xs font-medium text-[#8a6a2e]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#C99A4E]" /> Unsaved changes
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <Button variant="ghost" size="sm" onClick={resetDefaults} title="Reset cost settings to the original defaults">
             <RotateCcw className="h-4 w-4" /> Reset
           </Button>
           <Button size="sm" onClick={saveDefaults} disabled={saving} className="min-w-[9.5rem] justify-center">
@@ -140,37 +168,42 @@ export default function CostEstimator() {
       <div className="grid items-start gap-6 xl:grid-cols-12">
         {/* Left: inputs */}
         <div className="grid gap-6 md:grid-cols-2 xl:col-span-8">
-          {/* Print parameters */}
+          {/* This print job (per-job inputs) */}
           <motion.div {...rise(1)} className="h-full">
-            <Card className="flex h-full flex-col">
-              <CardHeader>
+            <Card className="flex h-full flex-col border-clay/25">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
-                  <Layers className="h-4 w-4 text-clay" /> Print parameters
+                  <Layers className="h-4 w-4 text-clay" /> This print job
                 </CardTitle>
+                <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">Required</span>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-5">
-                <Field label="Filament (g)">
-                  <Input type="number" min="0" inputMode="decimal" placeholder="0" value={numOrEmpty(filamentGrams)}
+                <Field label="Filament used (g)" hint="Grams of material — copy it from your slicer.">
+                  <Input type="number" min="0" inputMode="decimal" placeholder="e.g. 120" value={numOrEmpty(filamentGrams)}
                     onChange={(e) => handleNumberChange(e.target.value, setFilamentGrams)} />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Duration (h)">
-                    <Input type="number" min="0" placeholder="0" value={numOrEmpty(printHours)}
-                      onChange={(e) => handleNumberChange(e.target.value, setPrintHours)} />
-                  </Field>
-                  <Field label="Minutes">
-                    <Input type="number" min="0" max="59" placeholder="0" value={numOrEmpty(printMinutes)}
-                      onChange={(e) => handleNumberChange(e.target.value, setPrintMinutes)} />
-                  </Field>
+                <div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Print time (h)">
+                      <Input type="number" min="0" placeholder="0" value={numOrEmpty(printHours)}
+                        onChange={(e) => handleNumberChange(e.target.value, setPrintHours)} />
+                    </Field>
+                    <Field label="Minutes">
+                      <Input type="number" min="0" max="59" placeholder="0" value={numOrEmpty(printMinutes)}
+                        onChange={(e) => handleNumberChange(e.target.value, setPrintMinutes)} />
+                    </Field>
+                  </div>
+                  <div className="mt-1.5 min-h-[16px]">
+                    <AnimatePresence>
+                      {tm > 0 && (
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                          className="text-[11px] font-medium uppercase tracking-wider text-stone">
+                          Total print time · {Math.floor(tm / 60)}h {tm % 60}m
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-                <AnimatePresence>
-                  {tm > 0 && (
-                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="-mt-1 text-[11px] font-medium uppercase tracking-wider text-stone">
-                      Total print time · {Math.floor(tm / 60)}h {tm % 60}m
-                    </motion.p>
-                  )}
-                </AnimatePresence>
                 <div className="mt-auto flex items-center justify-between gap-3 rounded-xl border border-line bg-cream/50 px-4 py-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -185,7 +218,7 @@ export default function CostEstimator() {
                         )}
                       </AnimatePresence>
                     </div>
-                    <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h</p>
+                    <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h — auto-adds on long prints.</p>
                   </div>
                   <Switch checked={machineCostEnabled} onCheckedChange={setMachineCostEnabled} />
                 </div>
@@ -193,23 +226,26 @@ export default function CostEstimator() {
             </Card>
           </motion.div>
 
-          {/* Economics (editable defaults) */}
+          {/* Cost settings (editable, saved defaults) */}
           <motion.div {...rise(2)} className="h-full">
             <Card className="flex h-full flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
-                  <TrendingUp className="h-4 w-4 text-clay" /> Economics
+                  <SlidersHorizontal className="h-4 w-4 text-clay" /> Cost settings
                 </CardTitle>
+                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-stone">
+                  <Info className="h-3 w-3" /> Saved defaults — reused for every estimate.
+                </p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-5">
-                <Field label="Filament (৳/kg)">
+                <Field label="Filament price (৳/kg)" hint="What a kilogram of filament costs you.">
                   <Input type="number" min="0" value={numOrEmpty(config.filamentCostPerKg)} onChange={(e) => setCfg('filamentCostPerKg', e.target.value)} />
                 </Field>
                 <div className="grid grid-cols-2 gap-4 border-t border-line pt-4">
-                  <Field label="Power (৳/unit)">
+                  <Field label="Power (৳/unit)" hint="Electricity per kWh.">
                     <Input type="number" min="0" value={numOrEmpty(config.electricityRate)} onChange={(e) => setCfg('electricityRate', e.target.value)} />
                   </Field>
-                  <Field label="Printer (Watts)">
+                  <Field label="Printer (Watts)" hint="Printer power draw.">
                     <Input type="number" min="0" value={numOrEmpty(config.printerWattage)} onChange={(e) => setCfg('printerWattage', e.target.value)} />
                   </Field>
                 </div>
@@ -220,10 +256,10 @@ export default function CostEstimator() {
                   onChange={(v) => setCfg('profitMargin', v)} />
 
                 <div className="mt-auto grid grid-cols-2 gap-4 border-t border-line pt-4">
-                  <Field label="Machine (৳/hr)">
+                  <Field label="Machine (৳/hr)" hint="Rate after free hours.">
                     <Input type="number" min="0" value={numOrEmpty(config.machineRatePerHour)} onChange={(e) => setCfg('machineRatePerHour', e.target.value)} />
                   </Field>
-                  <Field label="Free hours">
+                  <Field label="Free hours" hint="Free time before machine cost.">
                     <Input type="number" min="0" step="0.5" value={numOrEmpty(config.freeHours)} onChange={(e) => setCfg('freeHours', e.target.value)} />
                   </Field>
                 </div>
@@ -234,10 +270,15 @@ export default function CostEstimator() {
 
         {/* Right: results (sticky on large screens) */}
         <motion.div {...rise(3)} className="space-y-6 xl:sticky xl:top-6 xl:col-span-4 xl:self-start">
-          <Card className="relative overflow-hidden">
-            <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 -translate-y-10 translate-x-10 rounded-full bg-clay/15 blur-3xl" />
+          {/* Hero total */}
+          <Card className="relative overflow-hidden border-clay/25">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-clay/[0.08] via-transparent to-transparent" />
+            <div className="pointer-events-none absolute -right-6 -top-10 h-36 w-36 rounded-full bg-clay/15 blur-3xl" />
             <CardContent className="relative p-6">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-stone">Calculated price</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-stone">Estimated selling price</p>
+                <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">per print</span>
+              </div>
               <div className="mt-2 flex items-baseline gap-1">
                 <span className="text-xl font-medium text-stone">৳</span>
                 <span className="font-display text-5xl font-bold tracking-tight text-ink tabular-nums">
@@ -245,10 +286,16 @@ export default function CostEstimator() {
                 </span>
                 <span className="ml-0.5 text-sm font-medium text-stone tabular-nums">.{priceDec}</span>
               </div>
-              <p className="mt-3 text-xs text-stone">
-                Making cost {taka(results.production)} + profit {taka(results.profit)}
-                {results.machine > 0 ? ` + machine ${taka(results.machine)}` : ''}
-              </p>
+              {hasJobInput ? (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <MiniStat label="Making cost" value={taka(results.production)} />
+                  <MiniStat label={`Profit · ${config.profitMargin || 0}%`} value={`+ ${taka(results.profit)}`} accent="#4F9D69" />
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-stone">
+                  Enter filament weight and print time under <span className="font-medium text-ink">This print job</span> to calculate.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -268,9 +315,9 @@ export default function CostEstimator() {
               <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-stone">Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6 pt-0">
-              <BreakdownItem label="Material" amount={results.filament} Icon={Database} subtext={`${filamentGrams || 0} g`} />
-              <BreakdownItem label="Electricity" amount={results.electricity} Icon={Zap} subtext={`Unit cost ৳${config.electricityRate}`} />
-              <BreakdownItem label="Labour" amount={results.labour} Icon={Clock} subtext={`${config.labourPercent}% of base`} />
+              <BreakdownItem label="Material" amount={results.filament} Icon={Database} subtext={`${filamentGrams || 0} g of filament`} />
+              <BreakdownItem label="Electricity" amount={results.electricity} Icon={Zap} subtext={`${config.printerWattage}W · ${taka(config.electricityRate).replace('.00', '')}/unit`} />
+              <BreakdownItem label="Labour" amount={results.labour} Icon={Clock} subtext={`${config.labourPercent}% of base cost`} />
               <AnimatePresence>
                 {machineCostEnabled && results.machine > 0 && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -294,16 +341,33 @@ export default function CostEstimator() {
         </motion.div>
       </div>
 
-      {!loaded && <p className="text-xs text-stone">Loading saved defaults…</p>}
+      <AnimatePresence>
+        {!loaded && (
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="flex items-center gap-1.5 text-xs text-stone">
+            <Loader2 className="h-3 w-3 animate-spin" /> Syncing your saved defaults…
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function Field({ label, children }) {
+function Field({ label, hint, children }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-[11px] font-semibold uppercase tracking-wider text-stone">{label}</Label>
       {children}
+      {hint && <p className="text-[11px] leading-snug text-stone/90">{hint}</p>}
+    </div>
+  )
+}
+
+function MiniStat({ label, value, accent }) {
+  return (
+    <div className="rounded-xl border border-line bg-paper/70 px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-stone">{label}</p>
+      <p className="mt-0.5 text-sm font-bold tabular-nums" style={accent ? { color: accent } : { color: 'rgb(var(--ink))' }}>{value}</p>
     </div>
   )
 }
