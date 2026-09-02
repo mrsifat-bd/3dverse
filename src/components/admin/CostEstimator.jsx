@@ -438,9 +438,9 @@ function Donut({ results }) {
   })
 
   return (
-    <div className="flex flex-col items-center gap-5 sm:flex-row">
-      <div className="relative h-36 w-36 shrink-0">
-        <svg viewBox="0 0 140 140" className="h-36 w-36 -rotate-90">
+    <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
+      <div className="relative h-32 w-32 shrink-0">
+        <svg viewBox="0 0 140 140" className="h-32 w-32 -rotate-90">
           <circle cx="70" cy="70" r={r} fill="none" stroke="rgb(var(--line))" strokeWidth="14" />
           {arcs.map((a) => (
             <circle key={a.key} cx="70" cy="70" r={r} fill="none" stroke={a.color} strokeWidth="14"
@@ -453,15 +453,18 @@ function Donut({ results }) {
           <span className="font-display text-[15px] font-bold text-ink tabular-nums">৳{Math.round(total).toLocaleString('en-US')}</span>
         </div>
       </div>
-      <ul className="w-full space-y-1.5">
+      {/* Tight, column-aligned legend (label · % · amount) — no wide gaps. */}
+      <ul className="w-full space-y-2 sm:w-auto sm:min-w-[15rem]">
         {data.map((d) => {
           const pct = total > 0 ? (d.value / total) * 100 : 0
           return (
-            <li key={d.key} className="flex items-center gap-2 text-sm">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: d.color }} />
-              <span className="flex-1 text-ink">{d.label}</span>
-              <span className="tabular-nums text-stone">{pct.toFixed(0)}%</span>
-              <span className="w-20 text-right font-medium tabular-nums text-ink">{taka(d.value)}</span>
+            <li key={d.key} className="grid grid-cols-[1fr_3rem_5rem] items-center gap-x-3 text-sm">
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: d.color }} />
+                <span className="truncate text-ink">{d.label}</span>
+              </span>
+              <span className="text-right tabular-nums text-stone">{pct.toFixed(0)}%</span>
+              <span className="text-right font-medium tabular-nums text-ink">{taka(d.value)}</span>
             </li>
           )
         })}
