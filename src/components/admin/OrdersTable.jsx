@@ -71,7 +71,7 @@ function orderVisual(order) {
   if (s === 'cancelled' || s === 'returned' || s === 'failed') return { label: s === 'cancelled' ? 'Cancelled' : orderStatusLabel(s), color: '#8A8577', tint: 'rgba(138,133,119,0.10)' }
   if (p === 'rejected') return { label: 'Payment rejected', color: '#B4381F', tint: 'rgba(180,56,31,0.07)' }
   if (p === 'pending') return { label: 'Pending verification', color: '#C99A4E', tint: 'rgba(201,154,78,0.10)' }
-  if (s === 'delivered') return { label: 'Paid & delivered', color: '#3F8F5A', tint: 'rgba(63,143,90,0.12)' }
+  if (s === 'delivered') return { label: 'Completed', color: '#2E8B54', tint: 'rgba(46,139,84,0.16)', done: true }
   if (p === 'verified') return { label: 'Delivery paid', color: '#5B8A5B', tint: 'rgba(91,138,91,0.07)' }
   return { label: 'New', color: '#8A8577', tint: 'transparent' }
 }
@@ -453,15 +453,15 @@ export default function OrdersTable() {
                   <span className="h-px flex-1 bg-line" />
                 </div>
               )}
-              <div data-order-id={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper"
-                style={{ borderLeftWidth: 4, borderLeftColor: v.color, boxShadow: v.tint !== 'transparent' ? `inset 0 0 0 9999px ${v.tint}` : undefined }}>
+              <div data-order-id={order.id} className="overflow-hidden rounded-2xl border border-line bg-paper transition-colors"
+                style={{ borderLeftWidth: 4, borderLeftColor: v.color, borderColor: v.done ? v.color : undefined, boxShadow: v.tint !== 'transparent' ? `inset 0 0 0 9999px ${v.tint}` : undefined }}>
                 {/* Row header */}
                 <button onClick={() => expand(order)} className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-line/30">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {serial && <span className="font-display text-sm font-bold" style={{ color: v.color }}>{serial}</span>}
                       <span className="font-display font-semibold text-ink">{order.order_number}</span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: `${v.color}1f`, color: v.color }}>{v.label}</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: `${v.color}1f`, color: v.color }}>{v.done && <CheckCircle2 className="h-3.5 w-3.5" />}{v.label}</span>
                       <OrderStatusBadge status={order.status} />
                       <CourierBadge order={order} />
                     </div>
