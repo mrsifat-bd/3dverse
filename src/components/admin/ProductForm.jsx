@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Loader2, Plus } from 'lucide-react'
-import { createProduct, updateProduct, uploadImage } from '@/lib/adminProducts'
+import { ImagePlus, X, Loader2, Plus } from 'lucide-react'
+import { createProduct, updateProduct, uploadImage, ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/adminProducts'
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
 import { getAllCategories } from '@/lib/categories'
 import { slugify } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,6 +42,8 @@ export default function ProductForm({ initial }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [dragOver, setDragOver] = useState(false)
+  const [pending, setPending] = useState([]) // optimistic previews while uploading
 
   // Admin form: load ALL categories (incl. brand-new empty ones) so a product
   // can be assigned to a category right after it's created. Falls back to config.
@@ -48,24 +51,53 @@ export default function ProductForm({ initial }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
-  async function onFiles(e) {
-    const files = Array.from(e.target.files || [])
+  // Shared upload path for BOTH click-to-browse and drag-and-drop. Validates
+  // type/size on the client (the same rules the server enforces), shows an
+  // instant local preview per file, then uploads. New uploads go to the FRONT
+  // so the latest photo becomes the Main (card) image.
+  async function handleFiles(fileList) {
+    const files = Array.from(fileList || [])
     if (!files.length) return
-    setUploading(true)
     setError('')
+    const valid = []
+    for (const f of files) {
+      if (!ACCEPTED_IMAGE_TYPES.includes(f.type)) { setError(`"${f.name}" isn't a supported image. Use JPG, PNG or WebP.`); continue }
+      if (f.size > MAX_IMAGE_BYTES) { setError(`"${f.name}" is too large — please use a file under 8 MB.`); continue }
+      valid.push(f)
+    }
+    if (!valid.length) return
+    setUploading(true)
+    const items = valid.map((f) => ({ key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, url: URL.createObjectURL(f) }))
+    setPending((prev) => [...items, ...prev])
     try {
-      const urls = []
-      for (const file of files) urls.push(await uploadImage(file))
-      // New uploads go to the FRONT so the latest photo becomes the main
-      // (card) image right away. Use "Set main" to change it afterwards.
-      setImages((prev) => [...urls, ...prev])
-    } catch (err) {
-      setError(err.message || 'Image upload failed')
+      for (let i = 0; i < valid.length; i++) {
+        const it = items[i]
+        try {
+          const url = await uploadImage(valid[i])
+          setImages((prev) => [url, ...prev])
+        } catch (err) {
+          setError(err.message || 'Image upload failed. Please try again.')
+        } finally {
+          URL.revokeObjectURL(it.url)
+          setPending((prev) => prev.filter((p) => p.key !== it.key))
+        }
+      }
     } finally {
       setUploading(false)
-      e.target.value = ''
     }
   }
+
+  function onFiles(e) {
+    handleFiles(e.target.files)
+    e.target.value = '' // allow re-selecting the same file
+  }
+  function onDrop(e) {
+    e.preventDefault()
+    setDragOver(false)
+    if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files)
+  }
+  function onDragOver(e) { e.preventDefault(); if (!dragOver) setDragOver(true) }
+  function onDragLeave(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false) }
 
   function removeImage(url) {
     setImages((prev) => prev.filter((u) => u !== url))
@@ -190,30 +222,55 @@ export default function ProductForm({ initial }) {
 
       <div className="space-y-2">
         <Label>Images</Label>
-        <div className="flex flex-wrap gap-3">
-          {images.map((url, idx) => (
-            <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
-              <Image src={url} alt="" fill sizes="96px" className="object-cover" />
-              {idx === 0 ? (
-                <span className="absolute left-1 top-1 rounded-full bg-clay px-1.5 py-0.5 text-[10px] font-medium text-paper">Main</span>
-              ) : (
-                <button type="button" onClick={() => makeMain(url)} aria-label="Set as main photo"
-                  className="absolute left-1 top-1 rounded-full bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-paper hover:bg-clay">
-                  Set main
+
+        {(images.length > 0 || pending.length > 0) && (
+          <div className="flex flex-wrap gap-3">
+            {/* Optimistic previews (still uploading) */}
+            {pending.map((p) => (
+              <div key={p.key} className="relative h-24 w-24 overflow-hidden rounded-xl border border-line">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt="" className="h-full w-full object-cover opacity-60" />
+                <div className="absolute inset-0 grid place-items-center bg-ink/25"><Loader2 className="h-5 w-5 animate-spin text-paper" /></div>
+              </div>
+            ))}
+            {images.map((url, idx) => (
+              <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 && pending.length === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
+                <Image src={url} alt="" fill sizes="96px" className="object-cover" />
+                {idx === 0 && pending.length === 0 ? (
+                  <span className="absolute left-1 top-1 rounded-full bg-clay px-1.5 py-0.5 text-[10px] font-medium text-paper">Main</span>
+                ) : (
+                  <button type="button" onClick={() => makeMain(url)} aria-label="Set as main photo"
+                    className="absolute left-1 top-1 rounded-full bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-paper hover:bg-clay">
+                    Set main
+                  </button>
+                )}
+                <button type="button" onClick={() => removeImage(url)} aria-label="Remove image"
+                  className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-paper">
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              )}
-              <button type="button" onClick={() => removeImage(url)} aria-label="Remove image"
-                className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-paper">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          <label className="grid h-24 w-24 cursor-pointer place-items-center rounded-xl border border-dashed border-line text-stone hover:border-clay/50 hover:text-clay">
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-            <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
-          </label>
-        </div>
-        <p className="text-xs text-stone">The image marked <span className="font-medium text-clay">Main</span> is what shows on product cards. New uploads become the Main photo automatically — or click <span className="font-medium">Set main</span> on any image. Compress large images before uploading.</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Drag & drop zone (also click-to-browse). */}
+        <label
+          onDragEnter={onDragOver}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={cn(
+            'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors',
+            dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-line text-stone hover:border-clay/50 hover:text-clay',
+          )}
+        >
+          {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
+          <span className="text-sm font-medium">{dragOver ? 'Drop image to upload' : 'Drag & drop images here, or click to browse'}</span>
+          <span className="text-xs text-stone">JPG, PNG or WebP · up to 8&nbsp;MB</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFiles} />
+        </label>
+
+        <p className="text-xs text-stone">The image marked <span className="font-medium text-clay">Main</span> is what shows on product cards. New uploads become the Main photo automatically — or click <span className="font-medium">Set main</span> on any image, and the <span className="font-medium">×</span> to remove/replace one.</p>
       </div>
 
       <div className="space-y-3 border-t border-line pt-6">
