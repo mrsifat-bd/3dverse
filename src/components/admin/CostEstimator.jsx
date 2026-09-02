@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence, animate, useMotionValue } from 'framer-motion'
 import {
   Calculator, Layers, SlidersHorizontal, TrendingUp, Database, Zap, Clock, HardDrive,
-  Save, Check, RotateCcw, Loader2, Info,
+  Save, Check, RotateCcw, Loader2, Info, BarChart3,
 } from 'lucide-react'
 import {
   ESTIMATOR_DEFAULTS, computeEstimate, totalMinutes, getEstimatorDefaults, saveEstimatorDefaults,
@@ -56,10 +56,11 @@ export default function CostEstimator() {
   const [justSaved, setJustSaved] = useState(false)
   const [error, setError] = useState('')
 
-  // Per-job print inputs — empty by default (render blank, not 0).
+  // Per-job print inputs. Print time is a single decimal-hours field now
+  // (e.g. 2.5 = 2h 30m); minutes is kept at 0 so the calculation is unchanged.
   const [filamentGrams, setFilamentGrams] = useState(undefined)
   const [printHours, setPrintHours] = useState(undefined)
-  const [printMinutes, setPrintMinutes] = useState(undefined)
+  const printMinutes = undefined // no separate minutes field — decimal hours cover it
   const [machineCostEnabled, setMachineCostEnabled] = useState(false)
 
   // Load persisted admin defaults on mount.
@@ -73,14 +74,14 @@ export default function CostEstimator() {
   // free window; the next time edit overrides any manual toggle.
   useEffect(() => {
     setMachineCostEnabled(totalMinutes(printHours, printMinutes) > (Number(config.freeHours) || 0) * 60)
-  }, [printHours, printMinutes, config.freeHours])
+  }, [printHours, config.freeHours])
 
   const results = useMemo(
     () => computeEstimate({ filamentGrams, printHours, printMinutes, machineCostEnabled }, config),
-    [filamentGrams, printHours, printMinutes, machineCostEnabled, config],
+    [filamentGrams, printHours, machineCostEnabled, config],
   )
 
-  const tm = totalMinutes(printHours, printMinutes)
+  const tm = Math.round(totalMinutes(printHours, printMinutes))
   const hasJobInput = (Number(filamentGrams) || 0) > 0 || tm > 0
   const shownSelling = useAnimatedNumber(results.selling)
   const [priceInt, priceDec] = shownSelling.toFixed(2).split('.')
@@ -165,147 +166,142 @@ export default function CostEstimator() {
         )}
       </AnimatePresence>
 
-      <div className="grid items-start gap-6 lg:grid-cols-12">
-        {/* Left: inputs stacked (each sizes to its own content — no forced gaps) */}
-        <div className="space-y-6 lg:col-span-7">
-          {/* This print job */}
-          <motion.div {...rise(1)}>
-            <Card className="border-clay/25">
-              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
-                  <Layers className="h-4 w-4 text-clay" /> This print job
-                </CardTitle>
-                <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">Required</span>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Filament used (g)" hint="Grams of material — copy it from your slicer.">
-                    <Input type="number" min="0" inputMode="decimal" placeholder="e.g. 120" value={numOrEmpty(filamentGrams)}
-                      onChange={(e) => handleNumberChange(e.target.value, setFilamentGrams)} />
-                  </Field>
-                  <Field label="Print time" hint={tm > 0 ? `Total · ${Math.floor(tm / 60)}h ${tm % 60}m` : 'Hours and minutes from your slicer.'}>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="relative">
-                        <Input type="number" min="0" placeholder="0" value={numOrEmpty(printHours)} className="pr-7"
-                          onChange={(e) => handleNumberChange(e.target.value, setPrintHours)} />
-                        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone">h</span>
-                      </div>
-                      <div className="relative">
-                        <Input type="number" min="0" max="59" placeholder="0" value={numOrEmpty(printMinutes)} className="pr-8"
-                          onChange={(e) => handleNumberChange(e.target.value, setPrintMinutes)} />
-                        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone">m</span>
-                      </div>
-                    </div>
-                  </Field>
-                </div>
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-cream/50 px-4 py-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-ink">Machine cost</p>
-                      <AnimatePresence>
-                        {machineCostEnabled && (
-                          <motion.span
-                            initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                            className="rounded-full bg-[#8C6E9E]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8C6E9E]">
-                            On
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h — auto-adds on long prints.</p>
+      {/* Row 1 — the job (big) and the price (big), equal height */}
+      <div className="grid items-stretch gap-6 lg:grid-cols-12">
+        <motion.div {...rise(1)} className="lg:col-span-7">
+          <Card className="flex h-full flex-col border-clay/25">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
+                <Layers className="h-4 w-4 text-clay" /> This print job
+              </CardTitle>
+              <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">Required</span>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col gap-6">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Filament used (g)" hint="Grams of material — copy it from your slicer.">
+                  <Input type="number" min="0" inputMode="decimal" placeholder="e.g. 120" value={numOrEmpty(filamentGrams)} className="h-12 text-base"
+                    onChange={(e) => handleNumberChange(e.target.value, setFilamentGrams)} />
+                </Field>
+                <Field label="Print time (hours)" hint={tm > 0 ? `= ${Math.floor(tm / 60)}h ${tm % 60}m` : 'Decimal hours — e.g. 2.5 means 2h 30m.'}>
+                  <div className="relative">
+                    <Input type="number" min="0" step="0.1" inputMode="decimal" placeholder="e.g. 2.5" value={numOrEmpty(printHours)} className="h-12 pr-10 text-base"
+                      onChange={(e) => handleNumberChange(e.target.value, setPrintHours)} />
+                    <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-stone">hr</span>
                   </div>
-                  <Switch checked={machineCostEnabled} onCheckedChange={setMachineCostEnabled} />
+                </Field>
+              </div>
+              <div className="mt-auto flex items-center justify-between gap-3 rounded-xl border border-line bg-cream/50 px-4 py-3.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-ink">Machine cost</p>
+                    <AnimatePresence>
+                      {machineCostEnabled && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                          className="rounded-full bg-[#8C6E9E]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8C6E9E]">
+                          On
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h — auto-adds on long prints.</p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                <Switch checked={machineCostEnabled} onCheckedChange={setMachineCostEnabled} />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-          {/* Cost settings (editable, saved defaults) */}
-          <motion.div {...rise(2)}>
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
-                  <SlidersHorizontal className="h-4 w-4 text-clay" /> Cost settings
-                </CardTitle>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-stone">
-                  <Info className="h-3 w-3" /> Saved defaults — reused for every estimate.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <Field label="Filament (৳/kg)" hint="Cost per kilogram.">
-                    <Input type="number" min="0" value={numOrEmpty(config.filamentCostPerKg)} onChange={(e) => setCfg('filamentCostPerKg', e.target.value)} />
-                  </Field>
-                  <Field label="Power (৳/unit)" hint="Electricity per kWh.">
-                    <Input type="number" min="0" value={numOrEmpty(config.electricityRate)} onChange={(e) => setCfg('electricityRate', e.target.value)} />
-                  </Field>
-                  <Field label="Printer (Watts)" hint="Printer power draw.">
-                    <Input type="number" min="0" value={numOrEmpty(config.printerWattage)} onChange={(e) => setCfg('printerWattage', e.target.value)} />
-                  </Field>
-                </div>
-
-                <div className="grid gap-6 border-t border-line pt-5 sm:grid-cols-2">
-                  <SliderField label="Labour" suffix="%" color="#C0603A" value={Number(config.labourPercent) || 0} max={100}
-                    onChange={(v) => setCfg('labourPercent', v)} />
-                  <SliderField label="Profit margin" suffix="%" color="#4F9D69" value={Number(config.profitMargin) || 0} max={500}
-                    onChange={(v) => setCfg('profitMargin', v)} />
-                </div>
-
-                <div className="grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
-                  <Field label="Machine (৳/hr)" hint="Rate charged after the free hours.">
-                    <Input type="number" min="0" value={numOrEmpty(config.machineRatePerHour)} onChange={(e) => setCfg('machineRatePerHour', e.target.value)} />
-                  </Field>
-                  <Field label="Free hours" hint="Free print time before machine cost.">
-                    <Input type="number" min="0" step="0.5" value={numOrEmpty(config.freeHours)} onChange={(e) => setCfg('freeHours', e.target.value)} />
-                  </Field>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Right: results (sticky on large screens) */}
-        <motion.div {...rise(3)} className="space-y-6 lg:sticky lg:top-6 lg:col-span-5 lg:self-start">
-          {/* Hero total */}
-          <Card className="relative overflow-hidden border-clay/25">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-clay/[0.08] via-transparent to-transparent" />
-            <div className="pointer-events-none absolute -right-6 -top-10 h-36 w-36 rounded-full bg-clay/15 blur-3xl" />
-            <CardContent className="relative p-6">
+        <motion.div {...rise(2)} className="lg:col-span-5">
+          <Card className="relative flex h-full flex-col justify-center overflow-hidden border-clay/25">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-clay/[0.1] via-transparent to-transparent" />
+            <div className="pointer-events-none absolute -right-8 -top-12 h-44 w-44 rounded-full bg-clay/15 blur-3xl" />
+            <CardContent className="relative p-7">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-stone">Estimated selling price</p>
                 <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">per print</span>
               </div>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-xl font-medium text-stone">৳</span>
-                <span className="font-display text-5xl font-bold tracking-tight text-ink tabular-nums">
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-2xl font-medium text-stone">৳</span>
+                <span className="font-display text-6xl font-bold leading-none tracking-tight text-ink tabular-nums">
                   {Number(priceInt).toLocaleString('en-US')}
                 </span>
-                <span className="ml-0.5 text-sm font-medium text-stone tabular-nums">.{priceDec}</span>
+                <span className="ml-1 text-base font-medium text-stone tabular-nums">.{priceDec}</span>
               </div>
               {hasJobInput ? (
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-6 grid grid-cols-2 gap-2.5">
                   <MiniStat label="Making cost" value={taka(results.production)} />
                   <MiniStat label={`Profit · ${config.profitMargin || 0}%`} value={`+ ${taka(results.profit)}`} accent="#4F9D69" />
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-stone">
-                  Enter filament weight and print time under <span className="font-medium text-ink">This print job</span> to calculate.
+                <p className="mt-4 text-sm text-stone">
+                  Enter filament weight and print time to calculate.
                 </p>
               )}
             </CardContent>
           </Card>
+        </motion.div>
+      </div>
 
-          {/* Breakdown donut */}
+      {/* Row 2 — price breakdown as a bar chart (full width) */}
+      <motion.div {...rise(3)}>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stone">
+              <BarChart3 className="h-4 w-4 text-clay" /> Price breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <BreakdownBars results={results} />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Row 3 — cost settings + summary (below the fold is fine) */}
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        <motion.div {...rise(4)} className="lg:col-span-7">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-stone">Price breakdown</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
+                <SlidersHorizontal className="h-4 w-4 text-clay" /> Cost settings
+              </CardTitle>
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-stone">
+                <Info className="h-3 w-3" /> Saved defaults — reused for every estimate.
+              </p>
             </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <Donut results={results} />
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Field label="Filament (৳/kg)" hint="Cost per kilogram.">
+                  <Input type="number" min="0" value={numOrEmpty(config.filamentCostPerKg)} onChange={(e) => setCfg('filamentCostPerKg', e.target.value)} />
+                </Field>
+                <Field label="Power (৳/unit)" hint="Electricity per kWh.">
+                  <Input type="number" min="0" value={numOrEmpty(config.electricityRate)} onChange={(e) => setCfg('electricityRate', e.target.value)} />
+                </Field>
+                <Field label="Printer (Watts)" hint="Printer power draw.">
+                  <Input type="number" min="0" value={numOrEmpty(config.printerWattage)} onChange={(e) => setCfg('printerWattage', e.target.value)} />
+                </Field>
+              </div>
+
+              <div className="grid gap-6 border-t border-line pt-5 sm:grid-cols-2">
+                <SliderField label="Labour" suffix="%" color="#C0603A" value={Number(config.labourPercent) || 0} max={100}
+                  onChange={(v) => setCfg('labourPercent', v)} />
+                <SliderField label="Profit margin" suffix="%" color="#4F9D69" value={Number(config.profitMargin) || 0} max={500}
+                  onChange={(v) => setCfg('profitMargin', v)} />
+              </div>
+
+              <div className="grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
+                <Field label="Machine (৳/hr)" hint="Rate charged after the free hours.">
+                  <Input type="number" min="0" value={numOrEmpty(config.machineRatePerHour)} onChange={(e) => setCfg('machineRatePerHour', e.target.value)} />
+                </Field>
+                <Field label="Free hours" hint="Free print time before machine cost.">
+                  <Input type="number" min="0" step="0.5" value={numOrEmpty(config.freeHours)} onChange={(e) => setCfg('freeHours', e.target.value)} />
+                </Field>
+              </div>
             </CardContent>
           </Card>
+        </motion.div>
 
-          {/* Summary */}
+        <motion.div {...rise(5)} className="lg:col-span-5">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-stone">Summary</CardTitle>
@@ -361,7 +357,7 @@ function Field({ label, hint, children }) {
 
 function MiniStat({ label, value, accent }) {
   return (
-    <div className="rounded-xl border border-line bg-paper/70 px-3 py-2">
+    <div className="rounded-xl border border-line bg-paper/70 px-3 py-2.5">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-stone">{label}</p>
       <p className="mt-0.5 text-sm font-bold tabular-nums" style={accent ? { color: accent } : { color: 'rgb(var(--ink))' }}>{value}</p>
     </div>
@@ -421,54 +417,39 @@ function Row({ label, value, accent }) {
   )
 }
 
-// Dependency-free SVG donut of the five price components. All five arcs are
-// always rendered (zero-value ones collapse to nothing) so the CSS transitions
-// stay smooth as figures change. The centre shows the running total.
-function Donut({ results }) {
+// Horizontal bar chart of the five price components (replaces the donut). Each
+// bar's width is that component's share of the total; amounts sum to the price.
+function BreakdownBars({ results }) {
   const data = SEGMENTS.map((s) => ({ ...s, value: Math.max(0, Number(results[s.key]) || 0) }))
   const total = data.reduce((a, b) => a + b.value, 0)
-  const r = 52
-  const C = 2 * Math.PI * r
-  let offset = 0
-  const arcs = data.map((d) => {
-    const frac = total > 0 ? d.value / total : 0
-    const seg = { ...d, dash: frac * C, gap: C - frac * C, off: -offset * C }
-    offset += frac
-    return seg
-  })
-
+  const spring = { type: 'spring', stiffness: 240, damping: 30 }
   return (
-    <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
-      <div className="relative h-32 w-32 shrink-0">
-        <svg viewBox="0 0 140 140" className="h-32 w-32 -rotate-90">
-          <circle cx="70" cy="70" r={r} fill="none" stroke="rgb(var(--line))" strokeWidth="14" />
-          {arcs.map((a) => (
-            <circle key={a.key} cx="70" cy="70" r={r} fill="none" stroke={a.color} strokeWidth="14"
-              strokeDasharray={`${a.dash} ${a.gap}`} strokeDashoffset={a.off} strokeLinecap="butt"
-              style={{ transition: 'stroke-dasharray .6s cubic-bezier(.4,0,.2,1), stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)' }} />
-          ))}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone">Total</span>
-          <span className="font-display text-[15px] font-bold text-ink tabular-nums">৳{Math.round(total).toLocaleString('en-US')}</span>
-        </div>
-      </div>
-      {/* Tight, column-aligned legend (label · % · amount) — no wide gaps. */}
-      <ul className="w-full space-y-2 sm:w-auto sm:min-w-[15rem]">
-        {data.map((d) => {
-          const pct = total > 0 ? (d.value / total) * 100 : 0
-          return (
-            <li key={d.key} className="grid grid-cols-[1fr_3rem_5rem] items-center gap-x-3 text-sm">
+    <div className="space-y-4">
+      {data.map((d) => {
+        const pct = total > 0 ? (d.value / total) * 100 : 0
+        return (
+          <div key={d.key} className="space-y-1.5">
+            <div className="flex items-center justify-between gap-3 text-sm">
               <span className="flex min-w-0 items-center gap-2">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: d.color }} />
                 <span className="truncate text-ink">{d.label}</span>
               </span>
-              <span className="text-right tabular-nums text-stone">{pct.toFixed(0)}%</span>
-              <span className="text-right font-medium tabular-nums text-ink">{taka(d.value)}</span>
-            </li>
-          )
-        })}
-      </ul>
+              <span className="flex shrink-0 items-center gap-3">
+                <span className="w-10 text-right tabular-nums text-stone">{pct.toFixed(0)}%</span>
+                <span className="w-24 text-right font-semibold tabular-nums text-ink">{taka(d.value)}</span>
+              </span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-line">
+              <motion.div className="h-full rounded-full" style={{ background: d.color }}
+                animate={{ width: `${pct}%` }} transition={spring} />
+            </div>
+          </div>
+        )
+      })}
+      <div className="flex items-center justify-between border-t border-line pt-3.5">
+        <span className="text-sm font-semibold text-ink">Total selling price</span>
+        <span className="font-display text-lg font-bold text-ink tabular-nums">{taka(total)}</span>
+      </div>
     </div>
   )
 }
