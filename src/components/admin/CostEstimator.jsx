@@ -176,7 +176,7 @@ export default function CostEstimator() {
               </CardTitle>
               <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">Required</span>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col gap-6">
+            <CardContent className="flex flex-1 flex-col justify-center">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Filament used (g)" hint="Grams of material — copy it from your slicer.">
                   <Input type="number" min="0" inputMode="decimal" placeholder="e.g. 120" value={numOrEmpty(filamentGrams)} className="h-12 text-base"
@@ -189,24 +189,6 @@ export default function CostEstimator() {
                     <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-stone">hr</span>
                   </div>
                 </Field>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-3 rounded-xl border border-line bg-cream/50 px-4 py-3.5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-ink">Machine cost</p>
-                    <AnimatePresence>
-                      {machineCostEnabled && (
-                        <motion.span
-                          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                          className="rounded-full bg-[#8C6E9E]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8C6E9E]">
-                          On
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h — auto-adds on long prints.</p>
-                </div>
-                <Switch checked={machineCostEnabled} onCheckedChange={setMachineCostEnabled} />
               </div>
             </CardContent>
           </Card>
@@ -296,6 +278,25 @@ export default function CostEstimator() {
                 <Field label="Free hours" hint="Free print time before machine cost.">
                   <Input type="number" min="0" step="0.5" value={numOrEmpty(config.freeHours)} onChange={(e) => setCfg('freeHours', e.target.value)} />
                 </Field>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-cream/50 px-4 py-3.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-ink">Machine cost</p>
+                    <AnimatePresence>
+                      {machineCostEnabled && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                          className="rounded-full bg-[#8C6E9E]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8C6E9E]">
+                          On
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <p className="text-xs text-stone">{taka(config.machineRatePerHour).replace('.00', '')}/hr after the first {config.freeHours}h — auto-adds on long prints.</p>
+                </div>
+                <Switch checked={machineCostEnabled} onCheckedChange={setMachineCostEnabled} />
               </div>
             </CardContent>
           </Card>
