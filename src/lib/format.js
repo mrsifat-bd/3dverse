@@ -28,6 +28,24 @@ export function effectivePrice(product) {
   return Math.round(price * (1 - pct / 100))
 }
 
+// Returns a product's OWN valid video URL, or null.
+// A video CTA must show only when THIS product has a real link — never a
+// shared/global or another product's fallback. Rejects null, empty string,
+// whitespace-only, non-strings, and anything that isn't a valid http(s) URL.
+export function productVideoUrl(product) {
+  const raw = product?.review_url
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  try {
+    const u = new URL(trimmed)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+    return trimmed
+  } catch {
+    return null
+  }
+}
+
 export function slugify(text) {
   return String(text)
     .toLowerCase()

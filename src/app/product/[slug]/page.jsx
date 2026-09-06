@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { getProductBySlug, getRelatedProducts, getAllSlugs } from '@/lib/products'
-import { formatPrice, allImages, firstImage, hasDiscount, effectivePrice } from '@/lib/format'
-import { categoryName, SITE_URL, REVIEW_URL } from '@/lib/config'
+import { formatPrice, allImages, firstImage, hasDiscount, effectivePrice, productVideoUrl } from '@/lib/format'
+import { categoryName, SITE_URL } from '@/lib/config'
 import { getSettings } from '@/lib/settings'
 import ProductGallery from '@/components/ProductGallery'
 import ProductCard from '@/components/ProductCard'
@@ -50,9 +50,10 @@ export default async function ProductPage({ params }) {
   const related = await getRelatedProducts(product)
   const settings = await getSettings()
   const images = allImages(product)
-  const reviewUrl =
-    product.review_url ||
-    (product.category === 'medical-bone-models' ? settings.review_url || REVIEW_URL : null)
+  // Video CTA shows ONLY when THIS product has its own valid video link.
+  // No category-based or global fallback — a videoless product never inherits
+  // another product's (or the site-wide) video.
+  const reviewUrl = productVideoUrl(product)
 
   const jsonLd = {
     '@context': 'https://schema.org',
