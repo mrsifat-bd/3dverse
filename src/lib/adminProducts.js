@@ -1,4 +1,5 @@
 import { supabase, PRODUCTS_BUCKET } from './supabaseClient'
+import { compressImage } from './imageCompress'
 import { slugify } from './format'
 
 // Admin CRUD + image upload. All calls require an authenticated session;
@@ -99,23 +100,31 @@ export async function deleteProduct(id) {
 // configured with these limits (allowed_mime_types + file_size_limit), so a
 // bad file is rejected server-side even if the client checks were bypassed.
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8 MB
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8 MB (what the bucket accepts)
+// Originals can be bigger than the bucket limit because they are shrunk in the
+// browser (compressImage) before upload; this only guards absurd files.
+export const MAX_INPUT_IMAGE_BYTES = 30 * 1024 * 1024 // 30 MB
 const EXT_BY_TYPE = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
 // Uploads a File to the product-images bucket and returns its public URL.
 // Validates type + size first, and stores the correct Content-Type so the CDN
 // serves it as an image.
-export async function uploadImage(file) {
-  if (!file || !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+export async function uploadImage(original) {
+  if (!original || !ACCEPTED_IMAGE_TYPES.includes(original.type)) {
     throw new Error('Unsupported file type. Please use a JPG, PNG or WebP image.')
   }
+  // Resize + re-encode in the browser so stored photos stay small (saves
+  // Supabase bandwidth, keeps the free plan from being blocked).
+  const file = await compressImage(original)
   if (file.size > MAX_IMAGE_BYTES) {
     throw new Error('Image is too large. Please use a file under 8 MB.')
   }
   const ext = EXT_BY_TYPE[file.type] || (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const { error } = await supabase.storage.from(PRODUCTS_BUCKET).upload(path, file, {
-    cacheControl: '3600',
+    // File names are unique and never overwritten, so browsers/CDN can cache
+    // them for a year instead of re-downloading every hour.
+    cacheControl: '31536000',
     upsert: false,
     contentType: file.type,
   })

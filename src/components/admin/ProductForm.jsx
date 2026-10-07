@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ImagePlus, X, Loader2, Plus } from 'lucide-react'
-import { createProduct, updateProduct, uploadImage, ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/adminProducts'
+import { createProduct, updateProduct, uploadImage, ACCEPTED_IMAGE_TYPES, MAX_INPUT_IMAGE_BYTES } from '@/lib/adminProducts'
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
 import { getAllCategories } from '@/lib/categories'
 import { slugify } from '@/lib/format'
@@ -62,7 +62,7 @@ export default function ProductForm({ initial }) {
     const valid = []
     for (const f of files) {
       if (!ACCEPTED_IMAGE_TYPES.includes(f.type)) { setError(`"${f.name}" isn't a supported image. Use JPG, PNG or WebP.`); continue }
-      if (f.size > MAX_IMAGE_BYTES) { setError(`"${f.name}" is too large — please use a file under 8 MB.`); continue }
+      if (f.size > MAX_INPUT_IMAGE_BYTES) { setError(`"${f.name}" is too large — please use a file under 30 MB.`); continue }
       valid.push(f)
     }
     if (!valid.length) return

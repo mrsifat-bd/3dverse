@@ -1,16 +1,18 @@
 import { supabase, AVATARS_BUCKET } from './supabaseClient'
+import { compressImage } from './imageCompress'
 
 // Uploads an avatar image to the user's own folder and saves its public URL
 // on the profile. Returns the new URL.
-export async function uploadAvatar(file) {
+export async function uploadAvatar(original) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not logged in')
-  if (!file.type?.startsWith('image/')) throw new Error('Please choose an image file.')
+  if (!original?.type?.startsWith('image/')) throw new Error('Please choose an image file.')
+  const file = await compressImage(original, { maxDim: 512, quality: 0.85 })
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5 MB.')
 
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `${user.id}/avatar-${Date.now()}.${ext}`
-  const { error: upErr } = await supabase.storage.from(AVATARS_BUCKET).upload(path, file, { upsert: true, cacheControl: '3600' })
+  const { error: upErr } = await supabase.storage.from(AVATARS_BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type })
   if (upErr) throw upErr
   const { data } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(path)
   const url = data.publicUrl
