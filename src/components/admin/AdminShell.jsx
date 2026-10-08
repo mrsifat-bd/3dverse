@@ -124,8 +124,8 @@ function AdminGate({ session, pathname, children }) {
   }
 
   return (
-    <div className="container grid gap-6 py-6 md:grid-cols-[220px_1fr] md:gap-8 md:py-10">
-      <aside className="h-fit rounded-2xl border border-line bg-paper p-3 md:sticky md:top-24 md:p-4">
+    <div className="container grid grid-cols-1 gap-6 py-6 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8 md:py-10">
+      <aside className="h-fit min-w-0 rounded-2xl border border-line bg-paper p-3 md:sticky md:top-24 md:p-4">
         <p className="hidden px-2 pb-3 font-display text-lg font-semibold text-ink md:block">{BUSINESS.name} admin</p>
         {/* Horizontal scroll strip on mobile, vertical sidebar on desktop. */}
         <nav className="flex gap-1.5 overflow-x-auto pb-1 md:flex-col md:gap-0 md:space-y-1.5 md:overflow-x-visible md:pb-0">
