@@ -73,6 +73,29 @@ export async function getAllSlugs() {
   return all.map((p) => p.slug)
 }
 
+// Only what product cards, search and sorting need. Lists are sent to the
+// browser as page data, so dropping FAQs, links, weight and extra photos keeps
+// the shop / category / home payloads small. (Search still covers name,
+// description, category and tags, exactly as before.)
+export function toListProduct(p) {
+  if (!p) return p
+  const img = p.image_url
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    description: p.description,
+    category: p.category,
+    tags: p.tags,
+    image_url: Array.isArray(img) ? img.slice(0, 1) : img,
+    in_stock: p.in_stock,
+    created_at: p.created_at,
+    discount_percent: p.discount_percent,
+    is_popular: p.is_popular,
+  }
+}
+
 // Pure client-side helpers for search/sort (used by interactive components).
 export function searchProducts(products, query) {
   const q = (query || '').trim().toLowerCase()

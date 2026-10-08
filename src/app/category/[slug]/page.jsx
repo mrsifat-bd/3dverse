@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getProductsByCategory } from '@/lib/products'
+import { getProductsByCategory, toListProduct } from '@/lib/products'
 import { getPublicCategories, getCategoryBySlug } from '@/lib/categories'
 import CategoryProducts from '@/components/CategoryProducts'
 
@@ -39,7 +39,7 @@ export default async function CategoryPage({ params }) {
         {category.blurb && <p className="mt-1 max-w-xl text-sm text-stone">{category.blurb}</p>}
       </header>
 
-      <CategoryProducts products={products} />
+      <CategoryProducts products={products.map(toListProduct)} />
     </div>
   )
 }

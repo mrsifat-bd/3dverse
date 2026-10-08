@@ -1,7 +1,6 @@
-import { Suspense } from 'react'
-import { getAllProducts } from '@/lib/products'
+import { getAllProducts, toListProduct } from '@/lib/products'
 import { getPublicCategories } from '@/lib/categories'
-import ShopView, { ShopViewFromParams } from '@/components/ShopView'
+import ShopView from '@/components/ShopView'
 
 // Static + revalidated every 60s (and on demand when an admin saves a product).
 // The ?q= / ?category= / ?popular= filters are applied in the browser, so the
@@ -17,9 +16,6 @@ export const metadata = {
 
 export default async function ShopPage() {
   const [products, categories] = await Promise.all([getAllProducts(), getPublicCategories()])
-  return (
-    <Suspense fallback={<ShopView products={products} categories={categories} />}>
-      <ShopViewFromParams products={products} categories={categories} />
-    </Suspense>
-  )
+  // Products are sent to the browser once; ShopView handles the URL filters.
+  return <ShopView products={products.map(toListProduct)} categories={categories} />
 }

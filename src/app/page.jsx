@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Flame, Bone, Cpu, Fish, PenTool, Lamp, Gift } from 'lucide-react'
-import { getFeaturedProducts } from '@/lib/products'
+import { getFeaturedProducts, toListProduct } from '@/lib/products'
 import { getPublicCategories } from '@/lib/categories'
 import { getSettings } from '@/lib/settings'
 import ProductGrid from '@/components/ProductGrid'
@@ -97,7 +97,7 @@ export default async function Home() {
           <Link href="/shop" className="text-sm font-medium text-clay hover:underline">View all →</Link>
         </div>
         <div className="mt-8">
-          <ProductGrid products={featured} />
+          <ProductGrid products={featured.map(toListProduct)} />
         </div>
       </section>
 
