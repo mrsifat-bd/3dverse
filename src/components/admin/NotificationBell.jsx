@@ -122,7 +122,7 @@ export default function NotificationBell() {
                   <div className="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full bg-line/50 text-stone">
                     <Bell className="h-5 w-5" />
                   </div>
-                  <p className="text-sm font-medium text-ink">You're all caught up</p>
+                  <p className="text-sm font-medium text-ink">You&apos;re all caught up</p>
                   <p className="mt-0.5 text-xs text-stone">New orders will show up here.</p>
                 </div>
               ) : (
