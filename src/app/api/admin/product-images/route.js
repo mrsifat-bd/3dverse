@@ -51,15 +51,18 @@ export async function POST(req) {
   }
 
   const bucket = supabase.storage.from(PRODUCTS_BUCKET)
-  const { error: upErr } = await bucket.upload(img.path, img.data, {
+  const isDuplicate = (e) => e && (String(e.statusCode) === '409' || /exists|duplicate/i.test(e.message || ''))
+  const put = (path, data) => bucket.upload(path, data, {
     contentType: img.contentType,
     cacheControl: '31536000', // content-hashed name: safe to cache for a year
     upsert: false,
   })
+  // Full image + card-size variant (used by product grids and thumbnails).
+  const [{ error: upErr }, { error: cardErr }] = await Promise.all([put(img.path, img.data), put(img.card.path, img.card.data)])
   // Same content hash already stored = identical photo; reuse it.
-  const duplicate = upErr && (String(upErr.statusCode) === '409' || /exists|duplicate/i.test(upErr.message || ''))
-  if (upErr && !duplicate) {
-    console.error('product-images: storage upload failed', upErr)
+  const duplicate = isDuplicate(upErr)
+  if ((upErr && !duplicate) || (cardErr && !isDuplicate(cardErr))) {
+    console.error('product-images: storage upload failed', upErr || cardErr)
     return json({ error: 'Saving the processed image failed. Please try again.' }, 502)
   }
 
@@ -73,6 +76,7 @@ export async function POST(req) {
     inputBytes: img.inputBytes,
     inputFormat: img.inputFormat,
     format: 'webp',
+    cardBytes: img.card.bytes,
     duplicate: Boolean(duplicate),
   })
 }

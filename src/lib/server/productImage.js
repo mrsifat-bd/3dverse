@@ -24,6 +24,8 @@ export const MAX_SIDE = 12_000 // px, per side, of the uploaded image
 export const MIN_SIDE = 64 // px, smaller than this is not a usable product photo
 export const OUTPUT_MAX_SIDE = 2000 // px, longest side of the stored image
 export const WEBP_QUALITY = 84 // high enough that prints/textures stay crisp
+export const CARD_MAX_SIDE = 640 // px, card/thumbnail variant (product grids, galleries)
+export const CARD_QUALITY = 80
 
 export class ImageRejectedError extends Error {
   constructor(message, status = 422) {
@@ -88,6 +90,18 @@ export async function processProductImage(input) {
     throw new ImageRejectedError('The image could not be processed. It may be corrupted.')
   }
 
+  // Small variant for product cards / thumbnails, made from the already
+  // cleaned image (so it is also metadata-free).
+  let card
+  try {
+    card = await sharp(out.data)
+      .resize({ width: CARD_MAX_SIDE, height: CARD_MAX_SIDE, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: CARD_QUALITY, alphaQuality: 85, smartSubsample: true, effort: 5 })
+      .toBuffer({ resolveWithObject: true })
+  } catch {
+    throw new ImageRejectedError('The image could not be processed. It may be corrupted.')
+  }
+
   // Content hash → stable name. The same photo uploaded twice maps to the same
   // file, so duplicates are never stored.
   const hash = crypto.createHash('sha256').update(out.data).digest('hex').slice(0, 32)
@@ -100,5 +114,12 @@ export async function processProductImage(input) {
     inputBytes: buf.length,
     path: `products/${hash}.webp`,
     contentType: 'image/webp',
+    card: {
+      data: card.data,
+      width: card.info.width,
+      height: card.info.height,
+      bytes: card.data.length,
+      path: `products/${hash}-${CARD_MAX_SIDE}.webp`,
+    },
   }
 }

@@ -40,9 +40,9 @@ module.exports = {
         sm: '0.375rem',
       },
       fontFamily: {
-        sans: ['Inter', 'Hind Siliguri', 'system-ui', 'sans-serif'],
-        display: ['Comfortaa', 'Inter', 'system-ui', 'sans-serif'],
-        bangla: ['"Hind Siliguri"', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'var(--font-hind)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-comfortaa)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        bangla: ['var(--font-hind)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         'fade-up': {

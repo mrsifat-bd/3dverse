@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { cardImage } from '@/lib/format'
 import Link from 'next/link'
 import {
   Package, CheckCircle, XCircle, UserPlus, Clock, Mail, Plus, RefreshCw, Loader2,
@@ -352,7 +353,7 @@ export default function AdminDashboard() {
                 <li key={p.id} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-line/40">
                   <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-clay/10 text-xs font-medium text-clay">{i + 1}</span>
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-line bg-cream">
-                    {p.image ? <img src={p.image} alt="" className="h-full w-full object-cover" /> : null}
+                    {p.image ? <img src={cardImage(p.image)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { if (e.currentTarget.src !== p.image) e.currentTarget.src = p.image }} /> : null}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-ink">{p.name}</p>

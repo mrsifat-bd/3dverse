@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { cardImage } from '@/lib/format'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
@@ -58,7 +59,7 @@ export default function CartPage() {
                 className="flex items-center gap-4 rounded-2xl border border-line bg-paper p-4"
               >
                 <Link href={`/product/${l.slug}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-line bg-cream">
-                  {l.image ? <img src={l.image} alt="" className="h-full w-full object-cover" /> : null}
+                  {l.image ? <img src={cardImage(l.image)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { if (e.currentTarget.src !== l.image) e.currentTarget.src = l.image }} /> : null}
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link href={`/product/${l.slug}`} className="line-clamp-1 font-medium text-ink hover:text-clay">{l.name}</Link>

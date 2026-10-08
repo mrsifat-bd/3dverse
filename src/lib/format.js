@@ -9,6 +9,15 @@ export function firstImage(product) {
   return img || null
 }
 
+// Card-size (640px) variant of a processed product image. Images uploaded
+// through the server pipeline are stored as products/<hash>.webp with a
+// products/<hash>-640.webp sibling; anything else is returned unchanged.
+const PROCESSED_IMG = /(\/product-images\/products\/[0-9a-f]{32})\.webp$/
+export function cardImage(url) {
+  if (!url || typeof url !== 'string') return url
+  return PROCESSED_IMG.test(url) ? url.replace(PROCESSED_IMG, '$1-640.webp') : url
+}
+
 export function allImages(product) {
   const img = product?.image_url
   if (Array.isArray(img)) return img.filter(Boolean)

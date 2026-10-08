@@ -4,6 +4,9 @@ import { getSettings } from '@/lib/settings'
 import { getPublicCategories } from '@/lib/categories'
 import { SettingsProvider } from '@/components/SettingsProvider'
 import { CartProvider } from '@/components/CartProvider'
+import { AuthProvider } from '@/hooks/useAuth'
+import { WishlistProvider } from '@/components/WishlistProvider'
+import localFont from 'next/font/local'
 import MotionProvider from '@/components/MotionProvider'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -12,6 +15,35 @@ import ScrollToTop from '@/components/ScrollToTop'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import SubscribePopup from '@/components/SubscribePopup'
 import PageViewTracker from '@/components/PageViewTracker'
+
+// Self-hosted fonts (next/font/local, files in src/fonts): served from our own
+// domain and preloaded — no render-blocking request to Google and no
+// text jump when the web font arrives.
+const inter = localFont({
+  src: '../fonts/inter-latin-wght-normal.woff2',
+  weight: '100 900',
+  display: 'swap',
+  variable: '--font-inter',
+})
+const comfortaa = localFont({
+  src: '../fonts/comfortaa-latin-wght-normal.woff2',
+  weight: '300 700',
+  display: 'swap',
+  variable: '--font-comfortaa',
+})
+// Bengali glyphs only (Latin text uses Inter). The browser downloads these
+// files only when a page actually contains Bengali characters.
+const hind = localFont({
+  src: [
+    { path: '../fonts/hind-siliguri-bengali-400-normal.woff2', weight: '400' },
+    { path: '../fonts/hind-siliguri-bengali-500-normal.woff2', weight: '500' },
+    { path: '../fonts/hind-siliguri-bengali-600-normal.woff2', weight: '600' },
+  ],
+  display: 'swap',
+  preload: false,
+  variable: '--font-hind',
+  declarations: [{ prop: 'unicode-range', value: 'U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1' }],
+})
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -46,25 +78,20 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children }) {
-  const settings = await getSettings()
-  const categories = await getPublicCategories()
+  const [settings, categories] = await Promise.all([getSettings(), getPublicCategories()])
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${comfortaa.variable} ${hind.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
           }}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Comfortaa:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         <SettingsProvider settings={settings}>
+          <AuthProvider>
+          <WishlistProvider>
           <CartProvider>
             <MotionProvider>
               <div className="flex min-h-screen flex-col">
@@ -79,6 +106,8 @@ export default async function RootLayout({ children }) {
               <PageViewTracker />
             </MotionProvider>
           </CartProvider>
+          </WishlistProvider>
+          </AuthProvider>
         </SettingsProvider>
       </body>
     </html>

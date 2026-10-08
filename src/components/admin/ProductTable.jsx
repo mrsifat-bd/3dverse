@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import ProductImage from '@/components/ProductImage'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Pencil, Trash2, Plus, Loader2, Tags } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { listProducts, deleteProduct } from '@/lib/adminProducts'
@@ -124,7 +124,7 @@ export default function ProductTable() {
                   <td className="p-3">
                     <div className="flex items-center gap-3">
                       <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-line bg-line/40">
-                        {firstImage(p) && <Image src={firstImage(p)} alt="" fill sizes="44px" className="object-cover" />}
+                        {firstImage(p) && <ProductImage src={firstImage(p)} variant="card" alt="" sizes="44px" className="object-cover" />}
                       </div>
                       <span className="font-medium text-ink">{p.name}</span>
                     </div>

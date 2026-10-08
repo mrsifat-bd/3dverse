@@ -25,9 +25,7 @@ export const metadata = {
 }
 
 export default async function Home() {
-  const featured = await getFeaturedProducts(8)
-  const s = await getSettings()
-  const cats = await getPublicCategories()
+  const [featured, s, cats] = await Promise.all([getFeaturedProducts(8), getSettings(), getPublicCategories()])
   const CATEGORY_CARDS = [
     { name: 'Popular', blurb: 'Our most-loved, best-selling prints — start here.', href: '/shop?popular=1', Icon: Flame, featured: true },
     ...cats.map((c) => ({ name: c.name, blurb: c.blurb, href: `/category/${c.slug}`, Icon: CATEGORY_ICONS[c.slug] || Flame })),

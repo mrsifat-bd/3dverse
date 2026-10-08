@@ -1,7 +1,12 @@
+import { Suspense } from 'react'
 import { getAllProducts } from '@/lib/products'
 import { getPublicCategories } from '@/lib/categories'
-import ShopBrowser from '@/components/ShopBrowser'
+import ShopView, { ShopViewFromParams } from '@/components/ShopView'
 
+// Static + revalidated every 60s (and on demand when an admin saves a product).
+// The ?q= / ?category= / ?popular= filters are applied in the browser, so the
+// page no longer has to be re-rendered on the server (with a full product
+// fetch) for every visit.
 export const revalidate = 60
 
 export const metadata = {
@@ -10,19 +15,11 @@ export const metadata = {
   alternates: { canonical: '/shop' },
 }
 
-export default async function ShopPage({ searchParams }) {
+export default async function ShopPage() {
   const [products, categories] = await Promise.all([getAllProducts(), getPublicCategories()])
-  const q = searchParams?.q || ''
-  const category = searchParams?.category || 'all'
-  const popular = searchParams?.popular === '1' || searchParams?.popular === 'true'
-
   return (
-    <div className="container py-10">
-      <header className="mb-8">
-        <h1 className="font-display text-3xl font-semibold text-ink">{popular ? 'Popular products' : 'Shop all products'}</h1>
-        <p className="mt-1 text-sm text-stone">Made-to-order 3D prints, ready to order on WhatsApp.</p>
-      </header>
-      <ShopBrowser products={products} categories={categories} initialQuery={q} initialCategory={category} initialPopular={popular} />
-    </div>
+    <Suspense fallback={<ShopView products={products} categories={categories} />}>
+      <ShopViewFromParams products={products} categories={categories} />
+    </Suspense>
   )
 }

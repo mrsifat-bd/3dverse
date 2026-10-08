@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
+import ProductImage from '@/components/ProductImage'
 import { useRouter } from 'next/navigation'
 import { ImagePlus, X, Loader2, Plus, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { createProduct, updateProduct, uploadImage, isAcceptedImageFile, MAX_INPUT_IMAGE_BYTES } from '@/lib/adminProducts'
@@ -305,7 +305,7 @@ export default function ProductForm({ initial }) {
             ))}
             {images.map((url, idx) => (
               <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
-                <Image src={url} alt="" fill sizes="96px" className="object-cover" />
+                <ProductImage src={url} variant="card" alt="" sizes="96px" className="object-cover" />
                 {idx === 0 ? (
                   <span className="absolute left-1 top-1 rounded-full bg-clay px-1.5 py-0.5 text-[10px] font-medium text-paper">Main</span>
                 ) : (

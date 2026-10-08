@@ -1,5 +1,14 @@
 import { supabase } from './supabaseClient'
 
+// Read-only lookups only need the signed-in user's id, which the browser
+// already has in its session. getSession() is local (no network round trip);
+// getUser() re-validates the token with the auth server and is kept for
+// writes. Row-level security still decides what each user can read.
+async function sessionUser() {
+  const { data } = await supabase.auth.getSession()
+  return data?.session?.user || null
+}
+
 const PRODUCT_COLS = 'id,name,slug,price,discount_percent,image_url,weight_kg,in_stock,category'
 
 // ---- Likes --------------------------------------------------------------
@@ -12,7 +21,7 @@ export async function getLikeCount(productId) {
 }
 
 export async function hasLiked(productId) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return false
   const { data } = await supabase.from('product_likes').select('id').eq('user_id', user.id).eq('product_id', productId).maybeSingle()
   return !!data
@@ -32,7 +41,7 @@ export async function toggleLike(productId) {
 
 // ---- Wishlist -----------------------------------------------------------
 export async function isWishlisted(productId) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return false
   const { data } = await supabase.from('wishlists').select('id').eq('user_id', user.id).eq('product_id', productId).maybeSingle()
   return !!data

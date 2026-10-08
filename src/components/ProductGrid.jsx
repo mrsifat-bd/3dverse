@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal'
 import ProductCard from './ProductCard'
 import { Skeleton } from './ui/skeleton'
 
@@ -20,11 +20,8 @@ export function ProductGridSkeleton({ count = 8 }) {
   )
 }
 
-const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
-const itemVariants = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }
-
-// `animateKey` re-triggers the entrance when it changes (e.g. shop filter/sort),
-// so filtered results fade in smoothly instead of snapping.
+// `animateKey` re-triggers a quick fade when it changes (e.g. shop filter/sort)
+// so filtered results don't snap. Cards further down reveal as they scroll in.
 export default function ProductGrid({ products, animateKey }) {
   if (!products.length) {
     return (
@@ -34,19 +31,12 @@ export default function ProductGrid({ products, animateKey }) {
     )
   }
   return (
-    <motion.div
-      key={animateKey}
-      className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-      variants={gridVariants}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-40px' }}
-    >
-      {products.map((p) => (
-        <motion.div key={p.id} variants={itemVariants} transition={{ duration: 0.4, ease: 'easeOut' }}>
+    <div key={animateKey} className="fade-up grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      {products.map((p, i) => (
+        <Reveal key={p.id} delayIndex={i}>
           <ProductCard product={p} />
-        </motion.div>
+        </Reveal>
       ))}
-    </motion.div>
+    </div>
   )
 }

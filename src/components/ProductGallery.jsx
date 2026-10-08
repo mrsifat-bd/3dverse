@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import ProductImage from './ProductImage'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X, Expand } from 'lucide-react'
@@ -81,7 +82,7 @@ export default function ProductGallery({ images, name }) {
               aria-label={`View image ${i + 1}`}
               className={cn('relative h-20 w-20 overflow-hidden rounded-xl border transition-colors', i === active ? 'border-clay' : 'border-line hover:border-clay/40')}
             >
-              {img && <Image src={img} alt="" fill sizes="80px" className="object-cover" />}
+              {img && <ProductImage src={img} variant="card" alt="" sizes="80px" className="object-cover" />}
             </button>
           ))}
         </div>

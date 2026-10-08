@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import sharp from 'sharp'
+import { cardImage } from '../format'
 import { processProductImage, sniffImageType, ImageRejectedError, OUTPUT_MAX_SIDE } from '../server/productImage'
 
 const EXIF = {
@@ -25,6 +26,16 @@ async function expectClean(buf) {
   return m
 }
 
+describe('cardImage()', () => {
+  it('maps processed images to their -640 variant and leaves others alone', () => {
+    const u = 'https://x.supabase.co/storage/v1/object/public/product-images/products/0123456789abcdef0123456789abcdef.webp'
+    expect(cardImage(u)).toBe(u.replace('.webp', '-640.webp'))
+    expect(cardImage('/img/medical.svg')).toBe('/img/medical.svg')
+    expect(cardImage('https://old.supabase.co/storage/v1/object/public/product-images/1712-abc.jpg')).toContain('1712-abc.jpg')
+    expect(cardImage(null)).toBe(null)
+  })
+})
+
 describe('product image pipeline', () => {
   it('converts a JPEG with camera + GPS EXIF to clean WebP', async () => {
     const jpg = await photo(3000, 2000).withExif(EXIF).jpeg({ quality: 90 }).toBuffer()
@@ -34,6 +45,15 @@ describe('product image pipeline', () => {
     expect(out.path).toMatch(/^products\/[0-9a-f]{32}\.webp$/)
     const m = await expectClean(out.data)
     expect(Math.max(m.width, m.height)).toBe(OUTPUT_MAX_SIDE)
+  })
+
+  it('also produces a clean 640px card variant next to the full image', async () => {
+    const jpg = await photo(3000, 2000).withExif(EXIF).jpeg({ quality: 90 }).toBuffer()
+    const out = await processProductImage(jpg)
+    expect(out.card.path).toBe(out.path.replace('.webp', '-640.webp'))
+    const m = await expectClean(out.card.data)
+    expect(Math.max(m.width, m.height)).toBe(640)
+    expect(out.card.bytes).toBeLessThan(out.bytes)
   })
 
   it('applies EXIF orientation before stripping it (portrait stays portrait)', async () => {

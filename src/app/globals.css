@@ -84,8 +84,18 @@
 }
 .fade-up { animation: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* Scroll reveal for long lists (see components/Reveal.jsx). Only off-screen
+   items are ever hidden; the transition runs on the compositor. */
+.reveal-pending { opacity: 0; transform: translate3d(0, 14px, 0); }
+.reveal-pending.reveal-in {
+  opacity: 1; transform: none;
+  transition: opacity 0.45s ease-out, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float-in, .fade-up, .logo-spin { animation: none !important; }
+  .reveal-pending { opacity: 1 !important; transform: none !important; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
 
@@ -110,4 +120,29 @@
   }
   .no-print { display: none !important; }
   .invoice-sheet { max-width: 100% !important; box-shadow: none !important; }
+}
+
+/* ---- Home hero (components/HeroPanel.jsx) -------------------------------
+   Compositor-only animations (transform + opacity). Paused off screen via
+   [data-paused] and disabled for prefers-reduced-motion. */
+.hero-orb { will-change: transform, opacity; }
+.hero-orb-a {
+  background: radial-gradient(circle, rgb(var(--clay) / 0.17) 0%, rgb(var(--clay) / 0.07) 38%, transparent 68%);
+  animation: hero-orb-a 6s ease-in-out infinite;
+}
+.hero-orb-b {
+  background: radial-gradient(circle, rgb(var(--clay) / 0.12) 0%, rgb(var(--clay) / 0.05) 38%, transparent 68%);
+  animation: hero-orb-b 7.5s ease-in-out infinite;
+}
+@keyframes hero-orb-a { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.25); opacity: 1; } }
+@keyframes hero-orb-b { 0%, 100% { transform: scale(1.15); opacity: 0.55; } 50% { transform: scale(1); opacity: 1; } }
+.hero-float { animation: hero-float 5s ease-in-out infinite; will-change: transform; }
+@keyframes hero-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50% { transform: translate3d(0, -12px, 0) rotate(2deg); }
+}
+.hero-anim[data-paused] .hero-orb,
+.hero-anim[data-paused] .hero-float { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb, .hero-float { animation: none !important; }
 }

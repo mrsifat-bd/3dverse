@@ -5,26 +5,38 @@ import { motion } from 'framer-motion'
 import { Bookmark } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { isWishlisted, toggleWishlist } from '@/lib/social'
+import { useWishlist } from './WishlistProvider'
 import { cn } from '@/lib/utils'
 
 // variant: "icon" (round overlay button) | "inline" (icon + label)
 export default function WishlistButton({ productId, variant = 'icon', className, onChange }) {
+  const shared = useWishlist()
   const { user } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [saved, setSaved] = useState(false)
+  const [localSaved, setLocalSaved] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => { let a = true; if (user) isWishlisted(productId).then((v) => a && setSaved(v)).catch(() => {}); else setSaved(false); return () => { a = false } }, [user, productId])
+  // Shared wishlist (one query for the whole page). Only falls back to a
+  // per-button lookup if rendered outside <WishlistProvider>.
+  useEffect(() => {
+    if (shared) return
+    let a = true
+    if (user) isWishlisted(productId).then((v) => a && setLocalSaved(v)).catch(() => {}); else setLocalSaved(false)
+    return () => { a = false }
+  }, [shared, user, productId])
+
+  const saved = shared ? shared.ids.has(productId) : localSaved
 
   async function onClick(e) {
     e.preventDefault(); e.stopPropagation()
     if (!user) { router.push(`/login?next=${encodeURIComponent(pathname || '/')}`); return }
     if (busy) return
-    const prev = saved
-    setBusy(true); setSaved(!prev)
-    try { const now = await toggleWishlist(productId); setSaved(now); onChange?.(now) }
-    catch { setSaved(prev) }
+    setBusy(true)
+    try {
+      if (shared) { const now = await shared.toggle(productId); onChange?.(now) }
+      else { const prev = localSaved; setLocalSaved(!prev); try { const now = await toggleWishlist(productId); setLocalSaved(now); onChange?.(now) } catch { setLocalSaved(prev) } }
+    } catch { /* toggle already rolled back */ }
     finally { setBusy(false) }
   }
 
@@ -37,7 +49,7 @@ export default function WishlistButton({ productId, variant = 'icon', className,
   }
 
   return (
-    <button onClick={onClick} aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'} className={cn('grid h-9 w-9 place-items-center rounded-full border border-line bg-paper/90 text-ink backdrop-blur transition-all hover:border-clay/40 hover:text-clay active:scale-90', className)}>
+    <button onClick={onClick} aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'} className={cn('grid h-9 w-9 place-items-center rounded-full border border-line bg-paper/90 text-ink transition-all hover:border-clay/40 hover:text-clay active:scale-90', className)}>
       <motion.span key={saved ? 'on' : 'off'} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
         <Bookmark className={cn('h-4 w-4', saved && 'fill-clay text-clay')} />
       </motion.span>
