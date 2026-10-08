@@ -261,7 +261,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {kpiCards.map(({ label, value, sub, Icon, href }, i) => (
           <Link
             key={label}
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent leads + Top products */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="mb-4 font-display text-lg font-semibold text-ink">Recent leads</h2>
           {orderLeads.length === 0 ? (
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Inventory alerts + Recent activity */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-paper p-6">
           <div className="mb-4 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-clay" />

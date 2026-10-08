@@ -183,7 +183,7 @@ export default function ProductForm({ initial }) {
           onBlur={() => { if (!form.slug) set('slug', slugify(form.name)) }} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="slug">Slug (URL)</Label>
           <Input id="slug" value={form.slug} onChange={(e) => set('slug', slugify(e.target.value))} placeholder="auto from name" />
@@ -217,7 +217,7 @@ export default function ProductForm({ initial }) {
         <Textarea id="description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={5} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="category">Category</Label>
           <Select id="category" className="w-full rounded-lg" value={form.category} onChange={(e) => set('category', e.target.value)}>
@@ -246,7 +246,7 @@ export default function ProductForm({ initial }) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="discount_percent">Discount (% off)</Label>
           <Input id="discount_percent" type="number" min="0" max="99" step="1" value={form.discount_percent} onChange={(e) => set('discount_percent', e.target.value)} placeholder="0" />
@@ -258,7 +258,7 @@ export default function ProductForm({ initial }) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="extra_link">Custom link (URL)</Label>
           <Input id="extra_link" type="url" value={form.extra_link} onChange={(e) => set('extra_link', e.target.value)} placeholder="https://…" />

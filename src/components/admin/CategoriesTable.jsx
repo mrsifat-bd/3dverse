@@ -61,7 +61,7 @@ export default function CategoriesTable() {
       {/* Add */}
       <form onSubmit={add} className="mb-6 rounded-2xl border border-line bg-paper p-5">
         <p className="font-display text-lg font-semibold text-ink">New category</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5"><Label htmlFor="cname">Name</Label><Input id="cname" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: f.slug || slugify(e.target.value) }))} placeholder="e.g. Keyrings" /></div>
           <div className="space-y-1.5"><Label htmlFor="cslug">Slug</Label><Input id="cslug" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="keyrings" /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="cblurb">Blurb</Label><Input id="cblurb" value={form.blurb} onChange={(e) => setForm((f) => ({ ...f, blurb: e.target.value }))} placeholder="Short description shown on the category card" /></div>

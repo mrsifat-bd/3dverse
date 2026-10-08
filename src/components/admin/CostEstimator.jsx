@@ -167,7 +167,7 @@ export default function CostEstimator() {
       </AnimatePresence>
 
       {/* Row 1 — the job (big) and the price (big), equal height */}
-      <div className="grid items-stretch gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         <motion.div {...rise(1)} className="lg:col-span-7">
           <Card className="flex h-full flex-col border-clay/25">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
@@ -177,7 +177,7 @@ export default function CostEstimator() {
               <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay">Required</span>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col justify-center">
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Filament used (g)" hint="Grams of material — copy it from your slicer.">
                   <Input type="number" min="0" inputMode="decimal" placeholder="e.g. 120" value={numOrEmpty(filamentGrams)} className="h-12 text-base"
                     onChange={(e) => handleNumberChange(e.target.value, setFilamentGrams)} />
@@ -240,7 +240,7 @@ export default function CostEstimator() {
       </motion.div>
 
       {/* Row 3 — cost settings + summary (below the fold is fine) */}
-      <div className="grid items-start gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <motion.div {...rise(4)} className="lg:col-span-7">
           <Card>
             <CardHeader className="pb-4">
@@ -252,7 +252,7 @@ export default function CostEstimator() {
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <Field label="Filament (৳/kg)" hint="Cost per kilogram.">
                   <Input type="number" min="0" value={numOrEmpty(config.filamentCostPerKg)} onChange={(e) => setCfg('filamentCostPerKg', e.target.value)} />
                 </Field>
@@ -264,14 +264,14 @@ export default function CostEstimator() {
                 </Field>
               </div>
 
-              <div className="grid gap-6 border-t border-line pt-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 border-t border-line pt-5 sm:grid-cols-2">
                 <SliderField label="Labour" suffix="%" color="#C0603A" value={Number(config.labourPercent) || 0} max={100}
                   onChange={(v) => setCfg('labourPercent', v)} />
                 <SliderField label="Profit margin" suffix="%" color="#4F9D69" value={Number(config.profitMargin) || 0} max={500}
                   onChange={(v) => setCfg('profitMargin', v)} />
               </div>
 
-              <div className="grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 border-t border-line pt-5 sm:grid-cols-2">
                 <Field label="Machine (৳/hr)" hint="Rate charged after the free hours.">
                   <Input type="number" min="0" value={numOrEmpty(config.machineRatePerHour)} onChange={(e) => setCfg('machineRatePerHour', e.target.value)} />
                 </Field>

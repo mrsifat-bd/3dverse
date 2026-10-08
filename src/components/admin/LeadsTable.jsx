@@ -79,7 +79,7 @@ export default function LeadsTable() {
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[{ label: 'Total interactions', value: stats.total }, { label: 'Orders (Buy Now)', value: stats.orders }, { label: 'Product views', value: stats.views }].map((s) => (
           <div key={s.label} className="rounded-2xl border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
             <p className="text-sm text-stone">{s.label}</p>
@@ -90,7 +90,7 @@ export default function LeadsTable() {
 
       <div className="mb-8">
         <h2 className="mb-3 font-display text-lg font-semibold text-ink">Most viewed products</h2>
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {analytics.map((win) => (
             <div key={win.label} className="rounded-2xl border border-line bg-paper p-5">
               <p className="mb-3 text-xs uppercase tracking-wide text-stone">{win.label}</p>

@@ -417,7 +417,7 @@ export default function OrdersTable() {
           <h1 className="font-display text-3xl font-semibold text-ink">Orders</h1>
           <p className="mt-1 text-sm text-stone">Review orders and create Steadfast courier parcels.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild><Link href="/admin/orders/new"><Plus className="h-4 w-4" /> New order</Link></Button>
           <Select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter by status">
             <option value="all">All statuses</option>
@@ -478,7 +478,7 @@ export default function OrdersTable() {
                 <AnimatePresence initial={false}>
                   {open && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-line">
-                      <div className="grid gap-6 p-5 lg:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2">
                         {/* Left: customer + items + money */}
                         <div className="space-y-5">
                           <div>

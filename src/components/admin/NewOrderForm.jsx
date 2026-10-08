@@ -109,7 +109,7 @@ export default function NewOrderForm() {
       {/* Customer */}
       <section className="rounded-2xl border border-line bg-paper p-5">
         <h2 className="font-display text-lg font-semibold text-ink">Customer</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="cname">Full name</Label>
             <Input id="cname" value={form.customer_name} onChange={(e) => set('customer_name', e.target.value)} required />
@@ -175,7 +175,7 @@ export default function NewOrderForm() {
       </section>
 
       {/* Charges + status + totals */}
-      <section className="mt-5 grid gap-5 lg:grid-cols-2">
+      <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-paper p-5">
           <h2 className="font-display text-lg font-semibold text-ink">Charges</h2>
           <div className="mt-4 grid grid-cols-3 gap-3">
