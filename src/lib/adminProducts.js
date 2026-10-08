@@ -1,4 +1,4 @@
-import { supabase, PRODUCTS_BUCKET } from './supabaseClient'
+import { supabase } from './supabaseClient'
 import { compressImage } from './imageCompress'
 import { slugify } from './format'
 
@@ -95,40 +95,78 @@ export async function deleteProduct(id) {
   await pingRevalidate()
 }
 
-// Accepted product image formats + size cap. Exported so the form validates
-// with the exact same rules the upload enforces. The Supabase bucket is ALSO
-// configured with these limits (allowed_mime_types + file_size_limit), so a
-// bad file is rejected server-side even if the client checks were bypassed.
+// Accepted product image formats. This is only a first, friendly check in the
+// browser: the server (/api/admin/product-images) inspects the real file bytes
+// and is the authority on what is accepted.
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8 MB (what the bucket accepts)
-// Originals can be bigger than the bucket limit because they are shrunk in the
-// browser (compressImage) before upload; this only guards absurd files.
+const ACCEPTED_EXT = /\.(jpe?g|png|webp)$/i
+// Largest original the admin can pick. Files over the server's request limit
+// are shrunk in the browser for TRANSPORT only, then fully re-processed on the
+// server; this cap just stops absurd files before any work is done.
 export const MAX_INPUT_IMAGE_BYTES = 30 * 1024 * 1024 // 30 MB
-const EXT_BY_TYPE = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+// Must match MAX_UPLOAD_BYTES on the server (Vercel caps bodies at 4.5 MB).
+export const MAX_REQUEST_IMAGE_BYTES = 4 * 1024 * 1024
 
-// Uploads a File to the product-images bucket and returns its public URL.
-// Validates type + size first, and stores the correct Content-Type so the CDN
-// serves it as an image.
-export async function uploadImage(original) {
-  if (!original || !ACCEPTED_IMAGE_TYPES.includes(original.type)) {
+export function isAcceptedImageFile(f) {
+  if (!f) return false
+  // Some systems report an empty type for .webp; fall back to the extension.
+  return ACCEPTED_IMAGE_TYPES.includes(f.type) || (!f.type && ACCEPTED_EXT.test(f.name || ''))
+}
+
+// Uploads one product photo through the server pipeline, which validates it,
+// converts it to a metadata-free WebP and stores only the processed file.
+// Resolves to { url, width, height, bytes, duplicate, ... }.
+//   onProgress(0..1) — bytes sent; onStage('preparing'|'uploading'|'processing')
+export async function uploadImage(original, { onProgress, onStage } = {}) {
+  if (!isAcceptedImageFile(original)) {
     throw new Error('Unsupported file type. Please use a JPG, PNG or WebP image.')
   }
-  // Resize + re-encode in the browser so stored photos stay small (saves
-  // Supabase bandwidth, keeps the free plan from being blocked).
-  const file = await compressImage(original)
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error('Image is too large. Please use a file under 8 MB.')
+  if (original.size > MAX_INPUT_IMAGE_BYTES) {
+    throw new Error('Image is too large. Please use a file under 30 MB.')
   }
-  const ext = EXT_BY_TYPE[file.type] || (file.name.split('.').pop() || 'jpg').toLowerCase()
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-  const { error } = await supabase.storage.from(PRODUCTS_BUCKET).upload(path, file, {
-    // File names are unique and never overwritten, so browsers/CDN can cache
-    // them for a year instead of re-downloading every hour.
-    cacheControl: '31536000',
-    upsert: false,
-    contentType: file.type,
+
+  let file = original
+  if (file.size > MAX_REQUEST_IMAGE_BYTES) {
+    // Too big to send in one request: make a high-quality smaller copy first.
+    // The server still decodes, validates and re-encodes it from scratch.
+    onStage?.('preparing')
+    file = await compressImage(original, { maxDim: 2600, quality: 0.92 })
+    if (file.size > MAX_REQUEST_IMAGE_BYTES) {
+      file = await compressImage(original, { maxDim: 2000, quality: 0.88 })
+    }
+    if (file.size > MAX_REQUEST_IMAGE_BYTES) {
+      throw new Error('This photo is too large to upload, even after resizing. Please use a smaller image.')
+    }
+  }
+
+  const { data: sess } = await supabase.auth.getSession()
+  const token = sess?.session?.access_token
+  if (!token) throw new Error('Your admin session has expired. Please sign in again.')
+
+  const body = new FormData()
+  body.append('file', file, file.name || 'image')
+
+  onStage?.('uploading')
+  const res = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', '/api/admin/product-images')
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.responseType = 'json'
+    xhr.timeout = 60000
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(e.loaded / e.total)
+    }
+    xhr.upload.onload = () => { onProgress?.(1); onStage?.('processing') }
+    xhr.onload = () => resolve({ status: xhr.status, data: xhr.response })
+    xhr.onerror = () => reject(new Error('Network error while uploading. Check your connection and try again.'))
+    xhr.ontimeout = () => reject(new Error('The upload timed out. Please try again.'))
+    xhr.send(body)
   })
-  if (error) throw error
-  const { data } = supabase.storage.from(PRODUCTS_BUCKET).getPublicUrl(path)
-  return data.publicUrl
+
+  const data = res.data || {}
+  if (res.status === 401) throw new Error('Your admin session has expired. Please sign in again.')
+  if (res.status < 200 || res.status >= 300 || !data.url) {
+    throw new Error(data.error || `Upload failed (error ${res.status}). Please try again.`)
+  }
+  return data
 }

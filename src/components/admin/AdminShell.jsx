@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, Tags, ShoppingBag, MessageSquare, Users, Mail, Settings, LogOut, Home, Loader2, Calculator } from 'lucide-react'
 import { useAuth, signIn, signOut } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabaseClient'
 import { BUSINESS } from '@/lib/config'
 import { cn } from '@/lib/utils'
 import NotificationBell from '@/components/admin/NotificationBell'
@@ -60,6 +61,68 @@ export default function AdminShell({ children }) {
 
   if (!session) return <LoginForm />
 
+  return <AdminGate session={session} pathname={pathname}>{children}</AdminGate>
+}
+
+// Confirms the signed-in account is really an admin, using the same database
+// rule (public.is_admin) that protects every admin table and the image bucket.
+// A customer who is signed in on the shop sees a clear message instead of a
+// broken admin panel. Re-checks whenever the signed-in user changes.
+function AdminGate({ session, pathname, children }) {
+  const userId = session?.user?.id
+  const [state, setState] = useState({ status: 'checking', userId: null })
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    setState({ status: 'checking', userId })
+    supabase.rpc('is_admin').then(({ data, error }) => {
+      if (!active) return
+      if (error) setState({ status: 'error', userId })
+      else setState({ status: data === true ? 'admin' : 'denied', userId })
+    })
+    return () => { active = false }
+  }, [userId, attempt])
+
+  if (state.status === 'checking' || state.userId !== userId) {
+    return (
+      <CenterCard>
+        <div className="flex items-center justify-center gap-2 text-stone">
+          <Loader2 className="h-5 w-5 animate-spin" /> Checking admin access…
+        </div>
+      </CenterCard>
+    )
+  }
+
+  if (state.status === 'error') {
+    return (
+      <CenterCard>
+        <h1 className="font-display text-2xl font-semibold text-ink">Couldn&apos;t verify access</h1>
+        <p className="mt-2 text-sm text-stone">The connection to the database failed. Check your internet connection and try again.</p>
+        <div className="mt-6 flex gap-3">
+          <Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
+          <Button variant="ghost" onClick={() => signOut()}>Sign out</Button>
+        </div>
+      </CenterCard>
+    )
+  }
+
+  if (state.status === 'denied') {
+    return (
+      <CenterCard>
+        <h1 className="font-display text-2xl font-semibold text-ink">No admin access</h1>
+        <p className="mt-2 text-sm text-stone">
+          You&apos;re signed in as <span className="font-medium text-ink">{session.user.email}</span>, which isn&apos;t an admin account.
+          Sign out and sign in with the owner account.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <Button onClick={() => signOut()}>Sign out</Button>
+          <Link href="/" className="btn-ghost">Back to site</Link>
+        </div>
+      </CenterCard>
+    )
+  }
+
   return (
     <div className="container grid gap-6 py-6 md:grid-cols-[220px_1fr] md:gap-8 md:py-10">
       <aside className="h-fit rounded-2xl border border-line bg-paper p-3 md:sticky md:top-24 md:p-4">
@@ -111,7 +174,7 @@ function LoginForm() {
     setError('')
     const { error } = await signIn(email, password)
     setBusy(false)
-    if (error) setError(error.message)
+    if (error) setError(friendlyAuthError(error))
   }
 
   return (
@@ -134,4 +197,13 @@ function LoginForm() {
       </form>
     </CenterCard>
   )
+}
+
+function friendlyAuthError(error) {
+  const msg = error?.message || 'Sign in failed.'
+  if (/email not confirmed/i.test(msg)) return 'This email address hasn\u2019t been confirmed yet. Open the confirmation link sent to your inbox, then sign in again.'
+  if (/invalid login credentials/i.test(msg)) return 'Wrong email or password.'
+  if (/rate limit|too many/i.test(msg)) return 'Too many attempts. Please wait a minute and try again.'
+  if (/fetch|network/i.test(msg)) return 'Could not reach the server. Check your internet connection.'
+  return msg
 }

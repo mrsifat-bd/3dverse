@@ -1,9 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, X, Loader2, Plus } from 'lucide-react'
-import { createProduct, updateProduct, uploadImage, ACCEPTED_IMAGE_TYPES, MAX_INPUT_IMAGE_BYTES } from '@/lib/adminProducts'
+import { ImagePlus, X, Loader2, Plus, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { createProduct, updateProduct, uploadImage, isAcceptedImageFile, MAX_INPUT_IMAGE_BYTES } from '@/lib/adminProducts'
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
 import { getAllCategories } from '@/lib/categories'
 import { slugify } from '@/lib/format'
@@ -38,53 +38,102 @@ export default function ProductForm({ initial }) {
   })
   const [images, setImages] = useState(Array.isArray(initial?.image_url) ? initial.image_url : [])
   const [faqs, setFaqs] = useState(Array.isArray(initial?.faqs) ? initial.faqs : [])
-  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [dragOver, setDragOver] = useState(false)
-  const [pending, setPending] = useState([]) // optimistic previews while uploading
+  // Upload queue. Each item: { key, preview, name, stage, progress, error, replaceUrl }
+  // stage: 'queued' | 'preparing' | 'uploading' | 'processing' | 'error'
+  const [pending, setPending] = useState([])
+  const [notice, setNotice] = useState('')
+  const filesRef = useRef(new Map()) // key -> File (kept for Retry)
+  const replaceInputRef = useRef(null)
+  const replaceTargetRef = useRef(null)
 
   // Admin form: load ALL categories (incl. brand-new empty ones) so a product
   // can be assigned to a category right after it's created. Falls back to config.
   useEffect(() => { getAllCategories().then((c) => { if (Array.isArray(c) && c.length) setCategories(c) }).catch(() => {}) }, [])
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Free preview blobs when the form unmounts.
+  useEffect(() => () => { filesRef.current.clear() }, [])
 
-  // Shared upload path for BOTH click-to-browse and drag-and-drop. Validates
-  // type/size on the client (the same rules the server enforces), shows an
-  // instant local preview per file, then uploads. New uploads go to the FRONT
-  // so the latest photo becomes the Main (card) image.
-  async function handleFiles(fileList) {
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const patchPending = (key, patch) => setPending((prev) => prev.map((p) => (p.key === key ? { ...p, ...patch } : p)))
+  const busyCount = pending.filter((p) => p.stage !== 'error').length
+  const uploading = busyCount > 0
+
+  // Sends one queued item through the server pipeline (validate → WebP →
+  // strip metadata → store) and, on success, puts the processed image in place.
+  async function runUpload(item) {
+    const file = filesRef.current.get(item.key)
+    if (!file) return
+    patchPending(item.key, { stage: 'uploading', progress: 0, error: '' })
+    try {
+      const res = await uploadImage(file, {
+        onStage: (stage) => patchPending(item.key, { stage }),
+        onProgress: (progress) => patchPending(item.key, { progress }),
+      })
+      setImages((prev) => {
+        if (item.replaceUrl && prev.includes(item.replaceUrl)) {
+          const without = prev.filter((u) => u !== res.url)
+          return without.map((u) => (u === item.replaceUrl ? res.url : u))
+        }
+        if (prev.includes(res.url)) {
+          setNotice(`"${item.name}" is the same photo as one already added, so it was skipped.`)
+          return prev
+        }
+        return [res.url, ...prev] // newest upload becomes the Main photo
+      })
+      URL.revokeObjectURL(item.preview)
+      filesRef.current.delete(item.key)
+      setPending((prev) => prev.filter((p) => p.key !== item.key))
+    } catch (err) {
+      patchPending(item.key, { stage: 'error', error: err.message || 'Upload failed. Please try again.' })
+    }
+  }
+
+  // Shared path for click-to-browse, drag-and-drop and Replace. Quick checks
+  // here are only for friendly messages; the server re-validates every file.
+  async function handleFiles(fileList, { replaceUrl } = {}) {
     const files = Array.from(fileList || [])
     if (!files.length) return
     setError('')
-    const valid = []
-    for (const f of files) {
-      if (!ACCEPTED_IMAGE_TYPES.includes(f.type)) { setError(`"${f.name}" isn't a supported image. Use JPG, PNG or WebP.`); continue }
-      if (f.size > MAX_INPUT_IMAGE_BYTES) { setError(`"${f.name}" is too large — please use a file under 30 MB.`); continue }
-      valid.push(f)
+    setNotice('')
+    const items = []
+    for (const f of (replaceUrl ? files.slice(0, 1) : files)) {
+      if (!isAcceptedImageFile(f)) { setError(`"${f.name}" isn't a supported image. Use JPG, PNG or WebP.`); continue }
+      if (f.size > MAX_INPUT_IMAGE_BYTES) { setError(`"${f.name}" is too large. Please use a file under 30 MB.`); continue }
+      // Ignore a file that is already in the queue (double drop / double click).
+      const sig = `${f.name}|${f.size}|${f.lastModified}`
+      if (pending.some((p) => p.sig === sig && p.stage !== 'error') || items.some((p) => p.sig === sig)) continue
+      const key = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      filesRef.current.set(key, f)
+      items.push({ key, sig, name: f.name, preview: URL.createObjectURL(f), stage: 'queued', progress: 0, error: '', replaceUrl })
     }
-    if (!valid.length) return
-    setUploading(true)
-    const items = valid.map((f) => ({ key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, url: URL.createObjectURL(f) }))
+    if (!items.length) return
     setPending((prev) => [...items, ...prev])
-    try {
-      for (let i = 0; i < valid.length; i++) {
-        const it = items[i]
-        try {
-          const url = await uploadImage(valid[i])
-          setImages((prev) => [url, ...prev])
-        } catch (err) {
-          setError(err.message || 'Image upload failed. Please try again.')
-        } finally {
-          URL.revokeObjectURL(it.url)
-          setPending((prev) => prev.filter((p) => p.key !== it.key))
-        }
-      }
-    } finally {
-      setUploading(false)
-    }
+    // One at a time keeps each request small and the progress meaningful.
+    for (const it of items) await runUpload(it)
+  }
+
+  function dismissPending(key) {
+    setPending((prev) => {
+      const it = prev.find((p) => p.key === key)
+      if (it) URL.revokeObjectURL(it.preview)
+      return prev.filter((p) => p.key !== key)
+    })
+    filesRef.current.delete(key)
+  }
+
+  function startReplace(url) {
+    replaceTargetRef.current = url
+    replaceInputRef.current?.click()
+  }
+  function onReplaceFile(e) {
+    const target = replaceTargetRef.current
+    replaceTargetRef.current = null
+    if (target && e.target.files?.length) handleFiles(e.target.files, { replaceUrl: target })
+    e.target.value = ''
   }
 
   function onFiles(e) {
@@ -225,18 +274,39 @@ export default function ProductForm({ initial }) {
 
         {(images.length > 0 || pending.length > 0) && (
           <div className="flex flex-wrap gap-3">
-            {/* Optimistic previews (still uploading) */}
+            {/* In-progress / failed uploads */}
             {pending.map((p) => (
-              <div key={p.key} className="relative h-24 w-24 overflow-hidden rounded-xl border border-line">
+              <div key={p.key} className={cn('relative h-24 w-24 overflow-hidden rounded-xl border', p.stage === 'error' ? 'border-destructive' : 'border-line')}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt="" className="h-full w-full object-cover opacity-60" />
-                <div className="absolute inset-0 grid place-items-center bg-ink/25"><Loader2 className="h-5 w-5 animate-spin text-paper" /></div>
+                <img src={p.preview} alt="" className="h-full w-full object-cover opacity-50" />
+                {p.stage === 'error' ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-ink/60 p-1 text-center">
+                    <AlertCircle className="h-4 w-4 text-paper" />
+                    <div className="flex gap-1">
+                      <button type="button" onClick={() => runUpload(p)} className="rounded-full bg-paper px-2 py-0.5 text-[10px] font-medium text-ink hover:bg-clay hover:text-paper">Retry</button>
+                      <button type="button" onClick={() => dismissPending(p.key)} className="rounded-full bg-ink/80 px-2 py-0.5 text-[10px] font-medium text-paper">Dismiss</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-ink/35 px-2 text-paper">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-[10px] font-medium leading-tight">
+                      {p.stage === 'queued' && 'Waiting…'}
+                      {p.stage === 'preparing' && 'Preparing…'}
+                      {p.stage === 'uploading' && `Uploading ${Math.round((p.progress || 0) * 100)}%`}
+                      {p.stage === 'processing' && 'Optimising…'}
+                    </span>
+                    <div className="h-1 w-full overflow-hidden rounded-full bg-paper/30">
+                      <div className="h-full bg-clay transition-all" style={{ width: `${p.stage === 'processing' ? 100 : Math.round((p.progress || 0) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {images.map((url, idx) => (
-              <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 && pending.length === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
+              <div key={url} className={`relative h-24 w-24 overflow-hidden rounded-xl border ${idx === 0 ? 'border-clay ring-2 ring-clay/40' : 'border-line'}`}>
                 <Image src={url} alt="" fill sizes="96px" className="object-cover" />
-                {idx === 0 && pending.length === 0 ? (
+                {idx === 0 ? (
                   <span className="absolute left-1 top-1 rounded-full bg-clay px-1.5 py-0.5 text-[10px] font-medium text-paper">Main</span>
                 ) : (
                   <button type="button" onClick={() => makeMain(url)} aria-label="Set as main photo"
@@ -245,13 +315,18 @@ export default function ProductForm({ initial }) {
                   </button>
                 )}
                 <button type="button" onClick={() => removeImage(url)} aria-label="Remove image"
-                  className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-paper">
+                  className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-paper hover:bg-destructive">
                   <X className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" onClick={() => startReplace(url)} aria-label="Replace image" disabled={uploading}
+                  className="absolute bottom-1 right-1 flex items-center gap-0.5 rounded-full bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-paper hover:bg-clay disabled:opacity-50">
+                  <RefreshCw className="h-3 w-3" /> Replace
                 </button>
               </div>
             ))}
           </div>
         )}
+        <input ref={replaceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReplaceFile} />
 
         {/* Drag & drop zone (also click-to-browse). */}
         <label
@@ -266,11 +341,22 @@ export default function ProductForm({ initial }) {
         >
           {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
           <span className="text-sm font-medium">{dragOver ? 'Drop image to upload' : 'Drag & drop images here, or click to browse'}</span>
-          <span className="text-xs text-stone">JPG, PNG or WebP · up to 8&nbsp;MB</span>
+          <span className="text-xs text-stone">JPG, PNG or WebP · up to 30&nbsp;MB · converted to optimised WebP automatically</span>
           <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFiles} />
         </label>
 
-        <p className="text-xs text-stone">The image marked <span className="font-medium text-clay">Main</span> is what shows on product cards. New uploads become the Main photo automatically — or click <span className="font-medium">Set main</span> on any image, and the <span className="font-medium">×</span> to remove/replace one.</p>
+        <div aria-live="polite" className="text-xs">
+          {uploading ? (
+            <p className="flex items-center gap-1.5 text-clay"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Processing {busyCount} image{busyCount === 1 ? '' : 's'}… please wait before saving.</p>
+          ) : pending.length > 0 ? (
+            <p className="flex items-center gap-1.5 text-destructive"><AlertCircle className="h-3.5 w-3.5" /> {pending.length} image{pending.length === 1 ? '' : 's'} failed: {pending[0].error} Retry or dismiss {pending.length === 1 ? 'it' : 'them'} before saving.</p>
+          ) : images.length > 0 ? (
+            <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> {images.length} image{images.length === 1 ? '' : 's'} ready. Click {editing ? 'Save changes' : 'Create product'} to keep them.</p>
+          ) : null}
+          {notice && <p className="mt-1 text-stone">{notice}</p>}
+        </div>
+
+        <p className="text-xs text-stone">The image marked <span className="font-medium text-clay">Main</span> is what shows on product cards. New uploads become the Main photo automatically. Use <span className="font-medium">Set main</span>, <span className="font-medium">Replace</span>, or <span className="font-medium">×</span> to remove.</p>
       </div>
 
       <div className="space-y-3 border-t border-line pt-6">
@@ -306,7 +392,7 @@ export default function ProductForm({ initial }) {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <Button type="submit" disabled={saving || uploading}>{saving ? 'Saving…' : editing ? 'Save changes' : 'Create product'}</Button>
+        <Button type="submit" disabled={saving || pending.length > 0}>{saving ? 'Saving…' : editing ? 'Save changes' : 'Create product'}</Button>
         <Button type="button" variant="ghost" onClick={() => router.push('/admin/products')}>Cancel</Button>
       </div>
     </form>
