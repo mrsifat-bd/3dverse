@@ -92,15 +92,7 @@ export async function processProductImage(input) {
 
   // Small variant for product cards / thumbnails, made from the already
   // cleaned image (so it is also metadata-free).
-  let card
-  try {
-    card = await sharp(out.data)
-      .resize({ width: CARD_MAX_SIDE, height: CARD_MAX_SIDE, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: CARD_QUALITY, alphaQuality: 85, smartSubsample: true, effort: 5 })
-      .toBuffer({ resolveWithObject: true })
-  } catch {
-    throw new ImageRejectedError('The image could not be processed. It may be corrupted.')
-  }
+  const card = await makeCardVariant(out.data)
 
   // Content hash → stable name. The same photo uploaded twice maps to the same
   // file, so duplicates are never stored.
@@ -114,12 +106,23 @@ export async function processProductImage(input) {
     inputBytes: buf.length,
     path: `products/${hash}.webp`,
     contentType: 'image/webp',
-    card: {
-      data: card.data,
-      width: card.info.width,
-      height: card.info.height,
-      bytes: card.data.length,
-      path: `products/${hash}-${CARD_MAX_SIDE}.webp`,
-    },
+    card: { ...card, path: cardPathFor(`products/${hash}.webp`) },
   }
 }
+
+// Card/thumbnail variant of an already-processed WebP (metadata-free input →
+// metadata-free output). Also used to backfill variants for older uploads.
+export async function makeCardVariant(webp) {
+  try {
+    const r = await sharp(webp, { limitInputPixels: MAX_INPUT_PIXELS })
+      .resize({ width: CARD_MAX_SIDE, height: CARD_MAX_SIDE, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: CARD_QUALITY, alphaQuality: 85, smartSubsample: true, effort: 5 })
+      .toBuffer({ resolveWithObject: true })
+    return { data: r.data, width: r.info.width, height: r.info.height, bytes: r.data.length }
+  } catch {
+    throw new ImageRejectedError('The image could not be processed. It may be corrupted.')
+  }
+}
+
+export const PROCESSED_PATH = /^products\/([0-9a-f]{32})\.webp$/
+export const cardPathFor = (path) => path.replace(/\.webp$/, `-${CARD_MAX_SIDE}.webp`)
