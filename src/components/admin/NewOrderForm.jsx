@@ -141,8 +141,8 @@ export default function NewOrderForm() {
       <section className="mt-5 rounded-2xl border border-line bg-paper p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-ink">Items</h2>
-          <div className="flex items-center gap-2">
-            <Select value={pick} onChange={(e) => addProduct(e.target.value)} aria-label="Add product" className="h-9">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+            <Select value={pick} onChange={(e) => addProduct(e.target.value)} aria-label="Add product" className="h-9 w-full min-w-0 sm:w-72">
               <option value="">+ Add product…</option>
               {products.map((p) => <option key={p.id} value={p.id}>{p.name} — {formatPrice(effectivePrice(p))}</option>)}
             </Select>
