@@ -24,7 +24,11 @@ function getObserver() {
     (entries) => {
       for (const e of entries) callbacks.get(e.target)?.(e)
     },
-    { rootMargin: '0px 0px -6% 0px', threshold: 0 },
+    // The huge top margin means "intersecting" = "its top has reached the
+    // bottom ~6% line, or it is anywhere above it". So an item the user flung
+    // past between two frames (never actually on screen) still gets revealed
+    // instead of staying hidden above the viewport.
+    { rootMargin: '100000px 0px -6% 0px', threshold: 0 },
   )
   return observer
 }
