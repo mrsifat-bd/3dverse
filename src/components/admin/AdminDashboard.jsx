@@ -307,7 +307,7 @@ export default function AdminDashboard() {
         <div className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="mb-4 font-display text-lg font-semibold text-ink">Recent leads</h2>
           {orderLeads.length === 0 ? (
-            <p className="py-8 text-center text-sm text-stone">No leads yet. They appear when a customer taps Buy Now on WhatsApp.</p>
+            <p className="py-8 text-center text-sm text-stone">No leads yet. They appear when customers view products or start an order.</p>
           ) : (
             <div className="-mx-2 overflow-x-auto">
               <table className="w-full text-sm">

@@ -18,7 +18,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
-const STEPS = ['Summary', 'Delivery payment', 'Your details']
+// Address first (so the delivery charge can follow the customer's area),
+// then the bKash delivery-charge payment, then confirm.
+const STEPS = ['Summary', 'Your details', 'Delivery payment']
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth()
@@ -36,11 +38,18 @@ export default function CheckoutPage() {
   // FORMAT check only — never a payment verification.
   const txnCheck = validateBkashTransactionId(form.transaction_id)
 
-  function goToDetails() {
-    const r = validateBkashTransactionId(form.transaction_id)
-    if (!r.ok) { setTxnError(r.error); return }
-    set('transaction_id', r.value) // store the normalised ID
-    setTxnError('')
+  function detailsError(f) {
+    if (f.customer_name.trim().length < 2) return 'Enter your full name.'
+    if (!isValidBDPhone(f.customer_phone)) return 'Enter a valid 11-digit phone number.'
+    if (f.customer_address.trim().length < 10) return 'Enter your full delivery address (house / road, area).'
+    if (!f.police_station) return 'Please select your police station (thana).'
+    return ''
+  }
+
+  function goToPayment() {
+    const e = detailsError(form)
+    if (e) { setError(e); return }
+    setError('')
     setStep(3)
   }
 
@@ -76,7 +85,7 @@ export default function CheckoutPage() {
   const lines = cart?.lines || []
   const subtotal = cart?.subtotal || 0
   const weight = cart?.weight || 0
-  const delivery = useMemo(() => localDeliveryCharge(weight), [weight])
+  const delivery = useMemo(() => localDeliveryCharge(weight, form.police_station), [weight, form.police_station])
 
   if (authLoading || !user || !cart || cart.loading) {
     return <div className="container flex items-center gap-2 py-24 text-stone"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>
@@ -101,9 +110,11 @@ export default function CheckoutPage() {
 
   async function confirm() {
     setError('')
-    if (!isValidBDPhone(form.customer_phone)) { setError('Enter a valid 11-digit phone number.'); return }
-    if (form.customer_name.trim().length < 2 || form.customer_address.trim().length < 10) { setError('Enter your full name and delivery address.'); return }
-    if (!form.police_station) { setError('Please select your police station (thana).'); return }
+    const de = detailsError(form)
+    if (de) { setError(de); setStep(2); return }
+    const t = validateBkashTransactionId(form.transaction_id)
+    if (!t.ok) { setTxnError(t.error); return }
+    setTxnError('')
     setBusy(true)
     const r = await placeOrder({
       customer_name: form.customer_name,
@@ -111,13 +122,13 @@ export default function CheckoutPage() {
       customer_address: form.customer_address,
       police_station: form.police_station,
       note: form.note,
-      transaction_id: form.transaction_id,
+      transaction_id: t.value,
       items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
     })
     setBusy(false)
     if (!r.ok) { setError(r.error || 'Could not place the order.'); return }
     try { await cart.clear() } catch {}
-    const q = new URLSearchParams({ n: r.order_number, cod: String(r.cod), delivery: String(r.delivery), txn: form.transaction_id.trim() })
+    const q = new URLSearchParams({ n: r.order_number, cod: String(r.cod), delivery: String(r.delivery), txn: t.value })
     router.push(`/checkout/success?${q.toString()}`)
   }
 
@@ -157,17 +168,46 @@ export default function CheckoutPage() {
               </ul>
               <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
                 <div className="flex justify-between text-stone"><span>Product subtotal (COD)</span><span className="text-ink">{formatPrice(subtotal)}</span></div>
-                <div className="flex justify-between text-stone"><span>Delivery charge (prepaid via bKash)</span><span className="text-ink">{formatPrice(delivery)}</span></div>
+                <div className="flex justify-between text-stone"><span>Delivery charge (prepaid via bKash)</span><span className="text-ink">{form.police_station ? formatPrice(delivery) : `${formatPrice(localDeliveryCharge(weight, 'Sylhet Sadar, Sylhet'))}–${formatPrice(delivery)}`}</span></div>
+                {!form.police_station && <p className="text-xs text-stone">Sylhet city pays less. The exact charge is set by your thana in the next step.</p>}
                 <div className="flex justify-between font-semibold text-ink"><span>Pay on delivery (COD)</span><span>{formatPrice(subtotal)}</span></div>
               </div>
-              <Button className="mt-6 w-full" size="lg" onClick={() => setStep(2)}>Continue <ArrowRight className="h-4 w-4" /></Button>
+              <Button className="mt-6 w-full" size="lg" onClick={() => setStep(2)}>Continue to delivery details <ArrowRight className="h-4 w-4" /></Button>
             </div>
           )}
 
           {step === 2 && (
             <div className="rounded-2xl border border-line bg-paper p-6">
+              <h2 className="font-display text-lg font-semibold text-ink">Delivery information</h2>
+              <div className="mt-5 space-y-4">
+                <div className="space-y-1.5"><Label htmlFor="name">Full name</Label><Input id="name" value={form.customer_name} onChange={(e) => set('customer_name', e.target.value)} autoComplete="name" /></div>
+                <div className="space-y-1.5"><Label htmlFor="phone">Phone</Label><Input id="phone" inputMode="tel" value={form.customer_phone} onChange={(e) => set('customer_phone', e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" /></div>
+                <div className="space-y-1.5"><Label htmlFor="addr">Delivery address</Label><Textarea id="addr" rows={2} value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} placeholder="House / road, area" autoComplete="street-address" /></div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="police_station">Police station (thana) <span className="text-clay">*</span></Label>
+                  <PoliceStationSelect value={form.police_station} onChange={(v) => set('police_station', v)} />
+                  <p className="text-xs text-stone">Needed for courier delivery. Search by your thana or district.</p>
+                </div>
+                <div className="space-y-1.5"><Label htmlFor="note">Notes <span className="text-stone">(optional)</span></Label><Textarea id="note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} /></div>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-clay/30 bg-clay/5 p-3 text-xs leading-relaxed text-stone">
+                Delivery charge for this address: <span className="font-medium text-ink">{form.police_station ? formatPrice(delivery) : 'select your thana'}</span>, paid via bKash in the next step. Product total <span className="font-medium text-ink">{formatPrice(subtotal)}</span> is paid as <span className="font-medium text-ink">Cash on Delivery</span>.
+              </div>
+
+              {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+
+              <div className="mt-6 flex gap-3">
+                <Button variant="ghost" onClick={() => { setError(''); setStep(1) }}><ArrowLeft className="h-4 w-4" /> Back</Button>
+                <Button className="flex-1" onClick={goToPayment}>Continue to payment <ArrowRight className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="rounded-2xl border border-line bg-paper p-6">
               <h2 className="font-display text-lg font-semibold text-ink">Pay delivery charge via bKash</h2>
-              <p className="mt-1 text-sm text-stone">Your delivery charge is <span className="font-semibold text-ink">{formatPrice(delivery)}</span>. Send this via bKash to confirm your order. The product price ({formatPrice(subtotal)}) is paid on delivery.</p>
+              <p className="mt-1 text-sm text-stone">Delivery to <span className="font-medium text-ink">{form.police_station}</span> costs <span className="font-semibold text-ink">{formatPrice(delivery)}</span>. Send this via bKash to confirm your order. The product price ({formatPrice(subtotal)}) is paid on delivery.</p>
 
               <div className="mt-5 rounded-xl border border-clay/30 bg-clay/5 p-4">
                 <div className="flex items-center justify-between"><span className="text-sm text-stone">bKash number</span><button onClick={copyNumber} className="inline-flex items-center gap-1.5 text-sm font-medium text-clay">{copied ? <><Check className="h-4 w-4" /> Copied</> : <><Copy className="h-4 w-4" /> Copy</>}</button></div>
@@ -197,40 +237,15 @@ export default function CheckoutPage() {
                 <p className="text-xs text-stone">Open bKash → Send Money → send ৳{delivery} to {BKASH.number}, then paste the Transaction ID here. We&apos;ll verify your payment manually before dispatch.</p>
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
-                <Button className="flex-1" onClick={goToDetails}>Continue to delivery info <ArrowRight className="h-4 w-4" /></Button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="rounded-2xl border border-line bg-paper p-6">
-              <h2 className="font-display text-lg font-semibold text-ink">Delivery information</h2>
-              <div className="mt-5 space-y-4">
-                <div className="space-y-1.5"><Label htmlFor="name">Full name</Label><Input id="name" value={form.customer_name} onChange={(e) => set('customer_name', e.target.value)} autoComplete="name" /></div>
-                <div className="space-y-1.5"><Label htmlFor="phone">Phone</Label><Input id="phone" inputMode="tel" value={form.customer_phone} onChange={(e) => set('customer_phone', e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" /></div>
-                <div className="space-y-1.5"><Label htmlFor="addr">Delivery address</Label><Textarea id="addr" rows={2} value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} placeholder="House / road, area" autoComplete="street-address" /></div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="police_station">Police station (thana) <span className="text-clay">*</span></Label>
-                  <PoliceStationSelect value={form.police_station} onChange={(v) => set('police_station', v)} />
-                  <p className="text-xs text-stone">Needed for courier delivery. Search by your thana or district.</p>
-                </div>
-                <div className="space-y-1.5"><Label htmlFor="note">Notes <span className="text-stone">(optional)</span></Label><Textarea id="note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} /></div>
-              </div>
-
-              <div className="mt-5 rounded-xl border border-clay/30 bg-clay/5 p-3 text-xs leading-relaxed text-stone">
-                Delivery charge <span className="font-medium text-ink">{formatPrice(delivery)}</span> paid via bKash (txn {form.transaction_id || '—'}). Product total <span className="font-medium text-ink">{formatPrice(subtotal)}</span> collected as <span className="font-medium text-ink">Cash on Delivery</span>.
-              </div>
-
               {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
               <div className="mt-6 flex gap-3">
-                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}><ArrowLeft className="h-4 w-4" /> Back</Button>
+                <Button variant="ghost" onClick={() => { setError(''); setStep(2) }} disabled={busy}><ArrowLeft className="h-4 w-4" /> Back</Button>
                 <Button className="flex-1" onClick={confirm} disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Placing order…</> : 'Confirm order'}</Button>
               </div>
             </div>
           )}
+
         </motion.div>
       </AnimatePresence>
     </div>

@@ -85,7 +85,19 @@ export default function CommentsTable() {
                   </div>
                   <span className="text-xs text-stone">{fmt(r.created_at)}</span>
                 </div>
+                {(r.rating || r.verified) && (
+                  <p className="mt-2 text-sm text-ink">
+                    {r.rating ? <span className="text-clay">{'★'.repeat(r.rating)}<span className="text-line">{'★'.repeat(5 - r.rating)}</span></span> : null}
+                    {r.verified && <span className="ml-2 rounded-full bg-[#5B8A5B]/10 px-2 py-0.5 text-xs font-medium text-[#5B8A5B]">Verified buyer</span>}
+                  </p>
+                )}
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-stone">{r.comment}</p>
+                {r.photo_url && (
+                  <a href={r.photo_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block h-24 w-24 overflow-hidden rounded-xl border border-line">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={r.photo_url} alt="Customer photo" loading="lazy" className="h-full w-full object-cover" />
+                  </a>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {r.status !== 'approved' && <Button size="sm" onClick={() => act(r, 'approved')} disabled={busyId === r.id}><Check className="h-3.5 w-3.5" /> Approve</Button>}
                   {r.status !== 'rejected' && <Button size="sm" variant="ghost" onClick={() => act(r, 'rejected')} disabled={busyId === r.id}><X className="h-3.5 w-3.5" /> Reject</Button>}

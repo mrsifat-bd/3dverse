@@ -1,7 +1,7 @@
 import './globals.css'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getSettings } from '@/lib/settings'
-import { getPublicCategories } from '@/lib/categories'
+import { getPublicCategories, nonEmptyCategories } from '@/lib/categories'
 import { SettingsProvider } from '@/components/SettingsProvider'
 import { CartProvider } from '@/components/CartProvider'
 import { AuthProvider } from '@/hooks/useAuth'
@@ -47,24 +47,24 @@ const hind = localFont({
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  // Every browser tab shows exactly "3D Verse BD". The template has no %s, so
-  // any page-specific title collapses to this same value site-wide.
+  // Pages set their own title; the template adds the brand once at the end,
+  // e.g. "Human Heart Model 3D Printed | 3D Verse BD".
   title: {
-    default: '3D Verse BD',
-    template: '3D Verse BD',
+    default: '3D Verse BD | 3D Printing in Sylhet, Bangladesh',
+    template: '%s | 3D Verse BD',
   },
   description:
-    'Custom 3D printed anatomical models, keyrings, decor and gifts, made to order in Sylhet. Order online: delivery charge via bKash, product price cash on delivery.',
-  keywords: ['3D printing', 'Sylhet', 'anatomical models', 'custom keyrings', 'Bangladesh', '3D Verse', '3DVerse'],
+    '3D printed anatomical and bone models, Islamic décor, desk organisers and phone stands, made to order in Sylhet. Order online: delivery charge via bKash, product price cash on delivery.',
+  keywords: ['3D printing Bangladesh', '3D print Sylhet', 'anatomical models', 'bone models', 'medical models Bangladesh', 'Islamic decor', 'phone stand', 'pen holder', '3D Verse', '3DVerse', '৩ডি প্রিন্টিং'],
   openGraph: {
-    title: `${BUSINESS.name} — Custom 3D Printed Products`,
+    title: '3D Verse BD | 3D Printing in Sylhet, Bangladesh',
     description: 'Made-to-order 3D printed products. Order online: delivery charge via bKash, product price cash on delivery.',
     url: SITE_URL,
-    siteName: BUSINESS.name,
+    siteName: '3D Verse BD',
     locale: 'en_US',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: BUSINESS.name },
+  twitter: { card: 'summary_large_image', title: '3D Verse BD | 3D Printing in Sylhet, Bangladesh' },
   verification: { google: 'GfSE00tB2Iskt-kbkNlIhoYFzxEXvjq5TjQkreii--c' },
   icons: {
     icon: [
@@ -98,7 +98,7 @@ export default async function RootLayout({ children }) {
                 <DemoBanner />
                 <Navbar />
                 <main className="flex-1">{children}</main>
-                <Footer categories={categories} />
+                <Footer categories={nonEmptyCategories(categories)} />
               </div>
               <ScrollToTop />
               <WhatsAppButton />

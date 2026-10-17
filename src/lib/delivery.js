@@ -14,20 +14,31 @@ export function totalWeight(items = []) {
   )
 }
 
-// Local mirror of the tier rules: <=1kg ৳120, <=2kg ৳210, <=3kg ৳240, then +৳30/kg.
-export function localDeliveryCharge(weightKg) {
+// Sylhet city (cheaper courier zone). Matches public.is_sylhet_city() in
+// migration_audit_fixes.sql — police-station labels are "Thana, District".
+const SYLHET_CITY = new Set(['sylhet sadar, sylhet', 'dakshinsurma, sylhet'])
+export function isSylhetCity(policeStation) {
+  return SYLHET_CITY.has(String(policeStation || '').trim().toLowerCase())
+}
+
+// Local mirror of the tier rules (server: compute_delivery_charge_zone).
+//   Rest of Bangladesh: <=1kg ৳120, <=2kg ৳210, <=3kg ৳240, then +৳30/kg.
+//   Sylhet city:        ৳50 less on each tier (৳70 / ৳160 / ৳190).
+// Without a police station yet, the outside-Sylhet price is shown.
+export function localDeliveryCharge(weightKg, policeStation) {
   const w = Number(weightKg) || 0
-  if (w <= 1) return 120
-  if (w <= 2) return 210
-  if (w <= 3) return 240
-  return 240 + Math.ceil(w - 3) * 30
+  const off = isSylhetCity(policeStation) ? 50 : 0
+  if (w <= 1) return 120 - off
+  if (w <= 2) return 210 - off
+  if (w <= 3) return 240 - off
+  return 240 - off + Math.ceil(w - 3) * 30
 }
 
 // Authoritative charge from the database function (falls back to local mirror).
-export async function serverDeliveryCharge(weightKg) {
+export async function serverDeliveryCharge(weightKg, policeStation = '') {
   try {
-    const { data, error } = await supabase.rpc('compute_delivery_charge', { p_weight: Number(weightKg) || 0 })
+    const { data, error } = await supabase.rpc('compute_delivery_charge_zone', { p_weight: Number(weightKg) || 0, p_police_station: policeStation || '' })
     if (!error && data != null) return Number(data)
   } catch {}
-  return localDeliveryCharge(weightKg)
+  return localDeliveryCharge(weightKg, policeStation)
 }

@@ -26,11 +26,12 @@ export default function CheckoutSuccessPage({ searchParams }) {
         </div>
 
         <p className="mt-4 text-sm leading-relaxed text-stone">
-          Thank you! We&apos;ll verify your bKash delivery payment and confirm your order shortly. You can follow its status in your account.
+          Thank you! We&apos;ll verify your bKash delivery payment and confirm your order shortly. You can follow its status in your account or on the Track order page with your order number and phone number.
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
           <Link href="/account/orders" className="btn-primary">View my orders</Link>
+          {n && <Link href={`/track?n=${encodeURIComponent(n)}`} className="btn-ghost">Track this order</Link>}
           <Link href="/shop" className="btn-ghost">Continue shopping</Link>
         </div>
       </div>

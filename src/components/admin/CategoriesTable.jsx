@@ -11,6 +11,9 @@ export default function CategoriesTable() {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', slug: '', blurb: '', sort: 0 })
+  // The slug follows the name until the admin edits it by hand. (It used to
+  // freeze after the first letter, which is how "Islamic Items" got /category/i.)
+  const [slugEdited, setSlugEdited] = useState(false)
   const [adding, setAdding] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
@@ -24,12 +27,13 @@ export default function CategoriesTable() {
     e.preventDefault()
     setError('')
     const name = form.name.trim()
-    const slug = (form.slug.trim() || slugify(name))
+    const slug = slugify(form.slug.trim() || name)
     if (!name || !slug) { setError('Name is required.'); return }
     setAdding(true)
     try {
       await createCategory({ name, slug, blurb: form.blurb, sort: Number(form.sort) || 0 })
       setForm({ name: '', slug: '', blurb: '', sort: 0 })
+      setSlugEdited(false)
       await load()
     } catch (e) { setError(e.message) } finally { setAdding(false) }
   }
@@ -62,8 +66,8 @@ export default function CategoriesTable() {
       <form onSubmit={add} className="mb-6 rounded-2xl border border-line bg-paper p-5">
         <p className="font-display text-lg font-semibold text-ink">New category</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label htmlFor="cname">Name</Label><Input id="cname" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: f.slug || slugify(e.target.value) }))} placeholder="e.g. Keyrings" /></div>
-          <div className="space-y-1.5"><Label htmlFor="cslug">Slug</Label><Input id="cslug" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="keyrings" /></div>
+          <div className="space-y-1.5"><Label htmlFor="cname">Name</Label><Input id="cname" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: slugEdited ? f.slug : slugify(e.target.value) }))} placeholder="e.g. Plant Pots" /></div>
+          <div className="space-y-1.5"><Label htmlFor="cslug">Slug</Label><Input id="cslug" value={form.slug} onChange={(e) => { setSlugEdited(true); setForm((f) => ({ ...f, slug: e.target.value })) }} placeholder="plant-pots" /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="cblurb">Blurb</Label><Input id="cblurb" value={form.blurb} onChange={(e) => setForm((f) => ({ ...f, blurb: e.target.value }))} placeholder="Short description shown on the category card" /></div>
           <div className="space-y-1.5"><Label htmlFor="csort">Sort order</Label><Input id="csort" inputMode="numeric" value={form.sort} onChange={(e) => setForm((f) => ({ ...f, sort: e.target.value.replace(/[^0-9]/g, '') }))} /></div>
         </div>

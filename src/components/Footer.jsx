@@ -49,6 +49,15 @@ export default function Footer({ categories = [] }) {
             <li><Link href="/about" className="hover:text-clay">About us</Link></li>
             <li><Link href="/contact" className="hover:text-clay">Contact</Link></li>
           </ul>
+          <h3 className="mt-8 text-sm font-medium text-ink">Help</h3>
+          <ul className="mt-4 space-y-2 text-sm text-stone">
+            <li><Link href="/track" className="hover:text-clay">Track your order</Link></li>
+            <li><Link href="/faq" className="hover:text-clay">FAQ</Link></li>
+            <li><Link href="/shipping-policy" className="hover:text-clay">Shipping &amp; delivery</Link></li>
+            <li><Link href="/refund-policy" className="hover:text-clay">Refunds &amp; returns</Link></li>
+            <li><Link href="/privacy-policy" className="hover:text-clay">Privacy policy</Link></li>
+            <li><Link href="/terms" className="hover:text-clay">Terms &amp; conditions</Link></li>
+          </ul>
         </div>
 
         <div>

@@ -10,7 +10,7 @@ import { FadeIn } from '@/components/Motion'
 import { getSettings } from '@/lib/settings'
 
 export const metadata = {
-  title: 'About us',
+  title: 'About Us',
   description:
     'About 3D Verse — a 3D printing studio in Sylhet, Bangladesh focused on precise anatomical & educational models, personalised pieces and useful everyday prints.',
   alternates: { canonical: '/about' },

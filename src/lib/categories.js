@@ -23,6 +23,19 @@ export async function getPublicCategories() {
   return FALLBACK
 }
 
+// { slug: name } for every active category — used to label product cards.
+export async function getCategoryNames() {
+  const cats = await getPublicCategories()
+  return Object.fromEntries(cats.map((c) => [c.slug, c.name]))
+}
+
+// Categories that actually have products (the DB ranking gives a count; the
+// built-in fallback list has none, so it is kept as-is). Empty categories are
+// left out of the homepage, footer and sitemap so nobody lands on a blank page.
+export function nonEmptyCategories(cats = []) {
+  return cats.filter((c) => c.product_count == null || Number(c.product_count) > 0)
+}
+
 export async function getCategoryBySlug(slug) {
   const cats = await getPublicCategories()
   return cats.find((c) => c.slug === slug) || null

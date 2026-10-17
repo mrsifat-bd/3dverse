@@ -78,7 +78,7 @@ export default function ContactInquiryForm({ whatsappNumber }) {
           </Select>
         </Field>
         <Field id="project" label="Project / product name" hint="Optional">
-          <Input id="project" value={form.project} onChange={(e) => set('project', e.target.value)} placeholder="e.g. Skull model, keyring…" />
+          <Input id="project" value={form.project} onChange={(e) => set('project', e.target.value)} placeholder="e.g. Skull model, name stand…" />
         </Field>
         <Field id="quantity" label="Quantity" hint="Optional">
           <Input id="quantity" inputMode="numeric" value={form.quantity} onChange={(e) => set('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="e.g. 10" />

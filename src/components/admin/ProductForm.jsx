@@ -28,7 +28,7 @@ export default function ProductForm({ initial }) {
     tags: Array.isArray(initial?.tags) ? initial.tags.join(', ') : initial?.tags || '',
     in_stock: initial?.in_stock ?? true,
     is_popular: initial?.is_popular ?? false,
-    weight_kg: initial?.weight_kg ?? 0.5,
+    weight_kg: initial?.weight_kg ?? '',
     discount_percent: initial?.discount_percent ?? 0,
     production_cost: initial?.production_cost ?? '',
     review_url: initial?.review_url || '',
@@ -58,6 +58,9 @@ export default function ProductForm({ initial }) {
   useEffect(() => () => { filesRef.current.clear() }, [])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Shop rule: filament grams = price ÷ 6; parcel weight = filament + 80 g packaging.
+  const suggestedWeight = Number(form.price) > 0 ? Math.round(((Number(form.price) / 6) + 80)) / 1000 : null
+  const [weightTouched, setWeightTouched] = useState(Boolean(initial?.weight_kg) && Number(initial?.weight_kg) !== 0.5)
   const patchPending = (key, patch) => setPending((prev) => prev.map((p) => (p.key === key ? { ...p, ...patch } : p)))
   const busyCount = pending.filter((p) => p.stage !== 'error').length
   const uploading = busyCount > 0
@@ -161,7 +164,8 @@ export default function ProductForm({ initial }) {
     e.preventDefault()
     setSaving(true)
     setError('')
-    const payload = { ...form, slug: form.slug || slugify(form.name), image_url: images, faqs }
+    const weight_kg = !weightTouched && suggestedWeight != null ? suggestedWeight : form.weight_kg
+    const payload = { ...form, weight_kg, slug: form.slug || slugify(form.name), image_url: images, faqs }
     try {
       if (editing) await updateProduct(initial.id, payload)
       else await createProduct(payload)
@@ -226,8 +230,20 @@ export default function ProductForm({ initial }) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="weight_kg">Weight (kg)</Label>
-          <Input id="weight_kg" type="number" min="0" step="0.05" value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} placeholder="0.5" />
-          <p className="text-xs text-stone">Used to calculate the delivery charge at checkout.</p>
+          <Input id="weight_kg" type="number" min="0" step="0.001"
+            value={weightTouched || suggestedWeight == null ? form.weight_kg : suggestedWeight}
+            onChange={(e) => { setWeightTouched(true); set('weight_kg', e.target.value) }}
+            placeholder={suggestedWeight != null ? String(suggestedWeight) : 'e.g. 0.25'} />
+          <p className="text-xs text-stone">
+            Sets the delivery charge.{' '}
+            {suggestedWeight != null && (
+              <>From the price: {Math.round(Number(form.price) / 6)} g filament + 80 g packaging = <span className="font-medium text-ink">{suggestedWeight} kg</span>
+                {weightTouched && Number(form.weight_kg) !== suggestedWeight && (
+                  <> · <button type="button" className="text-clay hover:underline" onClick={() => { setWeightTouched(false); set('weight_kg', suggestedWeight) }}>use this</button></>
+                )}
+              </>
+            )}
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="tags">Tags (comma-separated)</Label>

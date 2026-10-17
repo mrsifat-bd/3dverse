@@ -7,7 +7,7 @@ import { IconWhatsapp } from '@/components/icons'
 import { getSettings } from '@/lib/settings'
 
 export const metadata = {
-  title: 'Contact 3D Verse | 3D Printing & Custom Manufacturing in Bangladesh',
+  title: 'Contact Us | Custom 3D Printing in Bangladesh',
   description:
     'Contact 3D Verse for custom 3D printing, medical and anatomical models, personalised products, bulk orders and custom design services from Sylhet, Bangladesh.',
   alternates: { canonical: '/contact' },

@@ -36,7 +36,7 @@ export default function ProductCard({ product }) {
         </div>
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <p className="text-[11px] uppercase tracking-wide text-stone">{categoryName(product.category)}</p>
+        <p className="text-[11px] uppercase tracking-wide text-stone">{product.category_name || categoryName(product.category)}</p>
         <h3 className="mt-1 line-clamp-2 text-sm font-medium text-ink">{product.name}</h3>
         <div className="mt-auto flex items-center justify-between pt-3">
           <span className="flex items-baseline gap-1.5">

@@ -77,7 +77,7 @@ export async function getAllSlugs() {
 // browser as page data, so dropping FAQs, links, weight and extra photos keeps
 // the shop / category / home payloads small. (Search still covers name,
 // description, category and tags, exactly as before.)
-export function toListProduct(p) {
+export function toListProduct(p, categoryNames) {
   if (!p) return p
   const img = p.image_url
   return {
@@ -87,12 +87,42 @@ export function toListProduct(p) {
     price: p.price,
     description: p.description,
     category: p.category,
+    category_name: categoryNames?.[p.category] || p.category_name || undefined,
     tags: p.tags,
     image_url: Array.isArray(img) ? img.slice(0, 1) : img,
     in_stock: p.in_stock,
     created_at: p.created_at,
     discount_percent: p.discount_percent,
     is_popular: p.is_popular,
+  }
+}
+
+// SEO page title for a product, e.g. "Human Heart Model 3D Printed".
+// (The site layout appends " | 3D Verse BD".)
+export function productSeoTitle(p) {
+  let name = String(p?.name || '').trim()
+  if (p?.category === 'medical-bone-models' && !/model|set|skeleton|kit/i.test(name)) name += ' Model'
+  return /3d/i.test(name) ? name : `${name} 3D Printed`
+}
+
+// Approved, star-rated reviews for structured data (Google only accepts
+// ratings from real reviews, so nothing is emitted until there are some).
+export async function getReviewSummary(productId) {
+  if (!isSupabaseConfigured || !productId) return { count: 0, average: 0, reviews: [] }
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('user_name, comment, rating, created_at')
+      .eq('product_id', productId)
+      .eq('status', 'approved')
+      .not('rating', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error || !data?.length) return { count: 0, average: 0, reviews: [] }
+    const average = data.reduce((s, r) => s + Number(r.rating), 0) / data.length
+    return { count: data.length, average: Math.round(average * 10) / 10, reviews: data }
+  } catch {
+    return { count: 0, average: 0, reviews: [] }
   }
 }
 

@@ -61,26 +61,50 @@ export async function toggleWishlist(productId) {
 
 // ---- Reviews / comments -------------------------------------------------
 export async function getReviews(productId) {
-  const { data, error } = await supabase
+  const q = (cols) => supabase
     .from('comments')
-    .select('id, user_name, comment, created_at')
+    .select(cols)
     .eq('product_id', productId)
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
+  let { data, error } = await q('id, user_name, comment, created_at, rating, photo_url, verified')
+  if (error) ({ data, error } = await q('id, user_name, comment, created_at')) // before the ratings migration
   if (error) throw error
   return data || []
 }
 
-export async function submitReview(productId, comment, userName) {
+// rating: 1–5 (required). photoUrl: optional, from /api/review-photos.
+// "verified" is set by the database (verified buyer), never by the browser.
+export async function submitReview(productId, comment, userName, rating, photoUrl = '') {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('LOGIN_REQUIRED')
   const text = String(comment || '').trim()
+  const stars = Math.round(Number(rating))
+  if (!(stars >= 1 && stars <= 5)) throw new Error('Please choose a star rating.')
   if (text.length < 3) throw new Error('Please write a bit more.')
   const { error } = await supabase.from('comments').insert({
-    user_id: user.id, product_id: productId, comment: text.slice(0, 1000),
+    user_id: user.id, product_id: productId, comment: text.slice(0, 1000), rating: stars,
+    photo_url: photoUrl || '',
     user_name: (userName || '').trim() || (user.email || '').split('@')[0], status: 'pending',
   })
   if (error) throw error
+}
+
+// Uploads a customer's review photo through the server pipeline (validated,
+// converted to WebP, metadata stripped). Returns the public URL.
+export async function uploadReviewPhoto(file) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('LOGIN_REQUIRED')
+  // Phone photos are often 5–10 MB; send a 1600px copy (the server re-checks
+  // and re-encodes it anyway).
+  const { compressImage } = await import('./imageCompress')
+  const small = await compressImage(file, { maxDim: 1600, quality: 0.88 })
+  const body = new FormData()
+  body.append('file', small)
+  const res = await fetch('/api/review-photos', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` }, body })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || 'The photo could not be uploaded.')
+  return json.url
 }
 
 // Admin moderation.

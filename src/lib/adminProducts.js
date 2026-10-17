@@ -37,7 +37,10 @@ function normalise(payload) {
     image_url: Array.isArray(payload.image_url) ? payload.image_url : [],
     in_stock: Boolean(payload.in_stock),
     is_popular: Boolean(payload.is_popular),
-    weight_kg: payload.weight_kg === '' || payload.weight_kg == null ? 0.5 : Number(payload.weight_kg),
+    // No weight given: use the shop rule (price ÷ 6 g filament + 80 g packaging).
+    weight_kg: payload.weight_kg === '' || payload.weight_kg == null
+      ? (Number(payload.price) > 0 ? Math.round(Number(payload.price) / 6 + 80) / 1000 : 0.5)
+      : Number(payload.weight_kg),
     discount_percent: Math.max(0, Math.min(99, Math.round(Number(payload.discount_percent) || 0))),
     review_url: payload.review_url?.trim() || '',
     extra_link: payload.extra_link?.trim() || '',

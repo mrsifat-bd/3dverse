@@ -30,6 +30,18 @@ const nextConfig = {
     contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // Old URLs that changed (kept forever so links and Google results still work).
+  async redirects() {
+    return [
+      { source: '/category/i', destination: '/category/islamic-items', permanent: true },
+      { source: '/product/porsche-911-gt3-rs-wall-art', destination: '/product/gt-sports-car-wall-art', permanent: true },
+      { source: '/privacy', destination: '/privacy-policy', permanent: true },
+      { source: '/refund', destination: '/refund-policy', permanent: true },
+      { source: '/return-policy', destination: '/refund-policy', permanent: true },
+      { source: '/shipping', destination: '/shipping-policy', permanent: true },
+      { source: '/terms-and-conditions', destination: '/terms', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {

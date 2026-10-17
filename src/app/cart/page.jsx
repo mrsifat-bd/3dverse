@@ -84,6 +84,7 @@ export default function CartPage() {
             <div className="flex justify-between text-stone"><span>Items ({count})</span><span className="text-ink">{formatPrice(subtotal)}</span></div>
             <div className="flex justify-between text-stone"><span>Total weight</span><span className="text-ink">{weight.toFixed(2)} kg</span></div>
             <div className="flex justify-between text-stone"><span>Delivery charge</span><span className="text-ink">{formatPrice(delivery)}</span></div>
+            <p className="text-xs text-stone">Sylhet city: {formatPrice(localDeliveryCharge(weight, 'Sylhet Sadar, Sylhet'))}. Final amount is set by your thana at checkout.</p>
           </div>
           <div className="mt-4 rounded-xl border border-clay/30 bg-clay/5 p-3 text-xs leading-relaxed text-stone">
             <span className="font-medium text-ink">Product total ({formatPrice(subtotal)})</span> is paid <span className="font-medium text-ink">Cash on Delivery</span>. The <span className="font-medium text-ink">delivery charge ({formatPrice(delivery)})</span> is prepaid via bKash at checkout.

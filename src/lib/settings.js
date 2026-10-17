@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS = {
   description: BUSINESS.description,
   hero_headline: 'Custom 3D printed products, made for you.',
   hero_subtext:
-    'Anatomical models, personalised keyrings, home decor and gifts — designed and printed on demand. Browse the catalog, add to cart and check out online with cash on delivery.',
+    'Anatomical and bone models, Islamic décor, desk organisers and phone stands — designed and printed on demand. Browse the catalog, add to cart and check out online with cash on delivery.',
   social_facebook: BUSINESS.social.facebook,
   social_instagram: BUSINESS.social.instagram,
   social_tiktok: BUSINESS.social.tiktok,

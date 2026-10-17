@@ -8,7 +8,7 @@ export const BUSINESS = {
   whatsappNumber: '8801357141040',
   tagline: 'Custom 3D printed products, made in Sylhet.',
   description:
-    '3D Verse designs and 3D-prints made-to-order products from our studio in Sylhet, Bangladesh — anatomical and bone models for students and clinics, custom keyrings, home decor, and personalised gifts. Every piece is printed on demand, so we can tailor size, colour, and detail to exactly what you need.',
+    '3D Verse designs and 3D-prints made-to-order products from our studio in Sylhet, Bangladesh — anatomical and bone models for students and clinics, Islamic décor, desk organisers, phone stands and gifts. Every piece is printed on demand, so we can tailor size, colour, and detail to exactly what you need.',
   social: {
     facebook: 'https://www.facebook.com/3dversebd',
     instagram: 'https://www.instagram.com/3dversebd/',
@@ -37,8 +37,19 @@ export const CATEGORIES = [
   { slug: 'gifts', name: 'Gifts', blurb: 'Thoughtful, made-to-order gifts for every occasion.' },
 ]
 
-export function categoryName(slug) {
-  return CATEGORIES.find((c) => c.slug === slug)?.name || slug
+// Last-resort label for a category slug that isn't in the list above (the
+// real names come from the database — see lib/categories.js). Never shows a
+// raw slug: "desktop-accessories" -> "Desktop Accessories".
+export function prettifySlug(slug) {
+  return String(slug || '')
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+export function categoryName(slug, names) {
+  return names?.[slug] || CATEGORIES.find((c) => c.slug === slug)?.name || prettifySlug(slug)
 }
 
 // Admin allowlist for CLIENT-side gating (hiding admin UI from customers).

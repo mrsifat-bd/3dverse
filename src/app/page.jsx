@@ -1,7 +1,9 @@
 import Link from 'next/link'
-import { ArrowRight, Flame, Bone, Cpu, Fish, PenTool, Lamp, Gift } from 'lucide-react'
+import { ArrowRight, Flame, Bone, Cpu, Fish, PenTool, Lamp, Gift, Smartphone, Moon, Monitor, Sprout, Frame } from 'lucide-react'
+import { SITE_URL } from '@/lib/config'
+import { BN_FAQ } from '@/lib/faq'
 import { getFeaturedProducts, toListProduct } from '@/lib/products'
-import { getPublicCategories } from '@/lib/categories'
+import { getPublicCategories, nonEmptyCategories } from '@/lib/categories'
 import { getSettings } from '@/lib/settings'
 import ProductGrid from '@/components/ProductGrid'
 import SocialLinks from '@/components/SocialLinks'
@@ -16,7 +18,15 @@ const CATEGORY_ICONS = {
   'desk-accessories': PenTool,
   'home-decor': Lamp,
   gifts: Gift,
+  'pen-holder': PenTool,
+  'phone-stand': Smartphone,
+  'islamic-items': Moon,
+  'desktop-accessories': Monitor,
+  'plant-pot': Sprout,
+  'wall-decoration': Frame,
+  'aquarium-accessories': Fish,
 }
+
 
 export const revalidate = 60
 
@@ -26,13 +36,53 @@ export const metadata = {
 
 export default async function Home() {
   const [featured, s, cats] = await Promise.all([getFeaturedProducts(8), getSettings(), getPublicCategories()])
+  const catNames = Object.fromEntries(cats.map((c) => [c.slug, c.name]))
   const CATEGORY_CARDS = [
     { name: 'Popular', blurb: 'Our most-loved, best-selling prints — start here.', href: '/shop?popular=1', Icon: Flame, featured: true },
-    ...cats.map((c) => ({ name: c.name, blurb: c.blurb, href: `/category/${c.slug}`, Icon: CATEGORY_ICONS[c.slug] || Flame })),
+    ...nonEmptyCategories(cats).map((c) => ({ name: c.name, blurb: c.blurb, href: `/category/${c.slug}`, Icon: CATEGORY_ICONS[c.slug] || Flame })),
   ]
+
+  const businessLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': ['Organization', 'Store'],
+        '@id': `${SITE_URL}/#business`,
+        name: '3D Verse BD',
+        alternateName: ['3D Verse', '3DVerse', 'থ্রিডি ভার্স'],
+        url: SITE_URL,
+        logo: `${SITE_URL}/logo.png`,
+        image: `${SITE_URL}/opengraph-image.png`,
+        description: s.description,
+        email: s.email,
+        telephone: s.phone,
+        address: { '@type': 'PostalAddress', addressLocality: 'Sylhet', addressRegion: 'Sylhet Division', addressCountry: 'BD' },
+        areaServed: { '@type': 'Country', name: 'Bangladesh' },
+        priceRange: '৳৳',
+        currenciesAccepted: 'BDT',
+        paymentAccepted: 'Cash on delivery, bKash',
+        sameAs: [s.social_facebook, s.social_instagram, s.social_tiktok, s.social_youtube, s.social_telegram].filter(Boolean),
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: '3D Verse BD',
+        inLanguage: ['en', 'bn'],
+        publisher: { '@id': `${SITE_URL}/#business` },
+        potentialAction: { '@type': 'SearchAction', target: `${SITE_URL}/shop?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+      },
+      {
+        '@type': 'FAQPage',
+        inLanguage: 'bn',
+        mainEntity: BN_FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      },
+    ],
+  }
 
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(businessLd).replace(/</g, '\\u003c') }} />
       {/* Hero */}
       <section className="border-b border-line">
         <div className="container grid items-center gap-10 py-16 md:grid-cols-2 md:py-24">
@@ -97,7 +147,28 @@ export default async function Home() {
           <Link href="/shop" className="text-sm font-medium text-clay hover:underline">View all →</Link>
         </div>
         <div className="mt-8">
-          <ProductGrid products={featured.map(toListProduct)} />
+          <ProductGrid products={featured.map((p) => toListProduct(p, catNames))} />
+        </div>
+      </section>
+
+      {/* Bangla: who we are + FAQ (for Bangla searches and Bangla-first visitors) */}
+      <section lang="bn" className="border-t border-line font-bangla">
+        <div className="container grid gap-10 py-16 md:grid-cols-[1fr_1.3fr]">
+          <div>
+            <h2 className="font-bangla text-2xl font-semibold text-ink">৩ডি ভার্স: সিলেটের ৩ডি প্রিন্টিং স্টুডিও</h2>
+            <p className="mt-4 text-sm leading-relaxed text-stone">
+              আমরা সিলেটে নিজেদের স্টুডিওতে অর্ডার অনুযায়ী ৩ডি প্রিন্ট করি। মেডিকেল ও হাড়ের অ্যানাটমি মডেল, ইসলামিক ডেকর, পেন হোল্ডার, ফোন স্ট্যান্ড ও ডেস্কের নানা জিনিস পাওয়া যায়, চাইলে নিজের ডিজাইনও প্রিন্ট করাতে পারেন। সারা বাংলাদেশে ডেলিভারি দেওয়া হয়, পণ্যের দাম ক্যাশ অন ডেলিভারি।
+            </p>
+            <Link href="/shop" className="btn-primary mt-6">সব পণ্য দেখুন <ArrowRight className="h-4 w-4" /></Link>
+          </div>
+          <div className="space-y-3">
+            {BN_FAQ.map((f) => (
+              <details key={f.q} className="group rounded-xl border border-line bg-paper px-5 py-4">
+                <summary className="cursor-pointer list-none text-sm font-medium text-ink marker:hidden">{f.q}</summary>
+                <p className="mt-2 text-sm leading-relaxed text-stone">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -114,7 +185,7 @@ export default async function Home() {
               <h3 className="font-display text-lg font-semibold text-ink">Ordering is simple</h3>
               <ol className="mt-4 space-y-3 text-sm text-stone">
                 <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-clay text-xs font-medium text-paper">1</span> Browse and add products to your cart.</li>
-                <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-clay text-xs font-medium text-paper">2</span> Check out &mdash; prepay only the delivery charge via bKash.</li>
+                <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-clay text-xs font-medium text-paper">2</span> Check out &mdash; add your address, then prepay only the delivery charge via bKash.</li>
                 <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-clay text-xs font-medium text-paper">3</span> We confirm your order and deliver &mdash; pay for the product on delivery.</li>
               </ol>
             </div>

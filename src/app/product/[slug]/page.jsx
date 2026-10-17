@@ -1,10 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
-import { getProductBySlug, getRelatedProducts, getAllSlugs } from '@/lib/products'
+import { ArrowRight, Star } from 'lucide-react'
+import { getProductBySlug, getRelatedProducts, getAllSlugs, productSeoTitle, getReviewSummary, toListProduct } from '@/lib/products'
+import { getCategoryNames } from '@/lib/categories'
 import { formatPrice, allImages, firstImage, hasDiscount, effectivePrice, productVideoUrl } from '@/lib/format'
 import { categoryName, SITE_URL } from '@/lib/config'
-import { getSettings } from '@/lib/settings'
 import ProductGallery from '@/components/ProductGallery'
 import ProductCard from '@/components/ProductCard'
 import AddToCartButton from '@/components/AddToCartButton'
@@ -28,16 +28,23 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const product = await getProductBySlug(params.slug)
-  if (!product) return { title: 'Product not found' }
+  if (!product) return { title: 'Product not found', robots: { index: false } }
   const image = firstImage(product)
+  const title = productSeoTitle(product)
+  const price = formatPrice(effectivePrice(product))
+  const summary = String(product.description || '').replace(/\s+/g, ' ').trim()
+  const description = `${product.name} price in Bangladesh: ${price}. ${summary}`.slice(0, 158)
   return {
-    title: product.name,
-    description: product.description?.slice(0, 160),
+    title,
+    description,
     alternates: { canonical: `/product/${product.slug}` },
     openGraph: {
-      title: product.name,
-      description: product.description?.slice(0, 160),
-      images: image ? [image] : [],
+      title: `${title} | 3D Verse BD`,
+      description,
+      url: `/product/${product.slug}`,
+      siteName: '3D Verse BD',
+      // Without a product photo the site-wide share image is used instead.
+      ...(image && /^https?:\/\//.test(image) ? { images: [{ url: image, alt: product.name }] } : {}),
       type: 'website',
     },
   }
@@ -47,40 +54,74 @@ export default async function ProductPage({ params }) {
   const product = await getProductBySlug(params.slug)
   if (!product) notFound()
 
-  const related = await getRelatedProducts(product)
-  const settings = await getSettings()
+  const [related, catNames, ratings] = await Promise.all([
+    getRelatedProducts(product),
+    getCategoryNames(),
+    getReviewSummary(product.id),
+  ])
+  const catName = categoryName(product.category, catNames)
+  const price = effectivePrice(product)
   const images = allImages(product)
   // Video CTA shows ONLY when THIS product has its own valid video link.
   // No category-based or global fallback — a videoless product never inherits
   // another product's (or the site-wide) video.
   const reviewUrl = productVideoUrl(product)
 
+  const productUrl = `${SITE_URL}/product/${product.slug}`
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: product.description,
-    image: images,
-    category: categoryName(product.category),
-    brand: { '@type': 'Brand', name: settings.business_name },
+    image: images.filter((u) => /^https?:\/\//.test(u)),
+    sku: product.slug,
+    category: catName,
+    brand: { '@type': 'Brand', name: '3D Verse BD' },
     offers: {
       '@type': 'Offer',
-      price: effectivePrice(product),
+      price,
       priceCurrency: 'BDT',
       availability: product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
-      url: `${SITE_URL}/product/${product.slug}`,
+      itemCondition: 'https://schema.org/NewCondition',
+      url: productUrl,
+      seller: { '@type': 'Organization', name: '3D Verse BD' },
+      hasMerchantReturnPolicy: { '@id': `${SITE_URL}/refund-policy` },
     },
+    // Only real, approved customer ratings — never invented.
+    ...(ratings.count > 0
+      ? {
+          aggregateRating: { '@type': 'AggregateRating', ratingValue: ratings.average, reviewCount: ratings.count, bestRating: 5, worstRating: 1 },
+          review: ratings.reviews.slice(0, 5).map((r) => ({
+            '@type': 'Review',
+            author: { '@type': 'Person', name: r.user_name || 'Customer' },
+            datePublished: String(r.created_at).slice(0, 10),
+            reviewBody: r.comment,
+            reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+          })),
+        }
+      : {}),
+  }
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${SITE_URL}/shop` },
+      { '@type': 'ListItem', position: 3, name: catName, item: `${SITE_URL}/category/${product.category}` },
+      { '@type': 'ListItem', position: 4, name: product.name, item: productUrl },
+    ],
   }
 
   return (
     <div className="container py-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
       <LeadTracker product={{ id: product.id, name: product.name, slug: product.slug, category: product.category }} />
 
       <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs text-stone" aria-label="Breadcrumb">
         <Link href="/" className="hover:text-clay">Home</Link><span>/</span>
         <Link href="/shop" className="hover:text-clay">Shop</Link><span>/</span>
-        <Link href={`/category/${product.category}`} className="hover:text-clay">{categoryName(product.category)}</Link><span>/</span>
+        <Link href={`/category/${product.category}`} className="hover:text-clay">{catName}</Link><span>/</span>
         <span className="text-ink">{product.name}</span>
       </nav>
 
@@ -89,11 +130,11 @@ export default async function ProductPage({ params }) {
 
         <div>
           <Link href={`/category/${product.category}`} className="text-xs uppercase tracking-wide text-clay hover:underline">
-            {categoryName(product.category)}
+            {catName}
           </Link>
           <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink">{product.name}</h1>
           <div className="mt-4 flex flex-wrap items-baseline gap-3">
-            <p className="text-2xl font-semibold text-ink">{formatPrice(effectivePrice(product))}</p>
+            <p className="text-2xl font-semibold text-ink">{formatPrice(price)}</p>
             {hasDiscount(product) && (
               <>
                 <p className="text-lg text-stone line-through">{formatPrice(product.price)}</p>
@@ -102,6 +143,19 @@ export default async function ProductPage({ params }) {
             )}
           </div>
           <p className="mt-1 text-xs text-stone">{product.in_stock ? 'In stock · ready to print' : 'Made to order · ask for lead time'}</p>
+          {ratings.count > 0 && (
+            <a href="#reviews" className="mt-2 inline-flex items-center gap-1.5 text-sm text-stone hover:text-clay">
+              <span className="flex" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star key={n} className={`h-4 w-4 ${n <= Math.round(ratings.average) ? 'fill-clay text-clay' : 'text-line'}`} />
+                ))}
+              </span>
+              <span>{ratings.average} · {ratings.count} review{ratings.count === 1 ? '' : 's'}</span>
+            </a>
+          )}
+          <p lang="bn" className="mt-4 rounded-xl border border-line bg-paper px-4 py-3 font-bangla text-sm leading-relaxed text-stone">
+            {product.name} — ৩ডি প্রিন্টেড, বাংলাদেশে দাম {formatPrice(price)}। অনলাইনে অর্ডার করুন: ডেলিভারি চার্জ বিকাশে অগ্রিম, পণ্যের দাম ক্যাশ অন ডেলিভারি। সিলেট থেকে সারা বাংলাদেশে ডেলিভারি।
+          </p>
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-stone">{product.description}</p>
 
           {Array.isArray(product.tags) && product.tags.length > 0 && (
@@ -159,7 +213,7 @@ export default async function ProductPage({ params }) {
             <Link href={`/category/${product.category}`} className="text-sm font-medium text-clay hover:underline">More <ArrowRight className="inline h-4 w-4" /></Link>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {related.map((p) => <ProductCard key={p.id} product={p} />)}
+            {related.map((p) => <ProductCard key={p.id} product={toListProduct(p, catNames)} />)}
           </div>
         </section>
       )}
