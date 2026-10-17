@@ -10,7 +10,7 @@ export const revalidate = 60
 
 export const metadata = {
   title: 'Shop all products',
-  description: 'Browse all 3D Verse products — anatomical models, keyrings, decor and gifts. Search, filter, and check out with cash on delivery.',
+  description: 'Browse all 3D Verse products — anatomical models, keyrings, decor and gifts. Search, filter and order online: delivery charge via bKash, product price cash on delivery.',
   alternates: { canonical: '/shop' },
 }
 

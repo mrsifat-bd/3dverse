@@ -8,7 +8,7 @@ function ShopContent({ products, categories, q = '', category = 'all', popular =
     <div className="container py-10">
       <header className="mb-8">
         <h1 className="font-display text-3xl font-semibold text-ink">{popular ? 'Popular products' : 'Shop all products'}</h1>
-        <p className="mt-1 text-sm text-stone">Made-to-order 3D prints, ready to order on WhatsApp.</p>
+        <p className="mt-1 text-sm text-stone">Made-to-order 3D prints. Add to cart and check out here: delivery charge via bKash, product price cash on delivery.</p>
       </header>
       <ShopBrowser
         // Remount when the URL filters change (e.g. a new search from the navbar).

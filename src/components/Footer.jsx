@@ -67,7 +67,7 @@ export default function Footer({ categories = [] }) {
           <p>Owner: {s.owner} · {s.location}</p>
         </div>
         <div className="container pb-5 text-center text-[11px] leading-relaxed text-stone/80">
-          To process orders we record basic, non-personal info (approximate city/country, device type and browser) when you view a product or start a WhatsApp order.
+          To process orders we record basic, non-personal info (approximate city/country, device type and browser) when you view a product or place an order.
         </div>
       </div>
     </footer>

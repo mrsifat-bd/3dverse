@@ -71,8 +71,9 @@ export default async function AboutPage() {
           </p>
           <p>
             We care about the details that matter — clean geometry, precise dimensions, and a proper
-            finish on every piece. Ordering is simple: browse the catalog, pick what you like, and
-            place your order over WhatsApp. We confirm the details, lead time and delivery with you
+            finish on every piece. Ordering is simple: browse the catalog, add what you like to your cart and check
+            out right here on the site. You pay the delivery charge in advance via bKash and the
+            product price in cash on delivery. We then confirm the lead time and delivery with you
             directly.
           </p>
         </div>

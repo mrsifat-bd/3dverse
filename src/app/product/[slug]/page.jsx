@@ -120,7 +120,7 @@ export default async function ProductPage({ params }) {
             </div>
             <div className="flex items-center justify-between pt-1">
               <LikeButton productId={product.id} />
-              <span className="text-xs font-medium text-clay">Cash on Delivery available</span>
+              <span className="text-xs font-medium text-clay">Cash on delivery · delivery charge via bKash</span>
             </div>
             {reviewUrl && (
               <a

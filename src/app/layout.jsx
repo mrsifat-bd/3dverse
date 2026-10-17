@@ -54,11 +54,11 @@ export const metadata = {
     template: '3D Verse BD',
   },
   description:
-    'Custom 3D printed anatomical models, keyrings, decor and gifts. Made to order in Sylhet, Bangladesh. Order easily on WhatsApp.',
+    'Custom 3D printed anatomical models, keyrings, decor and gifts, made to order in Sylhet. Order online: delivery charge via bKash, product price cash on delivery.',
   keywords: ['3D printing', 'Sylhet', 'anatomical models', 'custom keyrings', 'Bangladesh', '3D Verse', '3DVerse'],
   openGraph: {
     title: `${BUSINESS.name} — Custom 3D Printed Products`,
-    description: 'Made-to-order 3D printed products. Order on WhatsApp.',
+    description: 'Made-to-order 3D printed products. Order online: delivery charge via bKash, product price cash on delivery.',
     url: SITE_URL,
     siteName: BUSINESS.name,
     locale: 'en_US',

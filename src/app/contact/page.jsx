@@ -14,12 +14,13 @@ export const metadata = {
 }
 
 const FAQS = [
+  { q: 'How do I order a product from the shop?', a: 'Add it to your cart and check out on the site. You pay the delivery charge in advance via bKash and the product price in cash on delivery.' },
   { q: 'How do I place a custom order?', a: "Send us your idea, reference or requirements through WhatsApp. We'll discuss the design, material, size, pricing and lead time with you." },
   { q: 'Can you print a model I already have?', a: 'If you have a 3D model, send it to us so we can check whether it is suitable for printing.' },
   { q: 'Can you create the 3D model for me?', a: 'For custom projects, our design team can prepare or refine the required 3D design depending on the project.' },
   { q: 'Do you accept bulk orders?', a: 'Yes. Contact us with the required quantity and project details so we can discuss pricing and production.' },
   { q: 'Do you deliver outside Sylhet?', a: 'Yes. 3D Verse is based in Sylhet and serves customers across Bangladesh.' },
-  { q: "What's the fastest way to contact you?", a: 'WhatsApp is the fastest way to discuss an order or custom project.' },
+  { q: "What's the fastest way to contact you?", a: 'For products in the shop, order directly on the site. For custom projects or questions, WhatsApp is the fastest way to reach us.' },
 ]
 
 const PROCESS = [
@@ -44,7 +45,7 @@ export default async function ContactPage() {
   ]
 
   const direct = [
-    { Icon: IconWhatsapp, label: 'WhatsApp', value: s.phone, desc: 'Fastest way to discuss an order or custom idea.', cta: 'Message us', href: wa('Hello 3D Verse,') },
+    { Icon: IconWhatsapp, label: 'WhatsApp', value: s.phone, desc: 'Fastest way to discuss a custom idea or ask a question.', cta: 'Message us', href: wa('Hello 3D Verse,') },
     { Icon: Mail, label: 'Email', value: s.email, desc: 'For detailed inquiries, business communication and collaboration.', cta: 'Send email', href: mailto },
     { Icon: MapPin, label: 'Studio', value: s.location, desc: 'Designed and printed locally. Delivered across Bangladesh.', cta: 'View location', href: '#location' },
   ]
