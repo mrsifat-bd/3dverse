@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import * as m from 'motion/react-m'
 import { useSettings } from '@/components/SettingsProvider'
 
 // Centered auth card matching the 3D Verse dark premium theme.
@@ -9,7 +9,7 @@ export default function AuthCard({ title, subtitle, children, footer }) {
   const s = useSettings()
   return (
     <div className="container flex min-h-[75vh] items-center justify-center py-14">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -23,7 +23,7 @@ export default function AuthCard({ title, subtitle, children, footer }) {
         {subtitle && <p className="mt-1 text-center text-sm text-stone">{subtitle}</p>}
         <div className="mt-6">{children}</div>
         {footer && <div className="mt-6 text-center text-sm text-stone">{footer}</div>}
-      </motion.div>
+      </m.div>
     </div>
   )
 }

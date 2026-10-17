@@ -61,7 +61,7 @@ export default function ProductReviews({ productId }) {
 
       {user ? (
         done ? (
-          <p className="mt-4 max-w-2xl rounded-xl border border-clay/30 bg-clay/5 p-3 text-sm text-stone">Thanks! Your review has been submitted and will appear once approved.</p>
+          <p role="status" className="enter mt-4 max-w-2xl rounded-xl border border-clay/30 bg-clay/5 p-3 text-sm text-stone">Thanks! Your review has been submitted and will appear once approved.</p>
         ) : (
           <form onSubmit={submit} className="mt-4 max-w-2xl">
             <div className="mb-3 flex items-center gap-1" role="radiogroup" aria-label="Your rating" onMouseLeave={() => setHover(0)}>

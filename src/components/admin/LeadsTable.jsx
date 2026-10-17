@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Trash2, RefreshCw } from 'lucide-react'
-import { motion } from 'framer-motion'
+import * as m from 'motion/react-m'
 import { getLeads, deleteLead, updateLeadStatus, LEAD_STATUSES } from '@/lib/leads'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -121,7 +121,7 @@ export default function LeadsTable() {
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-paper py-16 text-center text-sm text-stone">No leads yet. They appear when customers open a product or tap Buy Now.</div>
       ) : (
-        <motion.div
+        <m.div
           key={filter}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -166,7 +166,7 @@ export default function LeadsTable() {
               ))}
             </tbody>
           </table>
-        </motion.div>
+        </m.div>
       )}
     </div>
   )

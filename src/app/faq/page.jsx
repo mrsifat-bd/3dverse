@@ -9,7 +9,7 @@ export const metadata = {
 
 function Item({ q, a, bn }) {
   return (
-    <details className={`group rounded-xl border border-line bg-paper px-5 py-4 ${bn ? 'font-bangla' : ''}`}>
+    <details className={`disclosure group rounded-xl border border-line bg-paper px-5 py-4 ${bn ? 'font-bangla' : ''}`}>
       <summary className="cursor-pointer list-none text-sm font-medium text-ink marker:hidden">{q}</summary>
       <p className="mt-2 text-sm leading-relaxed text-stone">{a}</p>
     </details>

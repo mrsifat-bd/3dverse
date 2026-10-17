@@ -90,7 +90,7 @@ export default async function ContactPage() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex h-full flex-col rounded-2xl border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-1 hover:border-clay/40 hover:shadow-lg hover:shadow-black/5"
+              className="group flex h-full flex-col rounded-2xl border border-line bg-paper p-6 transition duration-200 hover:-translate-y-1 hover:border-clay/40 hover:shadow-lg hover:shadow-black/5"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-clay/10 text-clay"><Icon className="h-5 w-5" /></span>
               <h3 className="mt-4 font-display text-lg font-semibold text-ink">{title}</h3>
@@ -220,7 +220,7 @@ export default async function ContactPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a href={wa('Hello 3D Verse, I would like to make something.')} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition-all duration-200 hover:-translate-y-0.5 hover:bg-clay-dark">
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition duration-200 hover:-translate-y-0.5 hover:bg-clay-dark">
               <IconWhatsapp className="h-5 w-5" /> Message 3D Verse on WhatsApp
             </a>
             <Link href="/shop" className="inline-flex items-center justify-center gap-2 rounded-full border border-paper/25 px-6 py-3 text-sm font-medium text-paper transition-colors hover:bg-paper/10">

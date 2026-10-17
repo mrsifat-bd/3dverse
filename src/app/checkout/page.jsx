@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
+import { step as stepMotion } from '@/lib/motion'
 import { Loader2, Copy, Check, ArrowRight, ArrowLeft, ClipboardPaste } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/components/CartProvider'
@@ -153,7 +155,7 @@ export default function CheckoutPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div key={step} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }} className="mt-8">
+        <m.div key={step} {...stepMotion} className="mt-8">
 
           {step === 1 && (
             <div className="rounded-2xl border border-line bg-paper p-6">
@@ -246,7 +248,7 @@ export default function CheckoutPage() {
             </div>
           )}
 
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </div>
   )

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -9,6 +9,9 @@ import ThemeToggle from './ThemeToggle'
 import { useSettings } from './SettingsProvider'
 import { useCart } from './CartProvider'
 import { recordSearch } from '@/lib/analytics'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
+import { dropdown } from '@/lib/motion'
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -34,10 +37,19 @@ export default function Navbar() {
     setOpen(false)
   }
 
+  // Close the mobile menu on navigation and with Escape.
+  useEffect(() => { setOpen(false) }, [pathname])
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   const isActive = (href) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/85 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:opacity-90 active:scale-95" aria-label={`${settings.business_name} home`}>
           <Image src="/logo.png" alt={`${settings.business_name} logo`} width={40} height={44} priority className="h-9 w-auto dark:invert" />
@@ -50,8 +62,8 @@ export default function Navbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'relative text-sm transition-all duration-200 hover:scale-110 hover:text-clay active:scale-95 after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:w-0 after:rounded-full after:bg-clay after:transition-all after:duration-300 hover:after:w-full',
-                isActive(item.href) ? 'font-medium text-clay after:w-full' : 'text-ink/80'
+                'relative text-sm transition-colors duration-200 hover:text-clay after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:w-full after:origin-left after:rounded-full after:bg-clay after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100',
+                isActive(item.href) ? 'font-medium text-clay after:scale-x-100' : 'text-ink/80 after:scale-x-0'
               )}
             >
               {item.label}
@@ -76,34 +88,36 @@ export default function Navbar() {
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-all hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
+            className="relative grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
           >
             <ShoppingBag className="h-5 w-5" />
             {cart?.count > 0 && (
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-clay px-1 text-[10px] font-semibold text-paper">{cart.count}</span>
+              <span key={cart.count} className="pop absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-clay px-1 text-[10px] font-semibold text-paper">{cart.count}</span>
             )}
           </Link>
           <Link
             href="/account"
             aria-label="My account"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-all hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
+            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
           >
             <User className="h-5 w-5" />
           </Link>
           <ThemeToggle />
           <button
             onClick={() => setOpen((v) => !v)}
-            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-all hover:border-clay/40 hover:text-clay active:scale-90 md:hidden"
+            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:border-clay/40 hover:text-clay active:scale-90 md:hidden"
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
+            aria-controls="mobile-menu"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
+      <AnimatePresence>
       {open && (
-        <div className="glass animate-float-in border-t border-line md:hidden">
+        <m.div {...dropdown} id="mobile-menu" className="glass absolute inset-x-0 top-full border-t border-line shadow-lg shadow-black/5 md:hidden">
           <div className="container space-y-1 py-3">
             <form onSubmit={submitSearch} className="mb-3 flex items-center gap-2 rounded-full border border-line bg-paper px-3 py-2">
               <Search className="h-5 w-5 text-stone" />
@@ -121,7 +135,7 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={cn('block rounded-lg px-3 py-2 text-sm transition-all hover:bg-line/50 hover:pl-4 active:scale-[0.98]', isActive(item.href) ? 'bg-line/60 font-medium text-clay' : 'text-ink/80')}
+                className={cn('block rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-line/50 active:bg-line/70', isActive(item.href) ? 'bg-line/60 font-medium text-clay' : 'text-ink/80')}
               >
                 {item.label}
               </Link>
@@ -129,13 +143,14 @@ export default function Navbar() {
             <Link
               href="/account"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink/80 transition-all hover:bg-line/50 hover:pl-4 active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition-colors hover:bg-line/50 active:bg-line/70"
             >
               <User className="h-4 w-4" /> My account
             </Link>
           </div>
-        </div>
+        </m.div>
       )}
+      </AnimatePresence>
     </header>
   )
 }

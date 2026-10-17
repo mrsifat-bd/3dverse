@@ -1,57 +1,73 @@
 'use client'
 import { useEffect, useRef } from 'react'
 
-// Lightweight scroll-reveal for long lists (product grids).
+// Scroll reveal for lists and sections — CSS transition, one shared
+// IntersectionObserver, no animation library.
 //
-// Why not Framer Motion here: the grid previously staggered ALL cards from one
-// trigger (0.05s × index), so the 100th card only appeared ~5s after the grid
-// came into view, and every card ran its own JS-driven animation. This uses
-// ONE shared IntersectionObserver and a CSS opacity/transform transition, which
-// the browser runs on the compositor.
-//
-// - Server-rendered cards are visible by default (no LCP delay, no flash).
-// - Cards already on screen at mount stay as they are; only off-screen cards
-//   are hidden and then revealed as they scroll in.
+// - Server-rendered content is visible by default: nothing is hidden before
+//   JavaScript runs, so it never delays the first paint or LCP.
+// - Visibility is decided from the observer's own first report (it includes the
+//   element's position), so mounting 100+ cards causes no forced layouts.
+// - Things already on screen stay put; only things below the fold are hidden
+//   and then slide in as they scroll into view.
+// - `revealKey`: once an item has been revealed it is remembered for the rest
+//   of the visit, so going back to a page doesn't replay the entrance.
 // - prefers-reduced-motion: nothing is hidden or animated.
 
-let observer = null
+const seen = new Set()
 const callbacks = new WeakMap()
+let observer = null
 
 function getObserver() {
   if (observer || typeof IntersectionObserver === 'undefined') return observer
   observer = new IntersectionObserver(
     (entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue
-        const cb = callbacks.get(e.target)
-        if (cb) cb()
-      }
+      for (const e of entries) callbacks.get(e.target)?.(e)
     },
-    { rootMargin: '0px 0px -8% 0px', threshold: 0.01 },
+    { rootMargin: '0px 0px -6% 0px', threshold: 0 },
   )
   return observer
 }
 
-export default function Reveal({ children, className = '', delayIndex = 0 }) {
+const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+export default function Reveal({ children, className = '', delayIndex = 0, revealKey, as: Tag = 'div' }) {
   const ref = useRef(null)
 
   useEffect(() => {
     const el = ref.current
     const io = getObserver()
-    if (!el || !io) return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-    const r = el.getBoundingClientRect()
-    if (r.top < window.innerHeight && r.bottom > 0) return // already visible: leave it
-    el.classList.add('reveal-pending')
-    el.style.setProperty('--reveal-delay', `${(delayIndex % 4) * 60}ms`)
-    callbacks.set(el, () => {
-      el.classList.add('reveal-in')
-      io.unobserve(el)
-      callbacks.delete(el)
+    if (!el || !io || reduced()) return
+    if (revealKey != null && seen.has(revealKey)) return
+
+    let first = true
+    callbacks.set(el, (entry) => {
+      if (first) {
+        first = false
+        // On screen (or above it) at mount: leave it alone.
+        if (entry.isIntersecting || entry.boundingClientRect.top < window.innerHeight) {
+          if (revealKey != null) seen.add(revealKey)
+          io.unobserve(el)
+          callbacks.delete(el)
+          return
+        }
+        el.style.setProperty('--reveal-delay', `${(delayIndex % 4) * 60}ms`)
+        el.classList.add('reveal-pending')
+        return
+      }
+      if (entry.isIntersecting) {
+        el.classList.add('reveal-in')
+        if (revealKey != null) seen.add(revealKey)
+        io.unobserve(el)
+        callbacks.delete(el)
+      }
     })
     io.observe(el)
-    return () => { io.unobserve(el); callbacks.delete(el) }
-  }, [delayIndex])
+    return () => {
+      io.unobserve(el)
+      callbacks.delete(el)
+    }
+  }, [delayIndex, revealKey])
 
-  return <div ref={ref} className={className}>{children}</div>
+  return <Tag ref={ref} className={className}>{children}</Tag>
 }

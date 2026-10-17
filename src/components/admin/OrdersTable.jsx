@@ -1,6 +1,7 @@
 'use client'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as mo from 'motion/react-m'
 import Link from 'next/link'
 import {
   Loader2, RefreshCw, Truck, ChevronDown, ExternalLink, CheckCircle2, AlertTriangle, PackagePlus, Trash2, Ban,
@@ -477,7 +478,7 @@ export default function OrdersTable() {
                 {/* Expanded detail */}
                 <AnimatePresence initial={false}>
                   {open && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-line">
+                    <mo.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-line">
                       <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2">
                         {/* Left: customer + items + money */}
                         <div className="space-y-5">
@@ -694,7 +695,7 @@ export default function OrdersTable() {
                       </div>
 
                       {rowError && <p className="mx-5 mb-5 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">{rowError}</p>}
-                    </motion.div>
+                    </mo.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -707,8 +708,8 @@ export default function OrdersTable() {
       {/* Create parcel confirmation modal */}
       <AnimatePresence>
         {confirmOrder && (
-          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !creating && setConfirmOrder(null)}>
-            <motion.div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6" initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.18 }} onClick={(e) => e.stopPropagation()}>
+          <mo.div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !creating && setConfirmOrder(null)}>
+            <mo.div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6" initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.18 }} onClick={(e) => e.stopPropagation()}>
               <h2 className="font-display text-lg font-semibold text-ink">Create Steadfast parcel?</h2>
               <div className="mt-4 space-y-1.5 rounded-xl border border-line bg-cream p-4 text-sm">
                 <div className="flex justify-between gap-3"><span className="text-stone">Customer</span><span className="font-medium text-ink">{confirmOrder.customer_name}</span></div>
@@ -724,15 +725,15 @@ export default function OrdersTable() {
                 <Button variant="ghost" onClick={() => setConfirmOrder(null)} disabled={creating}>Cancel</Button>
                 <Button onClick={() => createParcel(confirmOrder)} disabled={creating}>{creating ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : 'Create parcel'}</Button>
               </div>
-            </motion.div>
-          </motion.div>
+            </mo.div>
+          </mo.div>
         )}
       </AnimatePresence>
 
       {/* Invoice preview modal (prints only the sheet — see globals.css) */}
       <AnimatePresence>
         {preview && (
-          <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => setPreview(null)}>
+          <mo.div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => setPreview(null)}>
             <div className="mx-auto my-4 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
               <div className="no-print mb-3 flex items-center justify-between gap-2">
                 <div className="flex gap-2">
@@ -745,15 +746,15 @@ export default function OrdersTable() {
                 <InvoicePreview invoice={preview.invoice} order={preview.order} />
               </div>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
 
       {/* Manual bKash payment decision — human verification only, never automatic. */}
       <AnimatePresence>
         {payConfirm && (
-          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !payBusy && setPayConfirm(null)}>
-            <motion.div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6" initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.18 }} onClick={(e) => e.stopPropagation()}>
+          <mo.div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !payBusy && setPayConfirm(null)}>
+            <mo.div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6" initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.18 }} onClick={(e) => e.stopPropagation()}>
               {payConfirm.action === 'verify' ? (
                 <>
                   <h2 className="font-display text-lg font-semibold text-ink">Have you manually verified this bKash payment?</h2>
@@ -778,15 +779,15 @@ export default function OrdersTable() {
                   </div>
                 </>
               )}
-            </motion.div>
-          </motion.div>
+            </mo.div>
+          </mo.div>
         )}
       </AnimatePresence>
 
       {/* Customer email preview + send */}
       <AnimatePresence>
         {emailPreview && (
-          <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !emailBusy && setEmailPreview(null)}>
+          <mo.div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => !emailBusy && setEmailPreview(null)}>
             <div className="mx-auto my-4 w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="rounded-2xl border border-line bg-paper p-5 shadow-2xl">
                 {(() => {
@@ -815,7 +816,7 @@ export default function OrdersTable() {
                 })()}
               </div>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
     </div>

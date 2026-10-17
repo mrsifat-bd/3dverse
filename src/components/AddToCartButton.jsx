@@ -33,14 +33,14 @@ export default function AddToCartButton({ product, qty = 1, full = false, varian
       disabled={busy}
       aria-label="Add to cart"
       className={cn(
-        'inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-70',
+        'inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3 text-sm font-medium transition-[transform,background-color,border-color,color] duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-70',
         base,
         full && 'w-full',
         className
       )}
     >
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : added ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-      {added ? 'Added' : 'Add to cart'}
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : added ? <Check className="pop h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+      <span aria-live="polite">{added ? 'Added' : 'Add to cart'}</span>
     </button>
   )
 }

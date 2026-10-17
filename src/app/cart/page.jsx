@@ -2,7 +2,8 @@
 import Link from 'next/link'
 import { cardImage } from '@/lib/format'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Loader2, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
 import { useCart } from '@/components/CartProvider'
 import { localDeliveryCharge } from '@/lib/delivery'
@@ -23,7 +24,7 @@ export default function CartPage() {
   if (lines.length === 0) {
     return (
       <div className="container py-16">
-        <div className="mx-auto max-w-md rounded-3xl border border-line bg-paper p-10 text-center">
+        <div className="enter mx-auto max-w-md rounded-3xl border border-line bg-paper p-10 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-clay/10 text-clay"><ShoppingBag className="h-7 w-7" /></span>
           <h1 className="mt-5 font-display text-2xl font-semibold text-ink">Your cart is empty</h1>
           <p className="mt-2 text-sm text-stone">Browse our products and add something you like.</p>
@@ -50,12 +51,12 @@ export default function CartPage() {
         <div className="space-y-3">
           <AnimatePresence initial={false}>
             {lines.map((l) => (
-              <motion.div
+              <m.div
                 key={l.product_id}
-                layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
+                // Collapse on remove so the rows below slide up smoothly.
+                exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, borderWidth: 0, transition: { duration: 0.2 } }}
                 className="flex items-center gap-4 rounded-2xl border border-line bg-paper p-4"
               >
                 <Link href={`/product/${l.slug}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-line bg-cream">
@@ -72,7 +73,7 @@ export default function CartPage() {
                 </div>
                 <div className="w-20 text-right text-sm font-semibold text-ink">{formatPrice(l.price * l.quantity)}</div>
                 <button onClick={() => cart.remove(l.product_id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone hover:bg-line/60 hover:text-destructive" aria-label="Remove"><Trash2 className="h-4 w-4" /></button>
-              </motion.div>
+              </m.div>
             ))}
           </AnimatePresence>
         </div>

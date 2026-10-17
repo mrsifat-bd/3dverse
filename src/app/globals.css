@@ -56,18 +56,21 @@
 
 @layer components {
   /* Frosted glass surface (translucent + blur). */
+  /* A medium blur is visually almost the same as blur-xl but much cheaper to
+     repaint while scrolling (blur cost grows with the radius). */
   .glass {
-    @apply border border-line/70 bg-paper/60 backdrop-blur-xl;
+    @apply border border-line/70 bg-paper/75 backdrop-blur-md;
   }
+  /* Buttons animate only transform/colour/shadow — never layout. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2.5 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition-all duration-200 hover:-translate-y-0.5 hover:bg-clay-dark hover:shadow-lg hover:shadow-clay/20 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50;
+    @apply inline-flex items-center justify-center gap-2.5 rounded-full bg-clay px-6 py-3 text-sm font-medium text-paper transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-clay-dark hover:shadow-lg hover:shadow-clay/20 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:bg-line/60 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40;
+    @apply inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-[transform,background-color,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:bg-line/60 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40;
   }
   /* Gentle lift + shadow for cards on hover. */
   .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5;
+    @apply transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5;
   }
 }
 
@@ -84,6 +87,67 @@
 }
 .fade-up { animation: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* ---- Motion system (CSS side). Mirrors src/lib/motion.js. ---------------- */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
+}
+
+/* Load-time entrance for above-the-fold content (<FadeIn onLoad>). Pure CSS,
+   starts with the first paint — never waits for JavaScript. Starts at a
+   near-zero (not zero) opacity so the browser still counts it for LCP. */
+@keyframes enter {
+  from { opacity: 0.01; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.enter { animation: enter 0.5s var(--ease-out) both; animation-delay: var(--enter-delay, 0s); }
+
+/* Route change (app/template.jsx, client navigations only). */
+@keyframes page-enter {
+  from { opacity: 0.6; transform: translate3d(0, 6px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter var(--dur-base) var(--ease-out) both; }
+
+/* Small confirmation pops: cart badge, "Added" tick. */
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 320ms var(--ease-out); }
+
+/* <details> disclosures (FAQ): animated chevron + content fade-in. */
+.disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary::after {
+  content: ''; flex: none; width: 0.55rem; height: 0.55rem;
+  border-right: 2px solid rgb(var(--clay)); border-bottom: 2px solid rgb(var(--clay));
+  transform: translateY(-25%) rotate(45deg);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.disclosure[open] > summary::after { transform: translateY(25%) rotate(225deg); }
+.disclosure[open] > summary ~ * { animation: disclose var(--dur-base) var(--ease-out); }
+@keyframes disclose {
+  from { opacity: 0; transform: translate3d(0, -4px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Image placeholder shimmer while a photo loads (space is already reserved
+   by the aspect-ratio box, so there is no layout shift). */
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.img-loading {
+  background-image: linear-gradient(100deg, transparent 30%, rgb(var(--paper) / 0.55) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+
+/* Skip rendering work for off-screen grid items until they get close. */
+.cv-auto { content-visibility: auto; contain-intrinsic-size: auto 340px; }
+
 /* Scroll reveal for long lists (see components/Reveal.jsx). Only off-screen
    items are ever hidden; the transition runs on the compositor. */
 .reveal-pending { opacity: 0; transform: translate3d(0, 14px, 0); }
@@ -94,7 +158,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-float-in, .fade-up, .logo-spin { animation: none !important; }
+  .animate-float-in, .fade-up, .logo-spin, .enter, .page-enter, .pop, .img-loading,
+  .disclosure[open] > summary ~ * { animation: none !important; }
   .reveal-pending { opacity: 1 !important; transform: none !important; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }

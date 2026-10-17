@@ -39,7 +39,7 @@ export default function ShopBrowser({ products, categories = [], initialQuery = 
           <button
             type="button"
             onClick={() => setPopularOnly((v) => !v)}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-95 ${popularOnly ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40 hover:text-clay'}`}
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition duration-200 hover:scale-[1.02] active:scale-95 ${popularOnly ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40 hover:text-clay'}`}
           >
             <Flame className="h-4 w-4" /> Popular
           </button>

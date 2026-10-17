@@ -86,7 +86,7 @@ export default async function Home() {
       {/* Hero */}
       <section className="border-b border-line">
         <div className="container grid items-center gap-10 py-16 md:grid-cols-2 md:py-24">
-          <FadeIn>
+          <FadeIn onLoad>
             <h1 className="font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
               {s.hero_headline}
             </h1>
@@ -102,7 +102,7 @@ export default async function Home() {
             <SocialLinks className="mt-8" />
           </FadeIn>
 
-          <FadeIn delay={0.1} className="relative">
+          <FadeIn onLoad delay={0.08} className="relative">
             <HeroPanel />
             <div className="absolute -bottom-5 -left-5 hidden rounded-2xl border border-line bg-cream px-5 py-4 shadow-lg shadow-black/5 sm:block">
               <p className="font-display text-2xl font-semibold text-ink">100%</p>
@@ -122,11 +122,11 @@ export default async function Home() {
           <Link href="/shop" className="hidden text-sm font-medium text-clay hover:underline sm:block">View all →</Link>
         </div>
         <Stagger className="mt-8 flex flex-wrap justify-center gap-4">
-          {CATEGORY_CARDS.map((c) => (
-            <StaggerItem key={c.href} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+          {CATEGORY_CARDS.map((c, i) => (
+            <StaggerItem key={c.href} index={i} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
               <Link
                 href={c.href}
-                className={`group block h-full rounded-2xl border bg-paper p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-clay/40 hover:shadow-xl hover:shadow-black/5 active:scale-[0.99] ${c.featured ? 'border-clay/40' : 'border-line'}`}
+                className={`group block h-full rounded-2xl border bg-paper p-6 transition duration-300 hover:-translate-y-1.5 hover:border-clay/40 hover:shadow-xl hover:shadow-black/5 active:scale-[0.99] ${c.featured ? 'border-clay/40' : 'border-line'}`}
               >
                 <span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-clay/10 text-clay transition-transform duration-300 group-hover:scale-110">
                   <c.Icon className="h-5 w-5" />
@@ -163,7 +163,7 @@ export default async function Home() {
           </div>
           <div className="space-y-3">
             {BN_FAQ.map((f) => (
-              <details key={f.q} className="group rounded-xl border border-line bg-paper px-5 py-4">
+              <details key={f.q} className="disclosure group rounded-xl border border-line bg-paper px-5 py-4">
                 <summary className="cursor-pointer list-none text-sm font-medium text-ink marker:hidden">{f.q}</summary>
                 <p className="mt-2 text-sm leading-relaxed text-stone">{f.a}</p>
               </details>

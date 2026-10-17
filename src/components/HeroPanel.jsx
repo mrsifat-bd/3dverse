@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 
 const WORDS = ['Dream', 'Design', 'Deliver']
 
@@ -55,7 +56,7 @@ export default function HeroPanel() {
         {/* Rotating word */}
         <div className="flex h-14 items-center overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
-            <motion.p
+            <m.p
               key={WORDS[i]}
               initial={{ y: 26, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -64,7 +65,7 @@ export default function HeroPanel() {
               className="font-display text-4xl font-bold tracking-tight text-clay sm:text-5xl"
             >
               {WORDS[i]}
-            </motion.p>
+            </m.p>
           </AnimatePresence>
         </div>
 

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
+import * as m from 'motion/react-m'
 import { Heart } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getLikeCount, hasLiked, toggleLike } from '@/lib/social'
@@ -31,9 +31,9 @@ export default function LikeButton({ productId, showCount = true, className }) {
 
   return (
     <button onClick={onClick} aria-label={liked ? 'Unlike' : 'Like'} className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
-      <motion.span key={liked ? 'on' : 'off'} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
+      <m.span key={liked ? 'on' : 'off'} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
         <Heart className={cn('h-5 w-5 transition-colors', liked ? 'fill-clay text-clay' : 'text-stone')} />
-      </motion.span>
+      </m.span>
       {showCount && <span className="text-stone">{count}</span>}
     </button>
   )

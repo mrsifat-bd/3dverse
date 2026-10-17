@@ -25,7 +25,7 @@ export default function WhatsAppButton() {
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       className={cn(
-        'group fixed bottom-6 left-6 z-50 flex items-center rounded-full bg-[#25D366] p-3 text-sm font-medium text-white shadow-lg shadow-[#25D366]/30 transition-all duration-300 hover:-translate-y-1 active:scale-95',
+        'group fixed bottom-6 left-6 z-50 flex items-center rounded-full bg-[#25D366] p-3 text-sm font-medium text-white shadow-lg shadow-[#25D366]/30 transition duration-300 hover:-translate-y-1 active:scale-95',
         show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
       )}
     >

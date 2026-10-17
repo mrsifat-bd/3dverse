@@ -1,46 +1,52 @@
 'use client'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ShopBrowser from './ShopBrowser'
 
-function ShopContent({ products, categories, q = '', category = 'all', popular = false }) {
+const DEFAULTS = { q: '', category: 'all', popular: false }
+
+function readParams(sp) {
+  const p = sp.get('popular')
+  return { q: sp.get('q') || '', category: sp.get('category') || 'all', popular: p === '1' || p === 'true' }
+}
+
+// Reads ?q= ?category= ?popular= and reports changes. It is the only part that
+// needs the URL, so it sits in its own tiny Suspense boundary: the product grid
+// itself is server-rendered and hydrated as-is. (Previously the whole grid sat
+// inside the boundary and was rendered a second time on load — ~280 ms of
+// blocking work on the live shop page.)
+function ParamsSync({ onChange }) {
+  const sp = useSearchParams()
+  const key = sp.toString()
+  useEffect(() => {
+    onChange(readParams(sp))
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
+}
+
+export default function ShopView({ products, categories }) {
+  const [f, setF] = useState(DEFAULTS)
+  const update = (next) =>
+    setF((cur) => (cur.q === next.q && cur.category === next.category && cur.popular === next.popular ? cur : next))
+
   return (
     <div className="container py-10">
+      <Suspense fallback={null}>
+        <ParamsSync onChange={update} />
+      </Suspense>
       <header className="mb-8">
-        <h1 className="font-display text-3xl font-semibold text-ink">{popular ? 'Popular products' : 'Shop all products'}</h1>
+        <h1 className="font-display text-3xl font-semibold text-ink">{f.popular ? 'Popular products' : 'Shop all products'}</h1>
         <p className="mt-1 text-sm text-stone">Made-to-order 3D prints. Add to cart and check out here: delivery charge via bKash, product price cash on delivery.</p>
       </header>
       <ShopBrowser
         // Remount when the URL filters change (e.g. a new search from the navbar).
-        key={`${q}|${category}|${popular}`}
+        key={`${f.q}|${f.category}|${f.popular}`}
         products={products}
         categories={categories}
-        initialQuery={q}
-        initialCategory={category}
-        initialPopular={popular}
+        initialQuery={f.q}
+        initialCategory={f.category}
+        initialPopular={f.popular}
       />
     </div>
-  )
-}
-
-// Reads the shop filters (?q= ?category= ?popular=) from the URL in the browser.
-function ShopContentFromParams({ products, categories }) {
-  const sp = useSearchParams()
-  const q = sp.get('q') || ''
-  const category = sp.get('category') || 'all'
-  const popularParam = sp.get('popular')
-  const popular = popularParam === '1' || popularParam === 'true'
-  return <ShopContent products={products} categories={categories} q={q} category={category} popular={popular} />
-}
-
-// The static HTML contains the full, unfiltered grid (the Suspense fallback),
-// so the page is crawlable and paints immediately; the URL filters apply as
-// soon as it hydrates. The product list is passed in only once, so it is not
-// duplicated in the page payload.
-export default function ShopView({ products, categories }) {
-  return (
-    <Suspense fallback={<ShopContent products={products} categories={categories} />}>
-      <ShopContentFromParams products={products} categories={categories} />
-    </Suspense>
   )
 }

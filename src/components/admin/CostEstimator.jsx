@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence, animate, useMotionValue } from 'framer-motion'
+import { AnimatePresence, animate, useMotionValue } from 'motion/react'
+import * as m from 'motion/react-m'
 import {
   Calculator, Layers, SlidersHorizontal, TrendingUp, Database, Zap, Clock, HardDrive,
   Save, Check, RotateCcw, Loader2, Info, BarChart3,
@@ -121,7 +122,7 @@ export default function CostEstimator() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div {...rise(0)} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <m.div {...rise(0)} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2.5 font-display text-2xl font-semibold text-ink">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-clay/10 text-clay">
@@ -137,12 +138,12 @@ export default function CostEstimator() {
         <div className="flex flex-wrap items-center gap-2">
           <AnimatePresence>
             {dirty && (
-              <motion.span
+              <m.span
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                 className="inline-flex items-center gap-1 rounded-full bg-[#C99A4E]/15 px-2.5 py-1 text-xs font-medium text-[#8a6a2e]"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[#C99A4E]" /> Unsaved changes
-              </motion.span>
+              </m.span>
             )}
           </AnimatePresence>
           <Button variant="ghost" size="sm" onClick={resetDefaults} title="Reset cost settings to the original defaults">
@@ -153,22 +154,22 @@ export default function CostEstimator() {
             {saving ? 'Saving…' : justSaved ? 'Saved' : 'Save as defaults'}
           </Button>
         </div>
-      </motion.div>
+      </m.div>
 
       <AnimatePresence>
         {error && (
-          <motion.p
+          <m.p
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive"
           >
             {error}
-          </motion.p>
+          </m.p>
         )}
       </AnimatePresence>
 
       {/* Row 1 — the job (big) and the price (big), equal height */}
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-        <motion.div {...rise(1)} className="lg:col-span-7">
+        <m.div {...rise(1)} className="lg:col-span-7">
           <Card className="flex h-full flex-col border-clay/25">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
@@ -192,9 +193,9 @@ export default function CostEstimator() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
 
-        <motion.div {...rise(2)} className="lg:col-span-5">
+        <m.div {...rise(2)} className="lg:col-span-5">
           <Card className="relative flex h-full flex-col justify-center overflow-hidden border-clay/25">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-clay/[0.1] via-transparent to-transparent" />
             <div className="pointer-events-none absolute -right-8 -top-12 h-44 w-44 rounded-full bg-clay/15 blur-3xl" />
@@ -222,11 +223,11 @@ export default function CostEstimator() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Row 2 — price breakdown as a bar chart (full width) */}
-      <motion.div {...rise(3)}>
+      <m.div {...rise(3)}>
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stone">
@@ -237,11 +238,11 @@ export default function CostEstimator() {
             <BreakdownBars results={results} />
           </CardContent>
         </Card>
-      </motion.div>
+      </m.div>
 
       {/* Row 3 — cost settings + summary (below the fold is fine) */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <motion.div {...rise(4)} className="lg:col-span-7">
+        <m.div {...rise(4)} className="lg:col-span-7">
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink">
@@ -286,11 +287,11 @@ export default function CostEstimator() {
                     <p className="text-sm font-medium text-ink">Machine cost</p>
                     <AnimatePresence>
                       {machineCostEnabled && (
-                        <motion.span
+                        <m.span
                           initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                           className="rounded-full bg-[#8C6E9E]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8C6E9E]">
                           On
-                        </motion.span>
+                        </m.span>
                       )}
                     </AnimatePresence>
                   </div>
@@ -300,9 +301,9 @@ export default function CostEstimator() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
 
-        <motion.div {...rise(5)} className="lg:col-span-5">
+        <m.div {...rise(5)} className="lg:col-span-5">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-stone">Summary</CardTitle>
@@ -313,9 +314,9 @@ export default function CostEstimator() {
               <BreakdownItem label="Labour" amount={results.labour} Icon={Clock} subtext={`${config.labourPercent}% of base cost`} />
               <AnimatePresence>
                 {machineCostEnabled && results.machine > 0 && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                     <BreakdownItem label="Machine cost" amount={results.machine} Icon={HardDrive} subtext="added to selling price" />
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
               <div className="space-y-3 border-t border-line pt-4">
@@ -331,15 +332,15 @@ export default function CostEstimator() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       </div>
 
       <AnimatePresence>
         {!loaded && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="flex items-center gap-1.5 text-xs text-stone">
             <Loader2 className="h-3 w-3 animate-spin" /> Syncing your saved defaults…
-          </motion.p>
+          </m.p>
         )}
       </AnimatePresence>
     </div>
@@ -381,9 +382,9 @@ function SliderField({ label, suffix, color, value, max, onChange }) {
       </div>
       <div className="relative flex h-5 items-center">
         <div className="absolute inset-x-0 h-2 rounded-full bg-line" />
-        <motion.div className="absolute left-0 h-2 rounded-full" style={{ background: color }}
+        <m.div className="absolute left-0 h-2 rounded-full" style={{ background: color }}
           animate={{ width: `${pct}%` }} transition={spring} />
-        <motion.div className="absolute h-4 w-4 rounded-full border-2 border-paper shadow-sm"
+        <m.div className="absolute h-4 w-4 rounded-full border-2 border-paper shadow-sm"
           style={{ background: color, x: '-50%' }} animate={{ left: `${pct}%` }} transition={spring} />
         <input type="range" min="0" max={max} value={value} onChange={(e) => onChange(Number(e.target.value))}
           aria-label={label} className="absolute inset-0 w-full cursor-pointer opacity-0" />
@@ -441,7 +442,7 @@ function BreakdownBars({ results }) {
               </span>
             </div>
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-line">
-              <motion.div className="h-full rounded-full" style={{ background: d.color }}
+              <m.div className="h-full rounded-full" style={{ background: d.color }}
                 animate={{ width: `${pct}%` }} transition={spring} />
             </div>
           </div>

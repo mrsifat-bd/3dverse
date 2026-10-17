@@ -1,44 +1,31 @@
-'use client'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal'
 
-// Reusable entrance animation wrappers (respect reduced motion via Framer defaults).
-export function FadeIn({ children, delay = 0, y = 12, className, as = 'div' }) {
-  const MotionTag = motion[as] || motion.div
-  return (
-    <MotionTag
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.5, ease: 'easeOut', delay }}
-      className={className}
-    >
-      {children}
-    </MotionTag>
-  )
+// Entrance helpers used by server pages. No animation library and no
+// JavaScript needed for the first paint:
+//
+// <FadeIn onLoad> — above-the-fold content (hero). A short CSS entrance that
+//   starts with the first paint, so it never waits for hydration (the old
+//   version kept the hero invisible until JS loaded, delaying LCP by ~0.7 s).
+// <FadeIn> — below-the-fold sections: revealed when scrolled into view.
+// <Stagger>/<StaggerItem index> — grids: each item reveals with a small,
+//   capped stagger.
+// All of it is disabled for "reduce motion" users (globals.css / Reveal).
+
+export function FadeIn({ children, delay = 0, className = '', onLoad = false }) {
+  if (onLoad) {
+    return (
+      <div className={`enter ${className}`} style={delay ? { '--enter-delay': `${delay}s` } : undefined}>
+        {children}
+      </div>
+    )
+  }
+  return <Reveal className={className}>{children}</Reveal>
 }
 
-export function Stagger({ children, className, stagger = 0.06 }) {
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-60px' }}
-      variants={{ hidden: {}, show: { transition: { staggerChildren: stagger } } }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  )
+export function Stagger({ children, className = '' }) {
+  return <div className={className}>{children}</div>
 }
 
-export function StaggerItem({ children, className, y = 14 }) {
-  return (
-    <motion.div
-      variants={{ hidden: { opacity: 0, y }, show: { opacity: 1, y: 0 } }}
-      transition={{ duration: 0.45, ease: 'easeOut' }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  )
+export function StaggerItem({ children, className = '', index = 0 }) {
+  return <Reveal className={className} delayIndex={index}>{children}</Reveal>
 }

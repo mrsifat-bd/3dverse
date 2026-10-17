@@ -15,19 +15,27 @@ export default function ProductImage({ src, alt = '', className = '', sizes, pri
   const [stage, setStage] = useState(0) // 0 = preferred, 1 = full-size fallback, 2 = failed
   const current = stage === 0 ? small : src
 
+  const [loaded, setLoaded] = useState(false)
+
   if (!src || stage === 2) {
     return <div className="grid h-full w-full place-items-center bg-line/40 text-xs text-stone">No image</div>
   }
   return (
-    <Image
-      key={current}
-      src={current}
-      alt={alt}
-      fill
-      sizes={sizes}
-      priority={priority}
-      className={className}
-      onError={() => setStage((s) => (s === 0 && small !== src ? 1 : 2))}
-    />
+    <>
+      {/* Shimmer while the photo downloads; removed as soon as it has loaded
+          (so nothing keeps animating behind a finished image). */}
+      {!loaded && <span aria-hidden="true" className="img-loading absolute inset-0" />}
+      <Image
+        key={current}
+        src={current}
+        alt={alt}
+        fill
+        sizes={sizes}
+        priority={priority}
+        className={className}
+        onLoad={() => setLoaded(true)}
+        onError={() => setStage((s) => (s === 0 && small !== src ? 1 : 2))}
+      />
+    </>
   )
 }

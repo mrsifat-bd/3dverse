@@ -27,7 +27,7 @@ export default function BuyNowButton({ product, qty = 1, full = false, className
       onClick={onClick}
       disabled={busy}
       className={cn(
-        'inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-[0.97] disabled:opacity-70',
+        'inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-[0.97] disabled:opacity-70',
         full && 'w-full',
         className
       )}

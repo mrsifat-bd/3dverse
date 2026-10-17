@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import ProductImage from '@/components/ProductImage'
 import Link from 'next/link'
 import { Pencil, Trash2, Plus, Loader2, Tags } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 import { listProducts, deleteProduct } from '@/lib/adminProducts'
 import { getAllCategories } from '@/lib/categories'
 import { formatPrice, firstImage } from '@/lib/format'
@@ -100,7 +101,7 @@ export default function ProductTable() {
           No products yet. Create your first one.
         </div>
       ) : (
-        <motion.div
+        <m.div
           key={category}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,12 +146,12 @@ export default function ProductTable() {
               ))}
             </tbody>
           </table>
-        </motion.div>
+        </m.div>
       )}
 
       <AnimatePresence>
         {confirmId && (
-          <motion.div
+          <m.div
             className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -158,7 +159,7 @@ export default function ProductTable() {
             transition={{ duration: 0.15 }}
             onClick={() => !deleting && setConfirmId(null)}
           >
-            <motion.div
+            <m.div
               className="w-full max-w-sm rounded-2xl border border-line bg-paper p-6"
               initial={{ opacity: 0, scale: 0.95, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -172,8 +173,8 @@ export default function ProductTable() {
                 <Button variant="ghost" onClick={() => setConfirmId(null)} disabled={deleting}>Cancel</Button>
                 <Button variant="destructive" onClick={() => onDelete(confirmId)} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete'}</Button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

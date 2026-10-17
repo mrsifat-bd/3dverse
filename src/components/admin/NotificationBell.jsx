@@ -1,7 +1,8 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as mo from 'motion/react-m'
 import { Bell, Loader2, PackageCheck, CheckCheck } from 'lucide-react'
 import {
   getAdminNotifications, unreadCount, markNotificationRead,
@@ -82,20 +83,20 @@ export default function NotificationBell() {
         <Bell className="h-[18px] w-[18px]" />
         <AnimatePresence>
           {unread > 0 && (
-            <motion.span
+            <mo.span
               initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               className="absolute -right-0.5 -top-0.5 grid h-5 min-w-[20px] place-items-center rounded-full bg-[#B4381F] px-1 text-[11px] font-bold leading-none text-white"
             >
               {unread > 9 ? '9+' : unread}
-            </motion.span>
+            </mo.span>
           )}
         </AnimatePresence>
       </button>
 
       <AnimatePresence>
         {open && (
-          <motion.div
+          <mo.div
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -150,7 +151,7 @@ export default function NotificationBell() {
                 </ul>
               )}
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
     </div>

@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
+  // `hover:` styles only on devices that can really hover. On phones a tap
+  // used to leave cards "stuck" lifted/zoomed; now touch gets the press
+  // (active:) feedback only.
+  future: { hoverOnlyWhenSupported: true },
   content: ['./src/**/*.{js,jsx}'],
   theme: {
     container: {

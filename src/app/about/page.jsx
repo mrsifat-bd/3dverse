@@ -56,7 +56,7 @@ export default async function AboutPage() {
   return (
     <div className="container py-14">
       {/* Intro / story */}
-      <FadeIn className="mx-auto max-w-3xl">
+      <FadeIn onLoad className="mx-auto max-w-3xl">
         <span className="text-xs uppercase tracking-wide text-clay">About us</span>
         <h1 className="mt-3 font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
           Precise, well-designed 3D printing — made in {settings.location}.
@@ -89,7 +89,7 @@ export default async function AboutPage() {
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {WHAT_WE_DO.map(({ Icon, title, body }) => (
-            <div key={title} className="flex gap-4 rounded-2xl border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
+            <div key={title} className="flex gap-4 rounded-2xl border border-line bg-paper p-6 transition duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-clay/10 text-clay">
                 <Icon className="h-5 w-5" />
               </span>
@@ -110,7 +110,7 @@ export default async function AboutPage() {
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {TEAM.map((m) => (
-            <div key={m.name} className="overflow-hidden rounded-2xl border border-line bg-paper text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
+            <div key={m.name} className="overflow-hidden rounded-2xl border border-line bg-paper text-center transition duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
               {/* Photo slot — replace by setting `photo` in the TEAM array above. */}
               <div className="relative aspect-square w-full bg-cream">
                 {m.photo ? (
@@ -142,7 +142,7 @@ export default async function AboutPage() {
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PROCESS.map(({ n, Icon, title, body }) => (
-            <div key={n} className="relative rounded-2xl border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
+            <div key={n} className="relative rounded-2xl border border-line bg-paper p-6 transition duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-md hover:shadow-black/5">
               <span className="pointer-events-none absolute right-5 top-4 font-display text-3xl font-semibold text-line">{n}</span>
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-clay/10 text-clay">
                 <Icon className="h-5 w-5" />
@@ -176,7 +176,7 @@ export default async function AboutPage() {
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link href="/shop" className="btn-primary">Browse products <ArrowRight className="h-4 w-4" /></Link>
-            <Link href="/contact" className="inline-flex items-center justify-center gap-2.5 rounded-full border border-paper/30 px-6 py-3 text-sm font-medium text-paper transition-all duration-200 hover:-translate-y-0.5 hover:bg-paper/10 active:scale-[0.97]">Contact us</Link>
+            <Link href="/contact" className="inline-flex items-center justify-center gap-2.5 rounded-full border border-paper/30 px-6 py-3 text-sm font-medium text-paper transition duration-200 hover:-translate-y-0.5 hover:bg-paper/10 active:scale-[0.97]">Contact us</Link>
           </div>
         </div>
 

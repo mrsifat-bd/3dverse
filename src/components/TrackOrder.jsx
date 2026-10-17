@@ -58,12 +58,12 @@ export default function TrackOrder() {
           <Label htmlFor="ordphone">Phone number</Label>
           <Input id="ordphone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="enter text-sm text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Checking…</> : 'Track order'}</Button>
       </form>
 
       {order && (
-        <div className="mt-8 rounded-2xl border border-line bg-paper p-6">
+        <div className="enter mt-8 rounded-2xl border border-line bg-paper p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-display text-xl font-semibold text-ink">Order {order.order_number}</h2>
             <span className="text-xs text-stone">Placed {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>

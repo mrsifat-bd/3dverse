@@ -12,7 +12,7 @@ export default function CheckoutSuccessPage({ searchParams }) {
 
   return (
     <div className="container py-16">
-      <div className="mx-auto max-w-md rounded-3xl border border-line bg-paper p-8 text-center">
+      <div className="enter mx-auto max-w-md rounded-3xl border border-line bg-paper p-8 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-clay/10 text-clay"><CheckCircle2 className="h-7 w-7" /></span>
         <h1 className="mt-5 font-display text-2xl font-semibold text-ink">Order submitted successfully</h1>
         {n && <p className="mt-1 text-sm text-stone">Order <span className="font-semibold text-ink">{n}</span></p>}

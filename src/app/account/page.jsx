@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import * as m from 'motion/react-m'
 import { Loader2, User, Package, Heart, MessageSquare, Settings, LogOut } from 'lucide-react'
 import { Camera, Loader2 as Spinner } from 'lucide-react'
 import { useAuth, signOut } from '@/hooks/useAuth'
@@ -84,22 +84,22 @@ export default function AccountPage() {
         <aside className="h-fit rounded-2xl border border-line bg-paper p-4 md:sticky md:top-24">
           <nav className="space-y-1.5">
             {LINKS.map(({ href, label, Icon }) => (
-              <Link key={href} href={href} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition-all duration-200 hover:translate-x-0.5 hover:bg-line/50">
+              <Link key={href} href={href} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition duration-200 hover:translate-x-0.5 hover:bg-line/50">
                 <Icon className="h-4 w-4 shrink-0" /> {label}
               </Link>
             ))}
           </nav>
           <div className="mt-4 space-y-1.5 border-t border-line pt-4">
-            <Link href="/reset-password" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition-all duration-200 hover:translate-x-0.5 hover:bg-line/50">
+            <Link href="/reset-password" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition duration-200 hover:translate-x-0.5 hover:bg-line/50">
               <Settings className="h-4 w-4 shrink-0" /> Change password
             </Link>
-            <button onClick={() => { signOut().then(() => router.push('/')) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition-all duration-200 hover:translate-x-0.5 hover:bg-line/50">
+            <button onClick={() => { signOut().then(() => router.push('/')) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition duration-200 hover:translate-x-0.5 hover:bg-line/50">
               <LogOut className="h-4 w-4 shrink-0" /> Sign out
             </button>
           </div>
         </aside>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-line bg-paper p-6">
+        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="font-display text-lg font-semibold text-ink">Profile</h2>
 
           {/* Avatar */}
@@ -115,7 +115,7 @@ export default function AccountPage() {
               )}
             </div>
             <div>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay">
                 <Camera className="h-4 w-4" /> {avatarUrl ? 'Change photo' : 'Upload photo'}
                 <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} disabled={uploadingAvatar} />
               </label>
@@ -142,7 +142,7 @@ export default function AccountPage() {
               {saved && <span className="text-sm text-clay">Saved ✓</span>}
             </div>
           </form>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   )

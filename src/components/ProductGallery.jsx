@@ -1,9 +1,11 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import ProductImage from './ProductImage'
 import Image from 'next/image'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 import { ChevronLeft, ChevronRight, X, Expand } from 'lucide-react'
+import { fade, DURATION, EASE } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 export default function ProductGallery({ images, name }) {
@@ -13,6 +15,8 @@ export default function ProductGallery({ images, name }) {
   const list = images.length ? images : [null]
   const hasImages = Boolean(list[0])
   const many = list.length > 1
+  const closeRef = useRef(null)
+  const openerRef = useRef(null)
 
   const go = useCallback(
     (dir) => setActive((i) => (i + dir + list.length) % list.length),
@@ -28,12 +32,16 @@ export default function ProductGallery({ images, name }) {
       else if (e.key === 'ArrowLeft') go(-1)
     }
     window.addEventListener('keydown', onKey)
-    // Lock background scroll while open.
+    // Lock background scroll while open; move focus into the viewer and give
+    // it back to the photo when it closes (keyboard / screen-reader users).
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    openerRef.current = document.activeElement
+    requestAnimationFrame(() => closeRef.current?.focus())
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
+      openerRef.current?.focus?.()
     }
   }, [open, go])
 
@@ -45,16 +53,15 @@ export default function ProductGallery({ images, name }) {
           hasImages && 'cursor-zoom-in',
         )}
         onClick={() => hasImages && setOpen(true)}
+        onKeyDown={(e) => { if (hasImages && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(true) } }}
         role={hasImages ? 'button' : undefined}
+        tabIndex={hasImages ? 0 : undefined}
         aria-label={hasImages ? 'Open full-screen image' : undefined}
       >
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div
+          <m.div
             key={active}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            {...fade}
             className="absolute inset-0"
           >
             {list[active] && !failed[active] ? (
@@ -63,7 +70,7 @@ export default function ProductGallery({ images, name }) {
             ) : (
               <div className="grid h-full w-full place-items-center text-stone">No image</div>
             )}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
 
         {hasImages && (
@@ -91,15 +98,16 @@ export default function ProductGallery({ images, name }) {
       {/* Full-screen viewer */}
       <AnimatePresence>
         {open && hasImages && (
-          <motion.div
+          <m.div
             className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/95 p-4 sm:p-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            {...fade}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${name} — photo ${active + 1} of ${list.length}`}
             onClick={() => setOpen(false)}
           >
             <button
+              ref={closeRef}
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close"
@@ -119,17 +127,17 @@ export default function ProductGallery({ images, name }) {
               </button>
             )}
 
-            <motion.div
+            <m.div
               key={active}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              transition={{ duration: DURATION.base, ease: EASE.out }}
               className="relative h-full max-h-[85vh] w-full max-w-5xl"
               onClick={(e) => e.stopPropagation()}
             >
               <Image src={list[active]} alt={name} fill sizes="100vw" className="object-contain" priority />
-            </motion.div>
+            </m.div>
 
             {many && (
               <button
@@ -147,7 +155,7 @@ export default function ProductGallery({ images, name }) {
                 {active + 1} / {list.length}
               </span>
             )}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Loader2, Package, ChevronDown, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getMyOrders, getOrderEvents, orderStatusLabel, steadfastStatusLabel, trackingUrlFor } from '@/lib/orders'
@@ -65,7 +66,7 @@ export default function MyOrdersPage() {
 
                 <AnimatePresence initial={false}>
                   {open && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-line">
+                    <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-line">
                       <div className="grid gap-6 p-5 sm:grid-cols-2">
                         <div className="space-y-3 text-sm">
                           <div>
@@ -98,7 +99,7 @@ export default function MyOrdersPage() {
                           </ul>
                         </div>
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
