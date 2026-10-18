@@ -38,7 +38,7 @@ export default function ProductGrid({ products, animateKey }) {
     <div key={animateKey} className={`${animateKey !== initialKey ? 'fade-up ' : ''}grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4`}>
       {products.map((p, i) => (
         <Reveal key={p.id} revealKey={p.id} delayIndex={i} className={i >= 8 ? 'cv-auto' : undefined}>
-          <ProductCard product={p} />
+          <ProductCard product={p} priority={i < 2} />
         </Reveal>
       ))}
     </div>

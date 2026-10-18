@@ -5,7 +5,9 @@ import { Badge } from './ui/badge'
 import WishlistButton from './WishlistButton'
 import ProductImage from './ProductImage'
 
-export default function ProductCard({ product }) {
+// `priority`: first cards of a grid (above the fold) load eagerly at high
+// priority — they are usually the page's LCP image on phones.
+export default function ProductCard({ product, priority = false }) {
   const image = firstImage(product)
   return (
     <Link
@@ -16,6 +18,7 @@ export default function ProductCard({ product }) {
         <ProductImage
           src={image}
           variant="card"
+          priority={priority}
           alt={product.name}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
