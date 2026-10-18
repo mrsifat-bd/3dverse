@@ -50,7 +50,7 @@ export default function HeroPanel() {
       <div className="relative flex h-full flex-col items-center justify-center gap-6 p-8">
         {/* Floating, gently tilting logo */}
         <div className="hero-float drop-shadow-xl">
-          <Image src="/logo.png" alt="3D Verse" width={170} height={188} priority className="h-28 w-auto dark:invert sm:h-32" />
+          <Image src="/logo-md.webp" alt="3D Verse" width={170} height={188} priority className="h-28 w-auto dark:invert sm:h-32" />
         </div>
 
         {/* Rotating word */}

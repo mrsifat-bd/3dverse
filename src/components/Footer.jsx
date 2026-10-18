@@ -25,7 +25,7 @@ export default function Footer({ categories = [] }) {
       <div className="container grid gap-10 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt={`${s.business_name} logo`} width={40} height={44} className="h-9 w-auto dark:invert" />
+            <Image src="/logo-sm.webp" alt={`${s.business_name} logo`} width={40} height={44} className="h-9 w-auto dark:invert" />
             <span className="font-display text-xl font-semibold text-ink">{s.business_name}</span>
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-stone">{s.tagline}</p>

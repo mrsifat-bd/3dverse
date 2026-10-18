@@ -52,7 +52,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/85 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:opacity-90 active:scale-95" aria-label={`${settings.business_name} home`}>
-          <Image src="/logo.png" alt={`${settings.business_name} logo`} width={40} height={44} priority className="h-9 w-auto dark:invert" />
+          <Image src="/logo-sm.webp" alt={`${settings.business_name} logo`} width={40} height={44} priority className="h-9 w-auto dark:invert" />
           <span className="font-display text-xl font-semibold tracking-tight text-ink">{settings.business_name}</span>
         </Link>
 

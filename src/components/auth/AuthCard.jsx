@@ -16,7 +16,7 @@ export default function AuthCard({ title, subtitle, children, footer }) {
         className="w-full max-w-md rounded-3xl border border-line bg-paper p-8"
       >
         <Link href="/" className="mb-6 flex items-center justify-center gap-2.5">
-          <Image src="/logo.png" alt={`${s.business_name} logo`} width={40} height={44} className="h-9 w-auto dark:invert" />
+          <Image src="/logo-sm.webp" alt={`${s.business_name} logo`} width={40} height={44} className="h-9 w-auto dark:invert" />
           <span className="font-display text-xl font-semibold tracking-tight text-ink">{s.business_name}</span>
         </Link>
         <h1 className="text-center font-display text-2xl font-semibold text-ink">{title}</h1>
