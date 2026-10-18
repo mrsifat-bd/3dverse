@@ -99,7 +99,7 @@ export default function ProductGallery({ images, name }) {
       <AnimatePresence>
         {open && hasImages && (
           <m.div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/95 p-4 sm:p-8"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(44_42_38/0.95)] p-4 sm:p-8"
             {...fade}
             role="dialog"
             aria-modal="true"
@@ -111,7 +111,7 @@ export default function ProductGallery({ images, name }) {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-paper/10 text-paper transition-colors hover:bg-paper/20"
+              className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <X className="h-5 w-5" />
             </button>
@@ -121,7 +121,7 @@ export default function ProductGallery({ images, name }) {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(-1) }}
                 aria-label="Previous image"
-                className="absolute left-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/10 text-paper transition-colors hover:bg-paper/20 sm:left-6"
+                className="absolute left-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
@@ -144,14 +144,14 @@ export default function ProductGallery({ images, name }) {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(1) }}
                 aria-label="Next image"
-                className="absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/10 text-paper transition-colors hover:bg-paper/20 sm:right-6"
+                className="absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
             )}
 
             {many && (
-              <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-paper/10 px-3 py-1 text-sm text-paper">
+              <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
                 {active + 1} / {list.length}
               </span>
             )}

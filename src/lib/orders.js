@@ -126,7 +126,12 @@ export async function createOrder(input) {
 // (server recomputes all money; COD = product subtotal, delivery prepaid via bKash).
 export async function placeOrder({ customer_name, customer_phone, customer_address, police_station, note, items, transaction_id }) {
   if (!isSupabaseConfigured) return { ok: false, error: 'Ordering is not available right now.' }
-  const check = validateOrderInput({ customer_name, customer_phone, customer_address, items })
+  // Cart lines carry `quantity`; the shared validator counts `qty`. Without this
+  // mapping every checkout failed with "Please check your details".
+  const check = validateOrderInput({
+    customer_name, customer_phone, customer_address,
+    items: (items || []).map((i) => ({ ...i, qty: i.qty ?? i.quantity })),
+  })
   if (!check.ok) return { ok: false, error: 'Please check your details and try again.', errors: check.errors }
   // FORMAT validation only (the same rule the backend re-checks). A valid format
   // is NOT a verified payment — an admin verifies the actual bKash payment later.
