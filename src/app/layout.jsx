@@ -82,6 +82,10 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${comfortaa.variable} ${hind.variable}`}>
       <head>
+        {/* Product photos come from Supabase Storage: open that connection
+            while the HTML is still parsing, so the first images (the LCP on
+            shop/product pages) don't wait for DNS + TLS on slow networks. */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
