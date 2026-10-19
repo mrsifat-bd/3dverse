@@ -1,0 +1,22 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  logoAlt: '{name} logo',
+  lightMode: 'Switch to light mode',
+  darkMode: 'Switch to dark mode',
+  backToTop: 'Back to top',
+  whatsappChat: 'Chat with us on WhatsApp',
+  whatsappUs: 'WhatsApp us',
+  close: 'Close',
+  cancel: 'Cancel',
+  back: 'Back',
+  loading: 'Loading…',
+  tryAgain: 'Try again',
+  required: 'Required',
+  optional: 'optional',
+  home: 'Home',
+  breadcrumb: 'Breadcrumb',
+  cod: 'COD',
+  or: 'or',
+  showMore: 'Show more',
+  error: 'Something went wrong. Please try again.',
+}

@@ -3,18 +3,22 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { ChevronDown, MapPin, Check } from 'lucide-react'
 import { POLICE_STATIONS } from '@/lib/policeStations'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n/client'
 
 // Searchable dropdown of all Bangladeshi police stations (thanas), grouped by
 // district in the label. Stores the full "Thana, District" string as the value.
-export default function PoliceStationSelect({ value, onChange, id = 'police_station', invalid = false, placeholder = 'Select your police station (thana)' }) {
+export default function PoliceStationSelect({ value, onChange, id = 'police_station', invalid = false, placeholder }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const ref = useRef(null)
 
   useEffect(() => {
     function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
   }, [])
 
   const results = useMemo(() => {
@@ -36,7 +40,7 @@ export default function PoliceStationSelect({ value, onChange, id = 'police_stat
       >
         <span className={cn('flex min-w-0 items-center gap-2', value ? 'text-ink' : 'text-stone')}>
           <MapPin className="h-4 w-4 shrink-0 text-clay" />
-          <span className="truncate">{value || placeholder}</span>
+          <span className="truncate">{value || placeholder || t('checkout.thanaPlaceholder')}</span>
         </span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-stone transition-transform', open && 'rotate-180')} />
       </button>
@@ -46,13 +50,14 @@ export default function PoliceStationSelect({ value, onChange, id = 'police_stat
           <div className="border-b border-line p-2">
             <input
               autoFocus value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Type a thana or district…"
+              placeholder={t('checkout.thanaSearch')}
+              aria-label={t('checkout.thanaSearch')}
               className="h-9 w-full rounded-md border border-line bg-cream/40 px-3 text-sm text-ink placeholder:text-stone focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             />
           </div>
           <ul role="listbox" className="max-h-64 overflow-y-auto py-1">
             {results.length === 0 && (
-              <li className="px-3 py-3 text-sm text-stone">No match — check the spelling or pick the nearest thana.</li>
+              <li className="px-3 py-3 text-sm text-stone">{t('checkout.thanaNoMatch')}</li>
             )}
             {results.map((p) => (
               <li key={p.label} role="option" aria-selected={value === p.label}>

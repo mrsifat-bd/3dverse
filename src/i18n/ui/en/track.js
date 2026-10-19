@@ -1,0 +1,27 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  title: 'Track your order',
+  intro: 'Enter the order number from your confirmation and the phone number you ordered with.',
+  orderNumber: 'Order number',
+  numberPlaceholder: 'e.g. 3D-20261017-001',
+  phone: 'Phone number',
+  checking: 'Checking…',
+  button: 'Track order',
+  needNumber: 'Enter your order number.',
+  needPhone: 'Enter the 11-digit phone number you ordered with.',
+  unavailable: 'Tracking is not available right now.',
+  failed: 'Could not check the order right now. Please try again.',
+  notFound: 'No order found with that order number and phone number. Please check both and try again.',
+  placedOn: 'Placed {date}',
+  ended: 'Order status: {status}. Contact us if you have questions.',
+  step: {
+    placed: 'Order placed',
+    confirmed: 'Payment verified & confirmed',
+    printing: 'Printed & packed',
+    shipped: 'With the courier',
+    delivered: 'Delivered',
+  },
+  payRejected: 'We could not verify your bKash delivery payment. Please contact us so we can sort it out.',
+  payPending: 'Your bKash delivery payment is waiting to be checked by our team.',
+  courier: 'Courier tracking:',
+}

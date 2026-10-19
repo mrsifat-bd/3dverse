@@ -1,0 +1,23 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  newsletterTitle: 'Get new drops & offers',
+  newsletterText: 'Subscribe with your email: new prints, restocks and discounts. No spam.',
+  followUs: 'Follow us',
+  shop: 'Shop',
+  allProducts: 'All products',
+  company: 'Company',
+  about: 'About us',
+  contact: 'Contact',
+  help: 'Help',
+  track: 'Track your order',
+  faq: 'FAQ',
+  shipping: 'Shipping & delivery',
+  refunds: 'Refunds & returns',
+  privacy: 'Privacy policy',
+  terms: 'Terms & conditions',
+  getInTouch: 'Get in touch',
+  serving: 'Delivering across Bangladesh',
+  copyright: '© {year} {name}. All rights reserved.',
+  owner: 'Owner: {owner}',
+  privacyNote: 'To process orders we record basic, non-personal info (approximate city/country, device type and browser) when you view a product or place an order.',
+}

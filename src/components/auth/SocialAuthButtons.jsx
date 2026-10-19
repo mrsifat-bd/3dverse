@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { signInWithProvider } from '@/hooks/useAuth'
+import { useT } from '@/i18n/client'
 
 // Shown only once the providers are configured in Supabase and the flag is set,
 // so customers never see a broken button before OAuth is live.
@@ -27,6 +28,7 @@ function FacebookF({ className = 'h-4 w-4' }) {
 }
 
 export default function SocialAuthButtons({ next = '', className = '' }) {
+  const t = useT()
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   if (!ENABLED) return null
@@ -36,10 +38,10 @@ export default function SocialAuthButtons({ next = '', className = '' }) {
     setBusy(provider); setError('')
     try {
       const { error } = await signInWithProvider(provider, next)
-      if (error) { setError('Could not start sign-in. Please try again.'); setBusy('') }
+      if (error) { setError(t('auth.socialFailed')); setBusy('') }
       // On success the browser redirects to the provider; keep the button busy.
     } catch {
-      setError('Could not start sign-in. Please try again.'); setBusy('')
+      setError(t('auth.socialFailed')); setBusy('')
     }
   }
 
@@ -47,19 +49,19 @@ export default function SocialAuthButtons({ next = '', className = '' }) {
     <div className={className}>
       <div className="my-5 flex items-center gap-3">
         <span className="h-px flex-1 bg-line" />
-        <span className="text-xs uppercase tracking-wider text-stone">or</span>
+        <span className="text-xs uppercase tracking-wider text-stone">{t('common.or')}</span>
         <span className="h-px flex-1 bg-line" />
       </div>
       <div className="space-y-2.5">
         <button type="button" onClick={() => go('google')} disabled={Boolean(busy)}
           className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-paper px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-line/40 disabled:opacity-60">
           {busy === 'google' ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleG />}
-          {busy === 'google' ? 'Connecting to Google…' : 'Continue with Google'}
+          {busy === 'google' ? t('auth.connecting', { provider: 'Google' }) : t('auth.continueWith', { provider: 'Google' })}
         </button>
         <button type="button" onClick={() => go('facebook')} disabled={Boolean(busy)}
           className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-paper px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-line/40 disabled:opacity-60">
           {busy === 'facebook' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FacebookF />}
-          {busy === 'facebook' ? 'Connecting to Facebook…' : 'Continue with Facebook'}
+          {busy === 'facebook' ? t('auth.connecting', { provider: 'Facebook' }) : t('auth.continueWith', { provider: 'Facebook' })}
         </button>
       </div>
       {error && <p className="mt-2 text-center text-sm text-destructive">{error}</p>}

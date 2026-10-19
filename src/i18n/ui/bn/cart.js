@@ -1,0 +1,22 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  loading: 'কার্ট লোড হচ্ছে…',
+  emptyTitle: 'আপনার কার্ট খালি',
+  emptyText: 'আমাদের পণ্যগুলো দেখুন, পছন্দেরটি কার্টে যোগ করুন।',
+  browse: 'পণ্য দেখুন',
+  title: 'আপনার কার্ট',
+  clear: 'কার্ট খালি করুন',
+  decrease: 'পরিমাণ কমান',
+  increase: 'পরিমাণ বাড়ান',
+  quantity: 'পরিমাণ',
+  remove: '{name} সরান',
+  summary: 'অর্ডারের সারসংক্ষেপ',
+  items: 'পণ্য ({count}টি)',
+  weight: 'মোট ওজন',
+  kg: '{n} কেজি',
+  delivery: 'ডেলিভারি চার্জ',
+  deliveryNote: 'সিলেট শহরে: {amount}। চূড়ান্ত চার্জ চেকআউটে আপনার থানা অনুযায়ী ঠিক হবে।',
+  paymentSplit: 'পণ্যের মোট দাম ({subtotal}) ডেলিভারির সময় ক্যাশে দেবেন। ডেলিভারি চার্জ ({delivery}) চেকআউটে বিকাশে অগ্রিম দিতে হবে।',
+  proceed: 'চেকআউটে যান',
+  continue: 'আরও কেনাকাটা করুন',
+}

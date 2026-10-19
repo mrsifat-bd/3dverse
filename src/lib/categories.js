@@ -9,7 +9,7 @@ export async function getPublicCategories() {
   if (!isSupabaseConfigured) return FALLBACK
   try {
     const { data, error } = await supabase.rpc('public_categories_ranked')
-    if (!error && Array.isArray(data) && data.length) return data
+    if (!error && Array.isArray(data) && data.length) return withBanglaNames(data)
   } catch {}
   try {
     const { data } = await supabase
@@ -18,15 +18,28 @@ export async function getPublicCategories() {
       .eq('status', 'active')
       .order('sort', { ascending: true })
       .order('name', { ascending: true })
-    if (Array.isArray(data) && data.length) return data
+    if (Array.isArray(data) && data.length) return withBanglaNames(data)
   } catch {}
   return FALLBACK
 }
 
+// Bangla category names live in categories.name_bn (optional). The ranked RPC
+// predates that column, so the names are merged in with one small query.
+async function withBanglaNames(cats) {
+  try {
+    const { data } = await supabase.from('categories').select('slug, name_bn')
+    const bn = Object.fromEntries((data || []).filter((r) => r.name_bn).map((r) => [r.slug, r.name_bn]))
+    return cats.map((c) => ({ ...c, name_bn: c.name_bn || bn[c.slug] || null }))
+  } catch {
+    return cats
+  }
+}
+
 // { slug: name } for every active category — used to label product cards.
-export async function getCategoryNames() {
+// Bangla pages get the Bangla name where one has been entered.
+export async function getCategoryNames(lang = 'en') {
   const cats = await getPublicCategories()
-  return Object.fromEntries(cats.map((c) => [c.slug, c.name]))
+  return Object.fromEntries(cats.map((c) => [c.slug, (lang === 'bn' && c.name_bn) || c.name]))
 }
 
 // Categories that actually have products (the DB ranking gives a count; the

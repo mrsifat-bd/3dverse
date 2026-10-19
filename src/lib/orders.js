@@ -251,6 +251,18 @@ export async function updateOrder(id, patch) {
   if (error) throw error
 }
 
+// Admin status change that only applies if the order is still in the status
+// the admin was looking at. Stops a stale admin screen from silently undoing
+// something that happened meanwhile (e.g. the customer cancelling).
+export const ORDER_CHANGED_MESSAGE = 'This order was changed elsewhere (for example, the customer cancelled it). The list has been reloaded — please check it and try again.'
+export async function updateOrderFromStatus(id, expectedStatus, patch) {
+  const { data, error } = await supabase.from('orders').update(patch).eq('id', id).eq('status', expectedStatus).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) {
+    const e = new Error(ORDER_CHANGED_MESSAGE); e.code = 'ORDER_CHANGED'; throw e
+  }
+}
+
 // Hard-delete an order (cascades items/payments/events). Only safe when no
 // Steadfast consignment exists — the UI enforces that. Steadfast's API has no
 // consignment-delete endpoint, so parcel-linked orders are cancelled instead.
@@ -284,25 +296,41 @@ export async function getDeliveryPayment(orderId) {
 }
 
 // Admin manually confirms the bKash payment after checking bKash themselves.
-// This is a human verification — never automatic. Records who/when/method.
-export async function verifyDeliveryPayment(orderId, adminEmail = '') {
-  const now = new Date().toISOString()
-  const a = await supabase.from('delivery_payments')
-    .update({ status: 'verified', verified_at: now, verified_by: adminEmail, verification_method: 'manual', rejection_reason: null })
-    .eq('order_id', orderId)
-  if (a.error) throw a.error
-  const b = await supabase.from('orders').update({ payment_status: 'verified', status: 'confirmed' }).eq('id', orderId)
-  if (b.error) throw b.error
-  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Payment manually verified by admin (pending → paid) — order confirmed.', actor: adminEmail })
+// This is a human verification — never automatic. One locked database
+// transaction (admin_verify_delivery_payment): a customer cancelling at the same
+// moment can never be overwritten — whichever happens first wins.
+export async function verifyDeliveryPayment(orderId) {
+  const { error } = await supabase.rpc('admin_verify_delivery_payment', { p_order_id: orderId })
+  if (error) throw new Error(adminOrderError(error.message))
 }
 
-export async function rejectDeliveryPayment(orderId, reason = '', adminEmail = '') {
-  const now = new Date().toISOString()
-  const a = await supabase.from('delivery_payments')
-    .update({ status: 'rejected', verified_at: now, verified_by: adminEmail, verification_method: 'manual', rejection_reason: reason })
-    .eq('order_id', orderId)
-  if (a.error) throw a.error
-  const b = await supabase.from('orders').update({ payment_status: 'rejected' }).eq('id', orderId)
-  if (b.error) throw b.error
-  await supabase.from('order_events').insert({ order_id: orderId, type: 'status', message: 'Payment rejected by admin (pending → rejected)' + (reason ? `: ${reason}` : ''), actor: adminEmail })
+export async function rejectDeliveryPayment(orderId, reason = '') {
+  const { error } = await supabase.rpc('admin_reject_delivery_payment', { p_order_id: orderId, p_reason: reason || '' })
+  if (error) throw new Error(adminOrderError(error.message))
+}
+
+function adminOrderError(msg = '') {
+  if (/ORDER_CANCELLED/.test(msg)) return 'The customer has already cancelled this order, so it can no longer be verified. Reload to see the latest status.'
+  if (/ORDER_NOT_FOUND/.test(msg)) return 'Order not found. Reload the list.'
+  return msg
+}
+
+// ---- Customer: cancel own order before verification -----------------------
+// The database decides (cancel_my_order): only the signed-in owner, only while
+// the order is 'new' and its payment is not verified. Returns
+// { ok: true, already } or { ok: false, code } with code one of
+// NOT_CANCELLABLE | ORDER_NOT_FOUND | NOT_AUTHENTICATED | FAILED.
+export async function cancelMyOrder(orderId) {
+  const { data, error } = await supabase.rpc('cancel_my_order', { p_order_id: orderId })
+  if (error) {
+    const code = (String(error.message).match(/NOT_CANCELLABLE|ORDER_NOT_FOUND|NOT_AUTHENTICATED/) || ['FAILED'])[0]
+    return { ok: false, code }
+  }
+  return { ok: true, already: Boolean(data?.already), status: data?.status || 'cancelled' }
+}
+
+// Customer-side eligibility, used only to decide whether to SHOW the button.
+// The server re-checks everything.
+export function canCustomerCancel(order) {
+  return Boolean(order) && order.status === 'new' && order.payment_status !== 'verified'
 }

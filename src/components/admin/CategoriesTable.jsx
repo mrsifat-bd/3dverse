@@ -84,6 +84,7 @@ export default function CategoriesTable() {
             <thead className="bg-paper text-left text-xs uppercase tracking-wide text-stone">
               <tr>
                 <th className="p-3 font-medium">Name</th>
+                <th className="p-3 font-medium">বাংলা নাম</th>
                 <th className="hidden p-3 font-medium sm:table-cell">Slug</th>
                 <th className="p-3 font-medium">Sort</th>
                 <th className="p-3 font-medium">Status</th>
@@ -95,6 +96,9 @@ export default function CategoriesTable() {
                 <tr key={c.id} className="border-t border-line transition-colors hover:bg-line/40">
                   <td className="p-3">
                     <input defaultValue={c.name} onBlur={(e) => e.target.value.trim() && e.target.value !== c.name && patch(c, { name: e.target.value.trim() })} className="w-full max-w-[180px] rounded-lg border border-transparent bg-transparent px-2 py-1 font-medium text-ink hover:border-line focus:border-clay/40 focus:outline-none" />
+                  </td>
+                  <td className="p-3">
+                    <input lang="bn" aria-label={`Bangla name for ${c.name}`} placeholder="—" defaultValue={c.name_bn || ''} onBlur={(e) => (e.target.value.trim() || null) !== (c.name_bn || null) && patch(c, { name_bn: e.target.value.trim() || null })} className="w-full max-w-[160px] rounded-lg border border-transparent bg-transparent px-2 py-1 text-ink hover:border-line focus:border-clay/40 focus:outline-none" />
                   </td>
                   <td className="hidden p-3 text-stone sm:table-cell">{c.slug}</td>
                   <td className="p-3">

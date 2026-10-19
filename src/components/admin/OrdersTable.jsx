@@ -14,7 +14,7 @@ import { useSettings } from '@/components/SettingsProvider'
 import {
   getOrders, updateOrder, deleteOrder, addOrderEvent, getOrderEvents, computeTotals,
   ORDER_STATUSES, orderStatusLabel, steadfastStatusLabel, trackingUrlFor,
-  getDeliveryPayment, verifyDeliveryPayment, rejectDeliveryPayment,
+  getDeliveryPayment, verifyDeliveryPayment, rejectDeliveryPayment, updateOrderFromStatus,
 } from '@/lib/orders'
 import {
   getInvoiceByOrder, updateInvoicePayment, generateInvoiceForOrder,
@@ -69,7 +69,7 @@ function CourierBadge({ order }) {
 function orderVisual(order) {
   const s = order.status
   const p = order.payment_status
-  if (s === 'cancelled' || s === 'returned' || s === 'failed') return { label: s === 'cancelled' ? 'Cancelled' : orderStatusLabel(s), color: '#8A8577', tint: 'rgba(138,133,119,0.10)' }
+  if (s === 'cancelled' || s === 'returned' || s === 'failed') return { label: s === 'cancelled' ? (order.cancelled_by === 'customer' ? 'Cancelled by customer' : 'Cancelled') : orderStatusLabel(s), color: '#8A8577', tint: 'rgba(138,133,119,0.10)' }
   if (p === 'rejected') return { label: 'Payment rejected', color: '#B4381F', tint: 'rgba(180,56,31,0.07)' }
   if (p === 'pending') return { label: 'Pending verification', color: '#C99A4E', tint: 'rgba(201,154,78,0.10)' }
   if (s === 'delivered') return { label: 'Completed', color: '#2E8B54', tint: 'rgba(46,139,84,0.16)', done: true }
@@ -237,18 +237,25 @@ export default function OrdersTable() {
       setPayment((p) => (p ? { ...p, status: 'verified' } : p))
       try { setEvents(await getOrderEvents(order.id)) } catch {}
       await loadInvoice(order.id) // confirming auto-generates the invoice (DB trigger)
-    } catch (e) { setRowError(e.message) } finally { setPayBusy(false) }
+    } catch (e) {
+      setRowError(e.message)
+      if (/already cancelled/i.test(e.message)) load() // show the customer's cancellation
+    } finally { setPayBusy(false) }
   }
 
   async function cancelOrder(order) {
     if (!window.confirm('Cancel this order? The customer will see it as cancelled.')) return
     setRowError('')
     try {
-      await updateOrder(order.id, { status: 'cancelled' })
+      const patch = { status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: 'admin' }
+      await updateOrderFromStatus(order.id, order.status, patch)
       await addOrderEvent(order.id, { type: 'status', message: 'Order cancelled by admin.', actor: await adminEmail() })
-      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'cancelled' } : o)))
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, ...patch } : o)))
       try { setEvents(await getOrderEvents(order.id)) } catch {}
-    } catch (e) { setRowError(e.message) }
+    } catch (e) {
+      setRowError(e.message)
+      if (e.code === 'ORDER_CHANGED') load()
+    }
   }
 
   async function removeOrder(order) {
@@ -269,7 +276,10 @@ export default function OrdersTable() {
       setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, payment_status: 'rejected' } : o)))
       setPayment((p) => (p ? { ...p, status: 'rejected', rejection_reason: reason } : p))
       try { setEvents(await getOrderEvents(order.id)) } catch {}
-    } catch (e) { setRowError(e.message) } finally { setPayBusy(false) }
+    } catch (e) {
+      setRowError(e.message)
+      if (/already cancelled/i.test(e.message)) load()
+    } finally { setPayBusy(false) }
   }
 
   // Confirm modal gate for the (manual) payment decision.
@@ -306,10 +316,13 @@ export default function OrdersTable() {
     const prev = orders
     setOrders((cur) => cur.map((o) => (o.id === order.id ? { ...o, status } : o)))
     try {
-      await updateOrder(order.id, { status })
+      await updateOrderFromStatus(order.id, order.status, { status })
       await addOrderEvent(order.id, { type: 'status', message: `Status set to ${orderStatusLabel(status)}` })
       if (status === 'confirmed') { await loadInvoice(order.id); try { setEvents(await getOrderEvents(order.id)) } catch {} }
-    } catch (e) { setOrders(prev); setRowError(e.message) }
+    } catch (e) {
+      setOrders(prev); setRowError(e.message)
+      if (e.code === 'ORDER_CHANGED') load()
+    }
   }
 
   // ---- Invoice actions ---------------------------------------------------

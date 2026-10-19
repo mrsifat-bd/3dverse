@@ -9,7 +9,7 @@ async function sessionUser() {
   return data?.session?.user || null
 }
 
-const PRODUCT_COLS = 'id,name,slug,price,discount_percent,image_url,weight_kg,in_stock,category'
+const PRODUCT_COLS = 'id,name,name_bn,slug,price,discount_percent,image_url,weight_kg,in_stock,category'
 
 // ---- Likes --------------------------------------------------------------
 export async function getLikeCount(productId) {

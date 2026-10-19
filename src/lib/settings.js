@@ -14,6 +14,11 @@ export const DEFAULT_SETTINGS = {
   hero_headline: 'Custom 3D printed products, made for you.',
   hero_subtext:
     'Anatomical and bone models, Islamic décor, desk organisers and phone stands — designed and printed on demand. Browse the catalog, add to cart and check out online with cash on delivery.',
+  // Bangla versions (shown on /bn pages; editable in admin Settings).
+  tagline_bn: 'অর্ডার অনুযায়ী তৈরি ৩ডি প্রিন্টেড পণ্য, সারা বাংলাদেশে ডেলিভারি।',
+  hero_headline_bn: 'আপনার জন্য তৈরি কাস্টম ৩ডি প্রিন্টেড পণ্য।',
+  hero_subtext_bn:
+    'অ্যানাটমিক্যাল ও বোন মডেল, ইসলামিক ডেকোর, ডেস্ক অর্গানাইজার ও ফোন স্ট্যান্ড, অর্ডার অনুযায়ী ডিজাইন ও প্রিন্ট করা। পণ্য বেছে কার্টে যোগ করুন, অনলাইনে চেকআউট করুন, পণ্যের দাম ক্যাশ অন ডেলিভারি।',
   social_facebook: BUSINESS.social.facebook,
   social_instagram: BUSINESS.social.instagram,
   social_tiktok: BUSINESS.social.tiktok,

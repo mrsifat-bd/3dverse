@@ -1,0 +1,22 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  loading: 'Loading cart…',
+  emptyTitle: 'Your cart is empty',
+  emptyText: 'Browse our products and add something you like.',
+  browse: 'Browse products',
+  title: 'Your cart',
+  clear: 'Clear cart',
+  decrease: 'Decrease quantity',
+  increase: 'Increase quantity',
+  quantity: 'Quantity',
+  remove: 'Remove {name}',
+  summary: 'Order summary',
+  items: 'Items ({count})',
+  weight: 'Total weight',
+  kg: '{n} kg',
+  delivery: 'Delivery charge',
+  deliveryNote: 'Sylhet city: {amount}. The final amount is set by your thana at checkout.',
+  paymentSplit: 'The product total ({subtotal}) is paid cash on delivery. The delivery charge ({delivery}) is prepaid via bKash at checkout.',
+  proceed: 'Proceed to checkout',
+  continue: 'Continue shopping',
+}

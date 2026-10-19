@@ -5,12 +5,13 @@ import { firstImage, effectivePrice } from './format'
 // { product_id, name, slug, price, image, weight_kg, in_stock, quantity }
 
 const GUEST_KEY = '3dv_cart'
-const PRODUCT_COLS = 'id,name,slug,price,discount_percent,image_url,weight_kg,in_stock'
+const PRODUCT_COLS = 'id,name,name_bn,slug,price,discount_percent,image_url,weight_kg,in_stock'
 
 export function enrichLine(p, quantity) {
   return {
     product_id: p.id,
     name: p.name,
+    name_bn: p.name_bn || null,
     slug: p.slug,
     price: effectivePrice(p),
     image: firstImage(p),

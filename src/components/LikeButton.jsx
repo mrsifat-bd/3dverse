@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useT, useLocalizedRouter } from '@/i18n/client'
 import * as m from 'motion/react-m'
 import { Heart } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -9,7 +10,8 @@ import { cn } from '@/lib/utils'
 
 export default function LikeButton({ productId, showCount = true, className }) {
   const { user } = useAuth()
-  const router = useRouter()
+  const router = useLocalizedRouter()
+  const t = useT()
   const pathname = usePathname()
   const [count, setCount] = useState(0)
   const [liked, setLiked] = useState(false)
@@ -30,7 +32,7 @@ export default function LikeButton({ productId, showCount = true, className }) {
   }
 
   return (
-    <button onClick={onClick} aria-label={liked ? 'Unlike' : 'Like'} className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
+    <button onClick={onClick} aria-pressed={liked} aria-label={liked ? t('product.unlike') : t('product.like')} className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
       <m.span key={liked ? 'on' : 'off'} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
         <Heart className={cn('h-5 w-5 transition-colors', liked ? 'fill-clay text-clay' : 'text-stone')} />
       </m.span>

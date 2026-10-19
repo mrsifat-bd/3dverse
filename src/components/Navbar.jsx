@@ -1,8 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from './LocalizedLink'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useLang, useT, useLocalizedRouter } from '@/i18n/client'
+import { stripLocale } from '@/i18n/config'
+import LanguageSwitcher from './LanguageSwitcher'
 import { Search, Menu, X, User, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ThemeToggle from './ThemeToggle'
@@ -14,18 +17,21 @@ import * as m from 'motion/react-m'
 import { dropdown } from '@/lib/motion'
 
 const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/shop', label: 'Shop' },
-  { href: '/category/medical-bone-models', label: 'Medical & Bone Models' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/', key: 'home' },
+  { href: '/shop', key: 'shop' },
+  { href: '/category/medical-bone-models', key: 'medical' },
+  { href: '/about', key: 'about' },
+  { href: '/contact', key: 'contact' },
 ]
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
-  const pathname = usePathname()
-  const router = useRouter()
+  const rawPath = usePathname() || '/'
+  const pathname = stripLocale(rawPath)
+  const router = useLocalizedRouter()
+  const t = useT()
+  const lang = useLang()
   const settings = useSettings()
   const cart = useCart()
 
@@ -38,7 +44,7 @@ export default function Navbar() {
   }
 
   // Close the mobile menu on navigation and with Escape.
-  useEffect(() => { setOpen(false) }, [pathname])
+  useEffect(() => { setOpen(false) }, [rawPath])
   useEffect(() => {
     if (!open) return
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
@@ -51,12 +57,12 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/85 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:opacity-90 active:scale-95" aria-label={`${settings.business_name} home`}>
+        <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:opacity-90 active:scale-95" aria-label={t('nav.homeOf', { name: settings.business_name })}>
           <Image src="/logo-sm.webp" alt={`${settings.business_name} logo`} width={40} height={44} priority className="h-9 w-auto dark:invert" />
           <span className="font-display text-xl font-semibold tracking-tight text-ink">{settings.business_name}</span>
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className={cn('hidden items-center md:flex', lang === 'bn' ? 'gap-5' : 'gap-7')} aria-label={t('nav.main')}>
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -66,7 +72,7 @@ export default function Navbar() {
                 isActive(item.href) ? 'font-medium text-clay after:scale-x-100' : 'text-ink/80 after:scale-x-0'
               )}
             >
-              {item.label}
+              {t(`nav.${item.key}`)}
             </Link>
           ))}
         </nav>
@@ -79,15 +85,15 @@ export default function Navbar() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 type="search"
-                placeholder="Search products…"
-                aria-label="Search products"
+                placeholder={t('nav.searchPlaceholder')}
+                aria-label={t('nav.search')}
                 className="w-40 bg-transparent text-sm text-ink placeholder:text-stone focus:outline-none"
               />
             </div>
           </form>
           <Link
             href="/cart"
-            aria-label="Cart"
+            aria-label={cart?.count > 0 ? t('nav.cartCount', { count: cart.count }) : t('nav.cart')}
             className="relative grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
           >
             <ShoppingBag className="h-5 w-5" />
@@ -97,16 +103,17 @@ export default function Navbar() {
           </Link>
           <Link
             href="/account"
-            aria-label="My account"
+            aria-label={t('nav.account')}
             className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
           >
             <User className="h-5 w-5" />
           </Link>
+          <LanguageSwitcher className="hidden sm:grid" />
           <ThemeToggle />
           <button
             onClick={() => setOpen((v) => !v)}
             className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-[transform,border-color,color] duration-200 hover:border-clay/40 hover:text-clay active:scale-90 md:hidden"
-            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={open}
             aria-controls="mobile-menu"
           >
@@ -125,8 +132,8 @@ export default function Navbar() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 type="search"
-                placeholder="Search products…"
-                aria-label="Search products"
+                placeholder={t('nav.searchPlaceholder')}
+                aria-label={t('nav.search')}
                 className="w-full bg-transparent text-sm text-ink placeholder:text-stone focus:outline-none"
               />
             </form>
@@ -137,7 +144,7 @@ export default function Navbar() {
                 onClick={() => setOpen(false)}
                 className={cn('block rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-line/50 active:bg-line/70', isActive(item.href) ? 'bg-line/60 font-medium text-clay' : 'text-ink/80')}
               >
-                {item.label}
+                {t(`nav.${item.key}`)}
               </Link>
             ))}
             <Link
@@ -145,8 +152,9 @@ export default function Navbar() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-ink/80 transition-colors hover:bg-line/50 active:bg-line/70"
             >
-              <User className="h-4 w-4" /> My account
+              <User className="h-4 w-4" /> {t('nav.account')}
             </Link>
+            <LanguageSwitcher variant="menu" />
           </div>
         </m.div>
       )}

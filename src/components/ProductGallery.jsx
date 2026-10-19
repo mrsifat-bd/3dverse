@@ -7,8 +7,10 @@ import * as m from 'motion/react-m'
 import { ChevronLeft, ChevronRight, X, Expand } from 'lucide-react'
 import { fade, DURATION, EASE } from '@/lib/motion'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n/client'
 
 export default function ProductGallery({ images, name }) {
+  const t = useT()
   const [active, setActive] = useState(0)
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState({})
@@ -56,7 +58,7 @@ export default function ProductGallery({ images, name }) {
         onKeyDown={(e) => { if (hasImages && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(true) } }}
         role={hasImages ? 'button' : undefined}
         tabIndex={hasImages ? 0 : undefined}
-        aria-label={hasImages ? 'Open full-screen image' : undefined}
+        aria-label={hasImages ? t('gallery.open') : undefined}
       >
         <AnimatePresence mode="wait" initial={false}>
           <m.div
@@ -68,7 +70,7 @@ export default function ProductGallery({ images, name }) {
               <Image src={list[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority
                 onError={() => setFailed((f) => ({ ...f, [active]: true }))} />
             ) : (
-              <div className="grid h-full w-full place-items-center text-stone">No image</div>
+              <div className="grid h-full w-full place-items-center text-stone">{t('gallery.noImage')}</div>
             )}
           </m.div>
         </AnimatePresence>
@@ -86,7 +88,7 @@ export default function ProductGallery({ images, name }) {
             <button
               key={i}
               onClick={() => setActive(i)}
-              aria-label={`View image ${i + 1}`}
+              aria-label={t('gallery.view', { n: i + 1 })}
               className={cn('relative h-20 w-20 overflow-hidden rounded-xl border transition-colors', i === active ? 'border-clay' : 'border-line hover:border-clay/40')}
             >
               {img && <ProductImage src={img} variant="card" alt="" sizes="80px" className="object-cover" />}
@@ -103,14 +105,14 @@ export default function ProductGallery({ images, name }) {
             {...fade}
             role="dialog"
             aria-modal="true"
-            aria-label={`${name} — photo ${active + 1} of ${list.length}`}
+            aria-label={t('gallery.dialog', { name, n: active + 1, total: list.length })}
             onClick={() => setOpen(false)}
           >
             <button
               ref={closeRef}
               type="button"
               onClick={() => setOpen(false)}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <X className="h-5 w-5" />
@@ -120,7 +122,7 @@ export default function ProductGallery({ images, name }) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(-1) }}
-                aria-label="Previous image"
+                aria-label={t('gallery.prev')}
                 className="absolute left-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -143,7 +145,7 @@ export default function ProductGallery({ images, name }) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(1) }}
-                aria-label="Next image"
+                aria-label={t('gallery.next')}
                 className="absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
               >
                 <ChevronRight className="h-6 w-6" />

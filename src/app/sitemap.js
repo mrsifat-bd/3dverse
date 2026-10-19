@@ -19,34 +19,31 @@ const STATIC_PAGES = [
   ['/track', 0.3, 'yearly'],
 ]
 
+// Every page exists in English (existing URL) and Bangla (/bn/...). Both are
+// listed, each pointing at the other through hreflang alternates.
+function both(path, rest) {
+  const en = `${SITE_URL}${path}`
+  const bn = `${SITE_URL}/bn${path}`
+  const alternates = { languages: { en, bn, 'x-default': en } }
+  return [{ url: en, ...rest, alternates }, { url: bn, ...rest, alternates }]
+}
+
 export default async function sitemap() {
   const now = new Date()
-  const staticRoutes = STATIC_PAGES.map(([p, priority, changeFrequency]) => ({
-    url: `${SITE_URL}${p}`,
-    lastModified: now,
-    changeFrequency,
-    priority,
-  }))
+  const staticRoutes = STATIC_PAGES.flatMap(([p, priority, changeFrequency]) =>
+    both(p, { lastModified: now, changeFrequency, priority }))
 
   let categoryRoutes = []
   try {
-    categoryRoutes = nonEmptyCategories(await getPublicCategories()).map((c) => ({
-      url: `${SITE_URL}/category/${c.slug}`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    }))
+    categoryRoutes = nonEmptyCategories(await getPublicCategories()).flatMap((c) =>
+      both(`/category/${c.slug}`, { lastModified: now, changeFrequency: 'weekly', priority: 0.7 }))
   } catch {}
 
   let productRoutes = []
   try {
     const products = await getAllProducts()
-    productRoutes = products.map((p) => ({
-      url: `${SITE_URL}/product/${p.slug}`,
-      lastModified: p.updated_at || p.created_at || now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }))
+    productRoutes = products.flatMap((p) =>
+      both(`/product/${p.slug}`, { lastModified: p.updated_at || p.created_at || now, changeFrequency: 'weekly', priority: 0.8 }))
   } catch {}
 
   return [...staticRoutes, ...categoryRoutes, ...productRoutes]

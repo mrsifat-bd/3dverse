@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { Loader2, Check } from 'lucide-react'
 import { subscribe } from '@/lib/subscribers'
+import { useT } from '@/i18n/client'
 
 export default function SubscribeForm({ source = 'site', onDone }) {
+  const t = useT()
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
@@ -20,14 +22,14 @@ export default function SubscribeForm({ source = 'site', onDone }) {
       try { localStorage.setItem('subscribed', '1') } catch {}
       onDone && onDone()
     } else {
-      setErr(r.error)
+      setErr(/valid email/i.test(r.error || '') ? t('subscribe.invalidEmail') : t('subscribe.failed'))
     }
   }
 
   if (done) {
     return (
       <p className="flex items-center gap-2 text-sm font-medium text-clay">
-        <Check className="h-4 w-4" /> Thanks — you&apos;re on the list!
+        <Check className="h-4 w-4" /> {t('subscribe.done')}
       </p>
     )
   }
@@ -41,11 +43,11 @@ export default function SubscribeForm({ source = 'site', onDone }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          aria-label="Email address"
+          aria-label={t('subscribe.emailLabel')}
           className="h-11 w-full rounded-full border border-line bg-paper px-4 text-sm text-ink placeholder:text-stone focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         />
         <button type="submit" disabled={busy} className="btn-primary shrink-0">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subscribe'}
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t('subscribe.button')}
         </button>
       </div>
       {err && <p className="mt-2 text-xs text-destructive">{err}</p>}

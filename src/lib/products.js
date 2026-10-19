@@ -7,7 +7,7 @@ import { MOCK_PRODUCTS } from './mockData'
 // admin-only column that the anon role has no column privilege on — selecting it
 // (or `*`) as anon would error. Every public query below lists explicit columns.
 const PUBLIC_COLUMNS =
-  'id,name,slug,price,description,category,tags,image_url,in_stock,created_at,discount_percent,review_url,extra_link,extra_link_label,faqs,is_popular,weight_kg'
+  'id,name,slug,price,description,category,tags,image_url,in_stock,created_at,discount_percent,review_url,extra_link,extra_link_label,faqs,is_popular,weight_kg,name_bn,description_bn'
 
 // Products WITH a photo always rank above products without one, so the shop
 // never leads with empty placeholder cards.
@@ -83,6 +83,7 @@ export function toListProduct(p, categoryNames) {
   return {
     id: p.id,
     name: p.name,
+    name_bn: p.name_bn || undefined,
     slug: p.slug,
     price: p.price,
     description: p.description,
@@ -131,7 +132,7 @@ export function searchProducts(products, query) {
   const q = (query || '').trim().toLowerCase()
   if (!q) return products
   return products.filter((p) => {
-    const haystack = [p.name, p.description, p.category, ...(Array.isArray(p.tags) ? p.tags : [])]
+    const haystack = [p.name, p.name_bn, p.description, p.category, p.category_name, ...(Array.isArray(p.tags) ? p.tags : [])].filter(Boolean)
       .join(' ')
       .toLowerCase()
     return haystack.includes(q)

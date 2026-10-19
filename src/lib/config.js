@@ -6,9 +6,9 @@ export const BUSINESS = {
   email: '3dverse.bd@gmail.com',
   phone: '+8801357141040',
   whatsappNumber: '8801357141040',
-  tagline: 'Custom 3D printed products, made in Sylhet.',
+  tagline: 'Custom 3D printed products, delivered across Bangladesh.',
   description:
-    '3D Verse designs and 3D-prints made-to-order products from our studio in Sylhet, Bangladesh — anatomical and bone models for students and clinics, Islamic décor, desk organisers, phone stands and gifts. Every piece is printed on demand, so we can tailor size, colour, and detail to exactly what you need.',
+    '3D Verse designs and 3D-prints made-to-order products and delivers them across Bangladesh — anatomical and bone models for students and clinics, Islamic décor, desk organisers, phone stands and gifts. Every piece is printed on demand, so we can tailor size, colour, and detail to exactly what you need.',
   social: {
     facebook: 'https://www.facebook.com/3dversebd',
     instagram: 'https://www.instagram.com/3dversebd/',
@@ -29,12 +29,12 @@ export const SITE_URL =
 export const REVIEW_URL = 'https://www.youtube.com/watch?v=gKxe9yfNt8c&list=PLTfEbDVspMGw'
 
 export const CATEGORIES = [
-  { slug: 'medical-bone-models', name: 'Medical & Bone Models', blurb: 'Anatomical skull parts, vertebrae, skeletons and study sets for students and clinics.' },
-  { slug: 'gadgets', name: 'Gadgets', blurb: 'Mounts, cases, racks and functional tech accessories.' },
-  { slug: 'aquarium', name: 'Aquarium', blurb: 'Decorative caves, formations and aquascaping pieces.' },
-  { slug: 'desk-accessories', name: 'Desk & Accessories', blurb: 'Pen holders, stands, organisers and everyday desk essentials.' },
-  { slug: 'home-decor', name: 'Home Decor', blurb: 'Wall art, decor and sculptural pieces for the home.' },
-  { slug: 'gifts', name: 'Gifts', blurb: 'Thoughtful, made-to-order gifts for every occasion.' },
+  { slug: 'medical-bone-models', name: 'Medical & Bone Models', name_bn: 'মেডিকেল ও বোন মডেল', blurb: 'Anatomical skull parts, vertebrae, skeletons and study sets for students and clinics.' },
+  { slug: 'gadgets', name: 'Gadgets', name_bn: 'গ্যাজেট', blurb: 'Mounts, cases, racks and functional tech accessories.' },
+  { slug: 'aquarium', name: 'Aquarium', name_bn: 'অ্যাকুয়ারিয়াম', blurb: 'Decorative caves, formations and aquascaping pieces.' },
+  { slug: 'desk-accessories', name: 'Desk & Accessories', name_bn: 'ডেস্ক ও অ্যাক্সেসরিজ', blurb: 'Pen holders, stands, organisers and everyday desk essentials.' },
+  { slug: 'home-decor', name: 'Home Decor', name_bn: 'ঘর সাজানো', blurb: 'Wall art, decor and sculptural pieces for the home.' },
+  { slug: 'gifts', name: 'Gifts', name_bn: 'উপহার', blurb: 'Thoughtful, made-to-order gifts for every occasion.' },
 ]
 
 // Last-resort label for a category slug that isn't in the list above (the

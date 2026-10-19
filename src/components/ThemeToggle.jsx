@@ -1,8 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
+import { useT } from '@/i18n/client'
 
 export default function ThemeToggle() {
+  const t = useT()
   const [dark, setDark] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -23,7 +25,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={dark ? t('common.lightMode') : t('common.darkMode')}
       className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90"
     >
       {mounted && dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

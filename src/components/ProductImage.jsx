@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { cardImage } from '@/lib/format'
+import { useT } from '@/i18n/client'
 
 // Product image with a graceful fallback. Fills its positioned parent (the
 // parent reserves the space via aspect-ratio, so there is no layout shift).
@@ -11,6 +12,7 @@ import { cardImage } from '@/lib/format'
 // photos. If that variant is missing (older uploads) it falls back to the full
 // image, and only then to a clean "No image" placeholder.
 export default function ProductImage({ src, alt = '', className = '', sizes, priority = false, variant = 'full' }) {
+  const t = useT()
   const small = variant === 'card' ? cardImage(src) : src
   const [stage, setStage] = useState(0) // 0 = preferred, 1 = full-size fallback, 2 = failed
   const current = stage === 0 ? small : src
@@ -18,7 +20,7 @@ export default function ProductImage({ src, alt = '', className = '', sizes, pri
   const [loaded, setLoaded] = useState(false)
 
   if (!src || stage === 2) {
-    return <div className="grid h-full w-full place-items-center bg-line/40 text-xs text-stone">No image</div>
+    return <div className="grid h-full w-full place-items-center bg-line/40 text-xs text-stone">{t('gallery.noImage')}</div>
   }
   return (
     <>

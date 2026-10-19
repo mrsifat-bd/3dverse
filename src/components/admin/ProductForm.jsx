@@ -24,6 +24,8 @@ export default function ProductForm({ initial }) {
     slug: initial?.slug || '',
     price: initial?.price ?? '',
     description: initial?.description || '',
+    name_bn: initial?.name_bn || '',
+    description_bn: initial?.description_bn || '',
     category: initial?.category || FALLBACK_CATEGORIES[0].slug,
     tags: Array.isArray(initial?.tags) ? initial.tags.join(', ') : initial?.tags || '',
     in_stock: initial?.in_stock ?? true,
@@ -220,6 +222,21 @@ export default function ProductForm({ initial }) {
         <Label htmlFor="description">Description</Label>
         <Textarea id="description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={5} />
       </div>
+
+      <details className="rounded-xl border border-line p-3" open={Boolean(form.name_bn || form.description_bn)}>
+        <summary className="cursor-pointer text-sm font-medium">বাংলা — Bangla name &amp; description <span className="font-normal text-stone">(optional)</span></summary>
+        <div className="mt-3 space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="name_bn">Name in Bangla</Label>
+            <Input id="name_bn" lang="bn" value={form.name_bn} onChange={(e) => set('name_bn', e.target.value)} placeholder="যেমন: মানুষের খুলির মডেল" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="description_bn">Description in Bangla</Label>
+            <Textarea id="description_bn" lang="bn" value={form.description_bn} onChange={(e) => set('description_bn', e.target.value)} rows={4} />
+          </div>
+          <p className="text-xs text-stone">Shown on the Bangla site (/bn). Leave empty to show the English text there. Keep medical and technical terms accurate.</p>
+        </div>
+      </details>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">

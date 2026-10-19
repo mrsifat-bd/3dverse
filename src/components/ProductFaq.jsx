@@ -2,20 +2,24 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT, useLang } from '@/i18n/client'
+import { textLang } from '@/lib/format'
 
 // Collapsible FAQ accordion — only questions show; click to expand the answer.
 export default function ProductFaq({ faqs }) {
+  const t = useT()
+  const lang = useLang()
   const [open, setOpen] = useState(-1)
   if (!Array.isArray(faqs) || faqs.length === 0) return null
 
   return (
     <section className="mt-16 max-w-3xl">
-      <h2 className="font-display text-2xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 className="font-display text-2xl font-semibold text-ink">{t('product.faqTitle')}</h2>
       <div className="mt-6 divide-y divide-line overflow-hidden rounded-2xl border border-line">
         {faqs.map((f, i) => {
           const isOpen = open === i
           return (
-            <div key={i} className="bg-paper">
+            <div key={i} className="bg-paper" lang={textLang(`${f.q} ${f.a}`) !== lang ? textLang(`${f.q} ${f.a}`) : undefined}>
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? -1 : i)}

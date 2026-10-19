@@ -1,0 +1,23 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  title: 'My Account',
+  profile: 'Profile',
+  orders: 'My Orders',
+  wishlist: 'Wishlist',
+  changePassword: 'Change password',
+  signOut: 'Sign out',
+  changePhoto: 'Change photo',
+  uploadPhoto: 'Upload photo',
+  photoHint: 'JPG or PNG, up to 5 MB.',
+  photoFailed: 'The photo could not be uploaded. Please try a JPG or PNG under 5 MB.',
+  defaultAddress: 'Default delivery address',
+  addressPlaceholder: 'House / road, area, thana, district',
+  saving: 'Saving…',
+  save: 'Save changes',
+  saved: 'Saved ✓',
+  saveFailed: 'Your changes could not be saved. Please try again.',
+  wishlistTitle: 'My Wishlist',
+  wishlistText: 'Products you saved. Tap the bookmark on a card to remove it.',
+  wishlistEmpty: 'No saved products yet.',
+  backToAccount: 'Back to account',
+}

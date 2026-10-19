@@ -50,21 +50,21 @@ export const metadata = {
   // Pages set their own title; the template adds the brand once at the end,
   // e.g. "Human Heart Model 3D Printed | 3D Verse BD".
   title: {
-    default: '3D Verse BD | 3D Printing in Sylhet, Bangladesh',
+    default: '3D Verse BD | 3D Printing in Bangladesh',
     template: '%s | 3D Verse BD',
   },
   description:
-    '3D printed anatomical and bone models, Islamic décor, desk organisers and phone stands, made to order in Sylhet. Order online: delivery charge via bKash, product price cash on delivery.',
-  keywords: ['3D printing Bangladesh', '3D print Sylhet', 'anatomical models', 'bone models', 'medical models Bangladesh', 'Islamic decor', 'phone stand', 'pen holder', '3D Verse', '3DVerse', '৩ডি প্রিন্টিং'],
+    '3D printed anatomical and bone models, Islamic décor, desk organisers and phone stands, made to order and delivered across Bangladesh. Order online: delivery charge via bKash, product price cash on delivery.',
+  keywords: ['3D printing Bangladesh', 'custom 3D printing', 'anatomical models', 'bone models', 'medical models Bangladesh', 'Islamic decor', 'phone stand', 'pen holder', '3D Verse', '3DVerse', '৩ডি প্রিন্টিং'],
   openGraph: {
-    title: '3D Verse BD | 3D Printing in Sylhet, Bangladesh',
-    description: 'Made-to-order 3D printed products. Order online: delivery charge via bKash, product price cash on delivery.',
+    title: '3D Verse BD | 3D Printing in Bangladesh',
+    description: 'Made-to-order 3D printed products, delivered across Bangladesh. Order online: delivery charge via bKash, product price cash on delivery.',
     url: SITE_URL,
     siteName: '3D Verse BD',
     locale: 'en_US',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: '3D Verse BD | 3D Printing in Sylhet, Bangladesh' },
+  twitter: { card: 'summary_large_image', title: '3D Verse BD | 3D Printing in Bangladesh' },
   verification: { google: 'GfSE00tB2Iskt-kbkNlIhoYFzxEXvjq5TjQkreii--c' },
   icons: {
     icon: [
@@ -88,7 +88,7 @@ export default async function RootLayout({ children }) {
         {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+            __html: `(function(){try{var p=location.pathname;if(p==='/bn'||p.indexOf('/bn/')===0){document.documentElement.lang='bn'}}catch(e){}})();(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
           }}
         />
       </head>

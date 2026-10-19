@@ -1,0 +1,22 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  logoAlt: '{name} লোগো',
+  lightMode: 'লাইট মোডে যান',
+  darkMode: 'ডার্ক মোডে যান',
+  backToTop: 'উপরে ফিরে যান',
+  whatsappChat: 'হোয়াটসঅ্যাপে আমাদের সাথে কথা বলুন',
+  whatsappUs: 'হোয়াটসঅ্যাপ করুন',
+  close: 'বন্ধ করুন',
+  cancel: 'বাতিল',
+  back: 'পেছনে',
+  loading: 'লোড হচ্ছে…',
+  tryAgain: 'আবার চেষ্টা করুন',
+  required: 'আবশ্যক',
+  optional: 'ঐচ্ছিক',
+  home: 'হোম',
+  breadcrumb: 'পেজের অবস্থান',
+  cod: 'ক্যাশ অন ডেলিভারি',
+  or: 'অথবা',
+  showMore: 'আরও দেখুন',
+  error: 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+}

@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ShopBrowser from './ShopBrowser'
+import { useT } from '@/i18n/client'
 
 const DEFAULTS = { q: '', category: 'all', popular: false }
 
@@ -25,6 +26,7 @@ function ParamsSync({ onChange }) {
 }
 
 export default function ShopView({ products, categories }) {
+  const t = useT()
   const [f, setF] = useState(DEFAULTS)
   const update = (next) =>
     setF((cur) => (cur.q === next.q && cur.category === next.category && cur.popular === next.popular ? cur : next))
@@ -35,8 +37,8 @@ export default function ShopView({ products, categories }) {
         <ParamsSync onChange={update} />
       </Suspense>
       <header className="mb-8">
-        <h1 className="font-display text-3xl font-semibold text-ink">{f.popular ? 'Popular products' : 'Shop all products'}</h1>
-        <p className="mt-1 text-sm text-stone">Made-to-order 3D prints. Add to cart and check out here: delivery charge via bKash, product price cash on delivery.</p>
+        <h1 className="font-display text-3xl font-semibold text-ink">{f.popular ? t('shop.titlePopular') : t('shop.title')}</h1>
+        <p className="mt-1 text-sm text-stone">{t('shop.intro')}</p>
       </header>
       <ShopBrowser
         // Remount when the URL filters change (e.g. a new search from the navbar).

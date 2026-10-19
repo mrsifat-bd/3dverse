@@ -1,0 +1,23 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  title: 'আমার অ্যাকাউন্ট',
+  profile: 'প্রোফাইল',
+  orders: 'আমার অর্ডার',
+  wishlist: 'উইশলিস্ট',
+  changePassword: 'পাসওয়ার্ড বদলান',
+  signOut: 'সাইন আউট',
+  changePhoto: 'ছবি বদলান',
+  uploadPhoto: 'ছবি আপলোড করুন',
+  photoHint: 'JPG বা PNG, সর্বোচ্চ ৫ এমবি।',
+  photoFailed: 'ছবিটি আপলোড করা যায়নি। ৫ এমবির কম JPG বা PNG দিয়ে চেষ্টা করুন।',
+  defaultAddress: 'ডেলিভারির স্থায়ী ঠিকানা',
+  addressPlaceholder: 'বাসা / রোড, এলাকা, থানা, জেলা',
+  saving: 'সেভ হচ্ছে…',
+  save: 'পরিবর্তন সেভ করুন',
+  saved: 'সেভ হয়েছে ✓',
+  saveFailed: 'পরিবর্তন সেভ করা যায়নি। আবার চেষ্টা করুন।',
+  wishlistTitle: 'আমার উইশলিস্ট',
+  wishlistText: 'আপনার সেভ করা পণ্য। সরাতে কার্ডের বুকমার্কে ট্যাপ করুন।',
+  wishlistEmpty: 'এখনো কোনো পণ্য সেভ করা হয়নি।',
+  backToAccount: 'অ্যাকাউন্টে ফিরে যান',
+}

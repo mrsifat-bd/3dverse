@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { isAdminEmail } from '@/lib/config'
 import { safeNext } from '@/lib/authRedirect'
 import AuthCard from '@/components/auth/AuthCard'
+import { useT } from '@/i18n/client'
 
 // Finalises the OAuth redirect: supabase-js exchanges the code/hash for a
 // session on load; we then send the user to a safe first-party destination.
@@ -13,6 +14,7 @@ import AuthCard from '@/components/auth/AuthCard'
 function CallbackInner() {
   const router = useRouter()
   const params = useSearchParams()
+  const t = useT()
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
@@ -36,7 +38,7 @@ function CallbackInner() {
   }, [params, router])
 
   return (
-    <AuthCard title="Just a moment" subtitle={failed ? 'Redirecting…' : 'Signing you in securely…'}>
+    <AuthCard title={t('auth.justAMoment')} subtitle={failed ? t('auth.redirecting') : t('auth.signingIn')}>
       <div className="flex justify-center py-2 text-clay"><Loader2 className="h-6 w-6 animate-spin" /></div>
     </AuthCard>
   )

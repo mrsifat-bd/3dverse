@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
 import * as mo from 'motion/react-m'
-import { Bell, Loader2, PackageCheck, CheckCheck } from 'lucide-react'
+import { Bell, Loader2, PackageCheck, PackageX, CheckCheck } from 'lucide-react'
 import {
   getAdminNotifications, unreadCount, markNotificationRead,
   markAllNotificationsRead, subscribeAdminNotifications,
@@ -135,7 +135,7 @@ export default function NotificationBell() {
                         className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-line/40 ${n.read_at ? '' : 'bg-clay/[0.04]'}`}
                       >
                         <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${n.read_at ? 'bg-line/60 text-stone' : 'bg-clay/15 text-clay'}`}>
-                          <PackageCheck className="h-4 w-4" />
+                          {n.type === 'customer_cancelled' ? <PackageX className="h-4 w-4" /> : <PackageCheck className="h-4 w-4" />}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">

@@ -1,0 +1,20 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  home: 'হোম',
+  shop: 'শপ',
+  medical: 'মেডিকেল ও বোন মডেল',
+  about: 'আমাদের কথা',
+  contact: 'যোগাযোগ',
+  account: 'অ্যাকাউন্ট',
+  cart: 'কার্ট',
+  cartCount: 'কার্ট, {count}টি পণ্য',
+  search: 'পণ্য খুঁজুন',
+  searchPlaceholder: 'পণ্য খুঁজুন...',
+  openMenu: 'মেনু খুলুন',
+  closeMenu: 'মেনু বন্ধ করুন',
+  homeOf: '{name} হোম',
+  main: 'প্রধান মেনু',
+  language: 'ভাষা',
+  switchToBn: 'বাংলায় দেখুন',
+  switchToEn: 'View in English (ইংরেজিতে দেখুন)',
+}

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useT, useLocalizedRouter } from '@/i18n/client'
 import { Loader2 } from 'lucide-react'
 import { useCart } from './CartProvider'
 import { cn } from '@/lib/utils'
@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils'
 // Adds the product to the cart, then sends the user to checkout (login first if needed).
 export default function BuyNowButton({ product, qty = 1, full = false, className }) {
   const cart = useCart()
-  const router = useRouter()
+  const router = useLocalizedRouter()
+  const t = useT()
   const [busy, setBusy] = useState(false)
 
   async function onClick() {
@@ -32,7 +33,7 @@ export default function BuyNowButton({ product, qty = 1, full = false, className
         className
       )}
     >
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Buy now
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t('product.buyNow')}
     </button>
   )
 }

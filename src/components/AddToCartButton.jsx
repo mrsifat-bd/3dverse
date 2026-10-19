@@ -3,10 +3,12 @@ import { useState } from 'react'
 import { ShoppingBag, Check, Loader2 } from 'lucide-react'
 import { useCart } from './CartProvider'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n/client'
 
 // Adds a product to the cart with brief "Added" feedback.
 export default function AddToCartButton({ product, qty = 1, full = false, variant = 'primary', className }) {
   const cart = useCart()
+  const t = useT()
   const [added, setAdded] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -31,7 +33,7 @@ export default function AddToCartButton({ product, qty = 1, full = false, varian
     <button
       onClick={onClick}
       disabled={busy}
-      aria-label="Add to cart"
+      aria-label={t('product.addToCart')}
       className={cn(
         'inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3 text-sm font-medium transition-[transform,background-color,border-color,color] duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-70',
         base,
@@ -40,7 +42,7 @@ export default function AddToCartButton({ product, qty = 1, full = false, varian
       )}
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : added ? <Check className="pop h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-      <span aria-live="polite">{added ? 'Added' : 'Add to cart'}</span>
+      <span aria-live="polite">{added ? t('product.added') : t('product.addToCart')}</span>
     </button>
   )
 }

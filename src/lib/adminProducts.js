@@ -27,6 +27,9 @@ function normalise(payload) {
     slug: (payload.slug?.trim() || slugify(payload.name || '')),
     price: Number(payload.price) || 0,
     description: payload.description?.trim() || '',
+    // Optional Bangla versions; empty means the English text is shown on /bn.
+    name_bn: payload.name_bn?.trim() || null,
+    description_bn: payload.description_bn?.trim() || null,
     category: payload.category || 'miscellaneous',
     tags: Array.isArray(payload.tags)
       ? payload.tags

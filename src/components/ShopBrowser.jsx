@@ -4,9 +4,13 @@ import { Search, Flame } from 'lucide-react'
 import { searchProducts, sortProducts } from '@/lib/products'
 import ProductGrid from './ProductGrid'
 import { Select } from './ui/select'
+import { useLang, useT } from '@/i18n/client'
+import { localized, formatNumber } from '@/lib/format'
 
 // Client-side browser over a product list fetched on the server.
 export default function ShopBrowser({ products, categories = [], initialQuery = '', initialCategory = 'all', initialPopular = false }) {
+  const t = useT()
+  const lang = useLang()
   const [query, setQuery] = useState(initialQuery)
   const [category, setCategory] = useState(initialCategory)
   const [sort, setSort] = useState('popular')
@@ -22,7 +26,7 @@ export default function ShopBrowser({ products, categories = [], initialQuery = 
 
   return (
     <div>
-      <div className="mb-3 text-sm text-stone">{visible.length} product{visible.length === 1 ? '' : 's'}</div>
+      <div className="mb-3 text-sm text-stone" aria-live="polite">{t(visible.length === 1 ? 'shop.countOne' : 'shop.count', { count: formatNumber(visible.length, lang) })}</div>
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex w-full items-center gap-2 rounded-full border border-line bg-paper px-4 py-2.5 lg:max-w-md">
           <Search className="h-4 w-4 text-stone" />
@@ -30,30 +34,31 @@ export default function ShopBrowser({ products, categories = [], initialQuery = 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             type="search"
-            placeholder="Search by name, tag or category…"
-            aria-label="Search products"
+            placeholder={t('shop.searchPlaceholder')}
+            aria-label={t('nav.search')}
             className="w-full bg-transparent text-sm text-ink placeholder:text-stone focus:outline-none"
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
+            aria-pressed={popularOnly}
             onClick={() => setPopularOnly((v) => !v)}
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition duration-200 hover:scale-[1.02] active:scale-95 ${popularOnly ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40 hover:text-clay'}`}
           >
-            <Flame className="h-4 w-4" /> Popular
+            <Flame className="h-4 w-4" /> {t('product.popular')}
           </button>
-          <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category">
-            <option value="all">All categories</option>
+          <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t('shop.category')}>
+            <option value="all">{t('shop.allCategories')}</option>
             {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>{c.name}</option>
+              <option key={c.slug} value={c.slug}>{localized(c, 'name', lang)}</option>
             ))}
           </Select>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
-            <option value="popular">Popular first</option>
-            <option value="newest">Newest</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
+          <Select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t('shop.sort')}>
+            <option value="popular">{t('shop.sortPopular')}</option>
+            <option value="newest">{t('shop.sortNewest')}</option>
+            <option value="price-asc">{t('shop.sortPriceAsc')}</option>
+            <option value="price-desc">{t('shop.sortPriceDesc')}</option>
           </Select>
         </div>
       </div>

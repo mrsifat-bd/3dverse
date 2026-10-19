@@ -1,0 +1,20 @@
+/* eslint-disable import/no-anonymous-default-export */
+export default {
+  home: 'Home',
+  shop: 'Shop',
+  medical: 'Medical & Bone Models',
+  about: 'About',
+  contact: 'Contact',
+  account: 'Account',
+  cart: 'Cart',
+  cartCount: 'Cart, {count} items',
+  search: 'Search products',
+  searchPlaceholder: 'Search products...',
+  openMenu: 'Open menu',
+  closeMenu: 'Close menu',
+  homeOf: '{name} home',
+  main: 'Main',
+  language: 'Language',
+  switchToBn: 'বাংলায় দেখুন (Switch to Bangla)',
+  switchToEn: 'View in English',
+}

@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { AnimatePresence } from 'motion/react'
 import * as m from 'motion/react-m'
+import { useT } from '@/i18n/client'
 
-const WORDS = ['Dream', 'Design', 'Deliver']
+const WORD_KEYS = ['home.word1', 'home.word2', 'home.word3']
 
 // Same look as before (glowing orbs, floating logo, rotating word), rebuilt to
 // be cheap to render:
@@ -15,6 +16,8 @@ const WORDS = ['Dream', 'Design', 'Deliver']
 // - Everything pauses while the hero is off screen or the tab is hidden, and
 //   honours prefers-reduced-motion (see globals.css).
 export default function HeroPanel() {
+  const t = useT()
+  const WORDS = WORD_KEYS.map((k) => t(k))
   const [i, setI] = useState(0)
   const [active, setActive] = useState(true)
   const ref = useRef(null)
@@ -33,8 +36,8 @@ export default function HeroPanel() {
 
   useEffect(() => {
     if (!active) return
-    const t = setInterval(() => setI((v) => (v + 1) % WORDS.length), 1900)
-    return () => clearInterval(t)
+    const id = setInterval(() => setI((v) => (v + 1) % WORD_KEYS.length), 1900)
+    return () => clearInterval(id)
   }, [active])
 
   return (

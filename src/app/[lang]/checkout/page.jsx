@@ -1,0 +1,266 @@
+'use client'
+import { useEffect, useMemo, useState } from 'react'
+import { useLang, useT, useLocalizedRouter } from '@/i18n/client'
+import { orderErrorKey, txnErrorKey } from '@/lib/orderErrors'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
+import { step as stepMotion } from '@/lib/motion'
+import { Loader2, Copy, Check, ArrowRight, ArrowLeft, ClipboardPaste } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { useCart } from '@/components/CartProvider'
+import { getMyProfile } from '@/lib/profile'
+import { placeOrder, isValidBDPhone } from '@/lib/orders'
+import { validateBkashTransactionId } from '@/lib/bkash'
+import Link from '@/components/LocalizedLink'
+import { localDeliveryCharge } from '@/lib/delivery'
+import PoliceStationSelect from '@/components/PoliceStationSelect'
+import { formatPrice, formatNumber, localized } from '@/lib/format'
+import { BKASH } from '@/lib/config'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+
+// Address first (so the delivery charge can follow the customer's area),
+// then the bKash delivery-charge payment, then confirm.
+const STEPS = ['checkout.stepSummary', 'checkout.stepDetails', 'checkout.stepPayment']
+
+export default function CheckoutPage() {
+  const { user, loading: authLoading } = useAuth()
+  const cart = useCart()
+  const router = useLocalizedRouter()
+  const t = useT()
+  const lang = useLang()
+  const money = (v) => formatPrice(v, lang)
+
+  const [step, setStep] = useState(1)
+  const [form, setForm] = useState({ customer_name: '', customer_phone: '', customer_address: '', police_station: '', note: '', transaction_id: '' })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [txnError, setTxnError] = useState('')
+  const [copied, setCopied] = useState(false)
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // FORMAT check only — never a payment verification.
+  const txnCheck = validateBkashTransactionId(form.transaction_id)
+
+  function detailsError(f) {
+    if (f.customer_name.trim().length < 2) return t('form.nameRequired')
+    if (!isValidBDPhone(f.customer_phone)) return t('form.phoneInvalid')
+    if (f.customer_address.trim().length < 10) return t('form.addressShort')
+    if (!f.police_station) return t('form.thanaRequired')
+    return ''
+  }
+
+  function goToPayment() {
+    const e = detailsError(form)
+    if (e) { setError(e); return }
+    setError('')
+    setStep(3)
+  }
+
+  // Paste from clipboard on explicit user action, then run the same format check.
+  async function pasteTxn() {
+    try {
+      const text = await navigator.clipboard.readText()
+      const raw = String(text || '').trim().replace(/\s+/g, '').toUpperCase()
+      const r = validateBkashTransactionId(text)
+      set('transaction_id', r.ok ? r.value : raw)
+      setTxnError(!raw ? '' : r.ok ? '' : t(txnErrorKey(r.error)))
+    } catch {
+      setTxnError(t('checkout.clipboardBlocked'))
+    }
+  }
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/login?next=/checkout')
+  }, [authLoading, user, router])
+
+  useEffect(() => {
+    if (!user) return
+    getMyProfile().then(({ profile }) => {
+      setForm((f) => ({
+        ...f,
+        customer_name: f.customer_name || profile?.full_name || '',
+        customer_phone: f.customer_phone || profile?.phone || '',
+        customer_address: f.customer_address || profile?.default_address || '',
+      }))
+    })
+  }, [user])
+
+  const lines = cart?.lines || []
+  const subtotal = cart?.subtotal || 0
+  const weight = cart?.weight || 0
+  const delivery = useMemo(() => localDeliveryCharge(weight, form.police_station), [weight, form.police_station])
+
+  if (authLoading || !user || !cart || cart.loading) {
+    return <div className="container flex items-center gap-2 py-24 text-stone"><Loader2 className="h-5 w-5 animate-spin" /> {t('common.loading')}</div>
+  }
+
+  if (lines.length === 0) {
+    return (
+      <div className="container py-16">
+        <div className="mx-auto max-w-md rounded-3xl border border-line bg-paper p-10 text-center">
+          <h1 className="font-display text-2xl font-semibold text-ink">{t('cart.emptyTitle')}</h1>
+          <p className="mt-2 text-sm text-stone">{t('checkout.emptyText')}</p>
+          <Link href="/shop" className="btn-primary mt-6">{t('cart.browse')}</Link>
+        </div>
+      </div>
+    )
+  }
+
+  function copyNumber() {
+    try { navigator.clipboard.writeText(BKASH.number) } catch {}
+    setCopied(true); setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function confirm() {
+    setError('')
+    const de = detailsError(form)
+    if (de) { setError(de); setStep(2); return }
+    const txn = validateBkashTransactionId(form.transaction_id)
+    if (!txn.ok) { setTxnError(t(txnErrorKey(txn.error))); return }
+    setTxnError('')
+    setBusy(true)
+    const r = await placeOrder({
+      customer_name: form.customer_name,
+      customer_phone: form.customer_phone,
+      customer_address: form.customer_address,
+      police_station: form.police_station,
+      note: form.note,
+      transaction_id: txn.value,
+      items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+    })
+    setBusy(false)
+    if (!r.ok) {
+      const key = orderErrorKey(r.error)
+      if (key === 'checkout.txnInvalid' || key === 'checkout.txnRequired') { setTxnError(t(key)); return }
+      setError(t(key))
+      return
+    }
+    try { await cart.clear() } catch {}
+    const q = new URLSearchParams({ n: r.order_number, cod: String(r.cod), delivery: String(r.delivery), txn: txn.value })
+    router.push(`/checkout/success?${q.toString()}`)
+  }
+
+  return (
+    <div className="container max-w-3xl py-12">
+      <h1 className="font-display text-3xl font-semibold text-ink">{t('checkout.title')}</h1>
+
+      {/* Stepper */}
+      <div className="mt-6 flex items-center gap-2">
+        {STEPS.map((key, i) => {
+          const label = t(key)
+          const n = i + 1
+          const active = step === n
+          const done = step > n
+          return (
+            <div key={key} className="flex flex-1 items-center gap-2">
+              <span aria-current={active ? 'step' : undefined} className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors duration-300 ${active ? 'bg-clay text-paper' : done ? 'bg-clay/20 text-clay' : 'border border-line text-stone'}`}>{done ? <Check className="pop h-4 w-4" /> : formatNumber(n, lang)}</span>
+              <span className={`hidden text-sm sm:block ${active ? 'font-medium text-ink' : 'text-stone'}`}>{label}</span>
+              {n < STEPS.length && <span className="h-px flex-1 bg-line" />}
+            </div>
+          )
+        })}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <m.div key={step} {...stepMotion} className="mt-8">
+
+          {step === 1 && (
+            <div className="rounded-2xl border border-line bg-paper p-6">
+              <h2 className="font-display text-lg font-semibold text-ink">{t('cart.summary')}</h2>
+              <ul className="mt-4 divide-y divide-line">
+                {lines.map((l) => (
+                  <li key={l.product_id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                    <span className="min-w-0 truncate text-ink">{localized(l, 'name', lang)} <span className="text-stone">× {formatNumber(l.quantity, lang)}</span></span>
+                    <span className="shrink-0 font-medium text-ink">{money(l.price * l.quantity)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
+                <div className="flex justify-between text-stone"><span>{t('checkout.subtotalCod')}</span><span className="text-ink">{money(subtotal)}</span></div>
+                <div className="flex justify-between text-stone"><span>{t('checkout.deliveryPrepaid')}</span><span className="text-ink">{form.police_station ? money(delivery) : `${money(localDeliveryCharge(weight, 'Sylhet Sadar, Sylhet'))}–${money(delivery)}`}</span></div>
+                {!form.police_station && <p className="text-xs text-stone">{t('checkout.deliveryRangeNote')}</p>}
+                <div className="flex justify-between font-semibold text-ink"><span>{t('checkout.payOnDelivery')}</span><span>{money(subtotal)}</span></div>
+              </div>
+              <Button className="mt-6 w-full" size="lg" onClick={() => setStep(2)}>{t('checkout.toDetails')} <ArrowRight className="h-4 w-4" /></Button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="rounded-2xl border border-line bg-paper p-6">
+              <h2 className="font-display text-lg font-semibold text-ink">{t('checkout.deliveryInfo')}</h2>
+              <div className="mt-5 space-y-4">
+                <div className="space-y-1.5"><Label htmlFor="name">{t('form.fullName')}</Label><Input id="name" value={form.customer_name} onChange={(e) => set('customer_name', e.target.value)} autoComplete="name" /></div>
+                <div className="space-y-1.5"><Label htmlFor="phone">{t('form.phone')}</Label><Input id="phone" inputMode="tel" value={form.customer_phone} onChange={(e) => set('customer_phone', e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" /></div>
+                <div className="space-y-1.5"><Label htmlFor="addr">{t('form.address')}</Label><Textarea id="addr" rows={2} value={form.customer_address} onChange={(e) => set('customer_address', e.target.value)} placeholder={t('form.addressPlaceholder')} autoComplete="street-address" /></div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="police_station">{t('checkout.thana')} <span className="text-clay" aria-hidden="true">*</span></Label>
+                  <PoliceStationSelect value={form.police_station} onChange={(v) => set('police_station', v)} />
+                  <p className="text-xs text-stone">{t('checkout.thanaHelp')}</p>
+                </div>
+                <div className="space-y-1.5"><Label htmlFor="note">{t('form.note')} <span className="text-stone">({t('common.optional')})</span></Label><Textarea id="note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} /></div>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-clay/30 bg-clay/5 p-3 text-xs leading-relaxed text-stone">
+                {t('checkout.addressNote', { delivery: form.police_station ? money(delivery) : t('checkout.selectThana'), subtotal: money(subtotal) })}
+              </div>
+
+              {error && <p role="alert" className="enter mt-3 text-sm text-destructive">{error}</p>}
+
+              <div className="mt-6 flex gap-3">
+                <Button variant="ghost" onClick={() => { setError(''); setStep(1) }}><ArrowLeft className="h-4 w-4" /> {t('common.back')}</Button>
+                <Button className="flex-1" onClick={goToPayment}>{t('checkout.toPayment')} <ArrowRight className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="rounded-2xl border border-line bg-paper p-6">
+              <h2 className="font-display text-lg font-semibold text-ink">{t('checkout.payTitle')}</h2>
+              <p className="mt-1 text-sm text-stone">{t('checkout.payText', { thana: form.police_station, delivery: money(delivery), subtotal: money(subtotal) })}</p>
+
+              <div className="mt-5 rounded-xl border border-clay/30 bg-clay/5 p-4">
+                <div className="flex items-center justify-between"><span className="text-sm text-stone">{t('checkout.bkashNumber')}</span><button onClick={copyNumber} className="inline-flex items-center gap-1.5 text-sm font-medium text-clay" aria-live="polite">{copied ? <><Check className="pop h-4 w-4" /> {t('checkout.copied')}</> : <><Copy className="h-4 w-4" /> {t('checkout.copy')}</>}</button></div>
+                <p className="mt-1 font-display text-2xl font-semibold text-ink">{BKASH.number}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div><p className="text-stone">{t('checkout.type')}</p><p className="font-medium text-ink">{t('checkout.sendMoney')}</p></div>
+                  <div><p className="text-stone">{t('checkout.amount')}</p><p className="font-medium text-ink">{money(delivery)}</p></div>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-1.5">
+                <Label htmlFor="txn">{t('checkout.txnLabel')} <span className="text-clay" aria-hidden="true">*</span></Label>
+                <div className="relative">
+                  <Input id="txn" className="pr-[86px]" value={form.transaction_id} aria-invalid={Boolean(txnError)}
+                    onChange={(e) => { set('transaction_id', e.target.value.toUpperCase()); if (txnError) setTxnError('') }}
+                    aria-describedby="txn-help"
+                    placeholder={t('checkout.txnPlaceholder')} />
+                  <button type="button" onClick={pasteTxn} aria-label={t('checkout.pasteLabel')}
+                    className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md border border-line bg-cream px-2 py-1.5 text-xs font-medium text-clay transition-colors hover:bg-clay/10">
+                    <ClipboardPaste className="h-3.5 w-3.5" /> {t('checkout.paste')}
+                  </button>
+                </div>
+                {/* Live FORMAT feedback — not a payment confirmation. */}
+                {form.transaction_id.trim() && txnCheck.ok && !txnError && (
+                  <p className="enter text-xs font-medium text-[#5B8A5B]">{t('checkout.txnFormatOk')}</p>
+                )}
+                {txnError && <p role="alert" className="enter text-xs text-destructive">{txnError}</p>}
+                <p id="txn-help" className="text-xs text-stone">{t('checkout.txnHelp', { amount: money(delivery), number: BKASH.number })}</p>
+              </div>
+
+              {error && <p role="alert" className="enter mt-3 text-sm text-destructive">{error}</p>}
+
+              <div className="mt-6 flex gap-3">
+                <Button variant="ghost" onClick={() => { setError(''); setStep(2) }} disabled={busy}><ArrowLeft className="h-4 w-4" /> {t('common.back')}</Button>
+                <Button className="flex-1" onClick={confirm} disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('checkout.placing')}</> : t('checkout.confirm')}</Button>
+              </div>
+            </div>
+          )}
+
+        </m.div>
+      </AnimatePresence>
+    </div>
+  )
+}

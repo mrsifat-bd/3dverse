@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Reveal from './Reveal'
 import ProductCard from './ProductCard'
 import { Skeleton } from './ui/skeleton'
+import { useT } from '@/i18n/client'
 
 export function ProductGridSkeleton({ count = 8 }) {
   return (
@@ -26,11 +27,12 @@ export function ProductGridSkeleton({ count = 8 }) {
 // Cards below the fold reveal as they scroll in (once per visit), and their
 // rendering is skipped until they get near the screen (content-visibility).
 export default function ProductGrid({ products, animateKey }) {
+  const t = useT()
   const [initialKey] = useState(animateKey)
   if (!products.length) {
     return (
       <div className="enter rounded-2xl border border-dashed border-line bg-paper py-16 text-center">
-        <p className="text-sm text-stone">No products found. Try a different search or category.</p>
+        <p className="text-sm text-stone">{t('shop.noResults')}</p>
       </div>
     )
   }
