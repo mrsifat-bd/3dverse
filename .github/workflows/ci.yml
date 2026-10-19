@@ -32,3 +32,66 @@ jobs:
         env:
           # Build runs in demo mode (no secrets needed). Real env vars live in Vercel.
           NEXT_PUBLIC_SITE_URL: https://example.com
+
+  # Database rules (rate limits, quantity validation, function permissions)
+  # against a throwaway Postgres. Never touches the real project.
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Database checks
+        run: npm run test:db
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+
+  # Browser regression tests on a demo build (public pages, languages,
+  # accessibility, SEO crawl) and on a fake-backend build (checkout,
+  # customer cancellation, admin flows). No real data or secrets.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Public site (demo build)
+        run: |
+          npm run build
+          (npx next start -p 3123 &) ; npx -y wait-on -t 60000 http://localhost:3123
+          node e2e/regress.mjs
+          node e2e/crawl.mjs
+          node e2e/a11y.mjs
+          pkill -f "next start" || true
+      - name: Orders and admin (fake backend build)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://qafake.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon
+        run: |
+          echo "127.0.0.1 qafake.supabase.co" | sudo tee -a /etc/hosts
+          npm run build
+          (npx next start -p 3123 &) ; npx -y wait-on -t 60000 http://localhost:3123
+          node e2e/orders-admin.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-screenshots
+          path: e2e/out/

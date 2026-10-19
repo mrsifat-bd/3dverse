@@ -90,7 +90,6 @@ export default async function ProductPage({ params }) {
     '@type': 'Product',
     name,
     description,
-    inLanguage: lang,
     image: images.filter((u) => /^https?:\/\//.test(u)),
     sku: product.slug,
     category: catName,
@@ -103,7 +102,6 @@ export default async function ProductPage({ params }) {
       itemCondition: 'https://schema.org/NewCondition',
       url: productUrl,
       seller: { '@type': 'Organization', name: '3D Verse BD' },
-      hasMerchantReturnPolicy: { '@id': `${SITE_URL}/refund-policy` },
     },
     // Only real, approved customer ratings — never invented.
     ...(ratings.count > 0

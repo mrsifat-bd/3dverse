@@ -4,17 +4,14 @@
 
 /* Bangla text: Hind Siliguri, Bengali glyphs only. 400 also serves 500
    (no faux bold), 600 also serves 700. Preloaded on /bn pages only.
-   Display "optional": if the font is not ready almost immediately the page
-   keeps the system Bengali font for that view instead of swapping later.
-   A late swap re-shapes and re-lays out every Bangla line (measured as the
-   biggest main-thread cost on /bn) and could shift the layout. The file is
-   cached, so the next page uses Hind Siliguri. */
+   Display "swap" (measured): "optional" blocked the first paint until the
+   font arrived, which made Lighthouse's Bangla LCP worse (5.5-6.4 s). */
 @font-face {
   font-family: 'Hind Siliguri';
   src: url('/fonts/hind-siliguri-bengali-400.woff2') format('woff2');
   font-weight: 300 500;
   font-style: normal;
-  font-display: optional;
+  font-display: swap;
   unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
 }
 @font-face {
@@ -22,7 +19,7 @@
   src: url('/fonts/hind-siliguri-bengali-600.woff2') format('woff2');
   font-weight: 600 800;
   font-style: normal;
-  font-display: optional;
+  font-display: swap;
   unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
 }
 :root { --font-hind: 'Hind Siliguri'; }
