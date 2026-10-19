@@ -32,17 +32,43 @@ const nextConfig = {
   },
   // Old URLs that changed (kept forever so links and Google results still work).
   async redirects() {
-    return [
-      { source: '/category/i', destination: '/category/islamic-items', permanent: true },
-      { source: '/product/porsche-911-gt3-rs-wall-art', destination: '/product/gt-sports-car-wall-art', permanent: true },
-      { source: '/privacy', destination: '/privacy-policy', permanent: true },
-      { source: '/refund', destination: '/refund-policy', permanent: true },
-      { source: '/return-policy', destination: '/refund-policy', permanent: true },
-      { source: '/shipping', destination: '/shipping-policy', permanent: true },
-      { source: '/terms-and-conditions', destination: '/terms', permanent: true },
+    const legacy = [
+      ['/category/i', '/category/islamic-items'],
+      ['/product/porsche-911-gt3-rs-wall-art', '/product/gt-sports-car-wall-art'],
+      ['/privacy', '/privacy-policy'],
+      ['/refund', '/refund-policy'],
+      ['/return-policy', '/refund-policy'],
+      ['/shipping', '/shipping-policy'],
+      ['/terms-and-conditions', '/terms'],
     ]
+    // Same legacy paths under /bn go to the Bangla page (one hop, no chain).
+    return legacy.flatMap(([from, to]) => [
+      { source: from, destination: to, permanent: true },
+      { source: `/bn${from}`, destination: `/bn${to}`, permanent: true },
+    ])
   },
   async headers() {
+    // Content-Security-Policy, built from the hosts the site actually uses:
+    //   Supabase (API, realtime websocket, storage images), ipwho.is (lead
+    //   country lookup), the OpenStreetMap embed on the contact page.
+    // 'unsafe-inline' for scripts is required by statically rendered Next.js
+    // pages (no per-request nonce). Shipped as REPORT-ONLY first: browsers
+    // report violations to /api/csp-report without blocking anything. Switch
+    // the header name to Content-Security-Policy once reports are clean.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.supabase.co",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ipwho.is",
+      "frame-src 'self' https://www.openstreetmap.org",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'report-uri /api/csp-report',
+    ].join('; ')
     return [
       {
         // Stable font file names: rename the file if it ever changes.
@@ -57,6 +83,7 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'Content-Security-Policy-Report-Only', value: csp },
         ],
       },
     ]

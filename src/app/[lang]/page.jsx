@@ -158,7 +158,7 @@ export default async function Home({ params }) {
       </section>
 
       {/* Featured */}
-      <section className="container pb-16">
+      <section className="cv-auto container pb-16">
         <div className="flex items-end justify-between">
           <h2 className="font-display text-2xl font-semibold text-ink">{t('home.featured')}</h2>
           <Link href="/shop" className="text-sm font-medium text-clay hover:underline">{t('home.viewAll')} →</Link>
@@ -169,7 +169,7 @@ export default async function Home({ params }) {
       </section>
 
       {/* Who we are + common questions, in the page language */}
-      <section className="border-t border-line">
+      <section className="cv-auto border-t border-line">
         <div className="container grid gap-10 py-16 md:grid-cols-[1fr_1.3fr]">
           <div>
             <h2 className="font-display text-2xl font-semibold text-ink">{t('home.aboutTitle')}</h2>
@@ -191,7 +191,7 @@ export default async function Home({ params }) {
       </section>
 
       {/* Brand intro / CTA */}
-      <section className="border-t border-line bg-paper">
+      <section className="cv-auto border-t border-line bg-paper">
         <div className="container grid items-center gap-8 py-16 md:grid-cols-[1.2fr_1fr]">
           <FadeIn>
             <h2 className="font-display text-2xl font-semibold text-ink">{t('home.brandTitle')}</h2>

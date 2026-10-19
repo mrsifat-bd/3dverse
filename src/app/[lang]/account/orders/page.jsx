@@ -7,8 +7,9 @@ import { Loader2, Package, ChevronDown, ExternalLink, XCircle, CheckCircle2 } fr
 import { useAuth } from '@/hooks/useAuth'
 import { useLang, useT, useLocalizedRouter } from '@/i18n/client'
 import {
-  getMyOrders, getOrderEvents, steadfastStatusLabel, trackingUrlFor, cancelMyOrder, canCustomerCancel,
+  getMyOrders, getOrderEvents, trackingUrlFor, cancelMyOrder, canCustomerCancel,
 } from '@/lib/orders'
+import { customerEvent, courierLabel } from '@/lib/orderTimeline'
 import { formatPrice, formatDate, formatNumber, localized } from '@/lib/format'
 import { fade, dialog } from '@/lib/motion'
 import { Button } from '@/components/ui/button'
@@ -145,7 +146,7 @@ export default function MyOrdersPage() {
                           )}
                           {o.steadfast_tracking_code && (
                             <div className="rounded-xl border border-line p-3">
-                              <div className="flex justify-between"><span className="text-stone">{t('orders.courier')}</span><span className="text-ink">Steadfast · {steadfastStatusLabel(o.steadfast_status)}</span></div>
+                              <div className="flex justify-between"><span className="text-stone">{t('orders.courier')}</span><span className="text-ink">Steadfast · {courierLabel(t, o.steadfast_status)}</span></div>
                               <div className="mt-1 flex justify-between"><span className="text-stone">{t('orders.tracking')}</span><span className="font-medium text-ink" lang="en">{o.steadfast_tracking_code}</span></div>
                               <a href={trackingUrlFor(o.steadfast_tracking_code)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-clay hover:underline"><ExternalLink className="h-3.5 w-3.5" /> {t('orders.trackSteadfast')}</a>
                             </div>
@@ -164,10 +165,13 @@ export default function MyOrdersPage() {
                           <p className="text-xs uppercase tracking-wide text-stone">{t('orders.timeline')}</p>
                           <ul className="mt-2 space-y-2 text-sm">
                             <li className="flex gap-2 text-stone"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay" /> {t('orders.placed')} · {formatDate(o.created_at, lang, { time: true })}</li>
-                            {events.map((ev) => (
-                              // Timeline notes are written by our team (English) and shown as written.
-                              <li key={ev.id} className="enter flex gap-2 text-stone"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay/50" /> <span lang="en">{ev.message}</span> · {formatDate(ev.created_at, lang, { time: true })}</li>
-                            ))}
+                            {events.map((ev) => {
+                              // Known timeline messages are translated; internal ones (e.g. courier
+                              // API errors) are not shown to customers.
+                              const line = customerEvent(ev, t)
+                              if (!line) return null
+                              return <li key={ev.id} className="enter flex gap-2 text-stone"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay/50" /> <span lang={line.lang}>{line.text}</span> · {formatDate(ev.created_at, lang, { time: true })}</li>
+                            })}
                           </ul>
                         </div>
                       </div>
