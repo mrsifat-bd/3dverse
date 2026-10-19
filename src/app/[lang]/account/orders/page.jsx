@@ -191,13 +191,18 @@ export default function MyOrdersPage() {
 function CancelDialog({ order, busy, onConfirm, onClose, t, lang }) {
   const keepRef = useRef(null)
   const boxRef = useRef(null)
+  // Latest onClose without re-running the effect on every render (which would
+  // re-focus "Keep order" and lose the element to return focus to).
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  const isOpen = Boolean(order)
 
   useEffect(() => {
-    if (!order) return
+    if (!isOpen) return
     const prev = document.activeElement
     keepRef.current?.focus()
     function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); onClose() }
+      if (e.key === 'Escape') { e.preventDefault(); closeRef.current() }
       if (e.key === 'Tab' && boxRef.current) {
         const f = boxRef.current.querySelectorAll('button:not([disabled])')
         if (!f.length) return
@@ -208,12 +213,12 @@ function CancelDialog({ order, busy, onConfirm, onClose, t, lang }) {
     }
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('keydown', onKey); prev?.focus?.() }
-  }, [order, onClose])
+  }, [isOpen])
 
   return (
     <AnimatePresence>
       {order && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center">
+        <div key="cancel-dialog" className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center">
           <m.div {...fade} className="absolute inset-0 bg-ink/40" onClick={onClose} />
           <m.div
             {...dialog}
