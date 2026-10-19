@@ -45,6 +45,11 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Stable font file names: rename the file if it ever changes.
+        source: '/fonts/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },

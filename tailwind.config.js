@@ -45,7 +45,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'var(--font-hind)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-comfortaa)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-comfortaa)', 'var(--font-inter)', 'var(--font-hind)', 'system-ui', 'sans-serif'],
         bangla: ['var(--font-hind)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       keyframes: {

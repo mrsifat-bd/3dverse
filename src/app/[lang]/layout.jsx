@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import ReactDOM from 'react-dom'
 import { LOCALES, isLocale } from '@/i18n/config'
 import LangSync from '@/components/LangSync'
 
@@ -13,6 +14,13 @@ export function generateStaticParams() {
 
 export default function LangLayout({ children, params }) {
   if (!isLocale(params.lang)) notFound()
+  // Bangla pages: start the Bangla font downloads with the HTML instead of
+  // after the CSS, so headings don't paint late or jump when it arrives.
+  if (params.lang === 'bn') {
+    for (const w of ['400', '600']) {
+      ReactDOM.preload(`/fonts/hind-siliguri-bengali-${w}.woff2`, { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' })
+    }
+  }
   return (
     <>
       <LangSync lang={params.lang} />

@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Bangla text: Hind Siliguri, Bengali glyphs only. 400 also serves 500
+   (no faux bold), 600 also serves 700. Preloaded on /bn pages only. */
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('/fonts/hind-siliguri-bengali-400.woff2') format('woff2');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
+}
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('/fonts/hind-siliguri-bengali-600.woff2') format('woff2');
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
+}
+:root { --font-hind: 'Hind Siliguri'; }
+
 @layer base {
   :root {
     --cream: 244 241 234;

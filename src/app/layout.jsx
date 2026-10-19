@@ -31,19 +31,9 @@ const comfortaa = localFont({
   display: 'swap',
   variable: '--font-comfortaa',
 })
-// Bengali glyphs only (Latin text uses Inter). The browser downloads these
-// files only when a page actually contains Bengali characters.
-const hind = localFont({
-  src: [
-    { path: '../fonts/hind-siliguri-bengali-400-normal.woff2', weight: '400' },
-    { path: '../fonts/hind-siliguri-bengali-500-normal.woff2', weight: '500' },
-    { path: '../fonts/hind-siliguri-bengali-600-normal.woff2', weight: '600' },
-  ],
-  display: 'swap',
-  preload: false,
-  variable: '--font-hind',
-  declarations: [{ prop: 'unicode-range', value: 'U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1' }],
-})
+// Bengali glyphs (Hind Siliguri) are declared in globals.css from /public/fonts
+// with a stable URL, so Bangla pages can preload them (see [lang]/layout.jsx)
+// while English pages never download them.
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -80,7 +70,7 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const [settings, categories] = await Promise.all([getSettings(), getPublicCategories()])
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${comfortaa.variable} ${hind.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${comfortaa.variable}`}>
       <head>
         {/* Product photos come from Supabase Storage: open that connection
             while the HTML is still parsing, so the first images (the LCP on
