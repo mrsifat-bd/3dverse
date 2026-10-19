@@ -11,8 +11,13 @@ const PAGES = ['/', '/shop', '/product/pelvis-anatomical-model', '/cart', '/logi
 const b = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })
 await ctx.route(/placehold\.co|google|facebook|ipwho/, (r) => r.abort())
+// Rules with a known, open finding waiting on a decision (listed in the audit
+// report). They are still printed; they only stop failing the run. Remove an
+// entry once it is fixed so it cannot come back unnoticed.
+const KNOWN = new Set((process.env.A11Y_KNOWN ?? 'color-contrast').split(',').filter(Boolean))
 const summary = {}
 let serious = 0
+let blocking = 0
 for (const lang of ['', '/bn']) {
   for (const path of PAGES) {
     const p = await ctx.newPage()
@@ -24,7 +29,7 @@ for (const lang of ['', '/bn']) {
       const k = `${v.impact} ${v.id}`
       summary[k] = summary[k] || { help: v.help, pages: new Set(), nodes: 0, sample: v.nodes[0]?.target?.join(' ') }
       summary[k].pages.add(lang + path); summary[k].nodes += v.nodes.length
-      if (v.impact === 'serious' || v.impact === 'critical') serious += v.nodes.length
+      if (v.impact === 'serious' || v.impact === 'critical') { serious += v.nodes.length; if (!KNOWN.has(v.id)) blocking += v.nodes.length }
     }
     await p.close()
   }
@@ -49,3 +54,6 @@ for (let i = 0; i < 8; i++) {
 }
 console.log('\nFirst Tab stops:', stops.map((s) => `${s.tag}:${s.name || '(no name)'}${s.visibleFocus ? '' : ' [NO VISIBLE FOCUS]'}`).join(' → '))
 await b.close()
+const noFocus = stops.filter((s) => !s.visibleFocus || !s.name).length
+if (blocking || noFocus) { console.log(`FAIL: ${blocking} blocking node(s), ${noFocus} tab stop(s) without name/visible focus`); process.exit(1) }
+console.log(`OK (known, not blocking: ${[...KNOWN].join(', ') || 'none'})`)

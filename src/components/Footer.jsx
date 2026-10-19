@@ -79,7 +79,7 @@ export default function Footer({ categories = [] }) {
           <p>{t('footer.copyright', { year: new Date().getFullYear(), name: s.business_name })}</p>
           <p>{t('footer.owner', { owner: s.owner })}</p>
         </div>
-        <div className="container pb-5 text-center text-[11px] leading-relaxed text-stone/80">
+        <div className="container pb-5 text-center text-[11px] leading-relaxed text-stone">
           {t('footer.privacyNote')}
         </div>
       </div>

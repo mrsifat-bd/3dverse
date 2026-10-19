@@ -15,7 +15,7 @@ async function get(url, redirect = 'manual') {
   const r = await fetch(url, { redirect, headers: { 'user-agent': '3dverse-seo-crawl' } })
   return { status: r.status, location: r.headers.get('location'), text: r.status === 200 ? await r.text() : '' }
 }
-const attr = (tag, name) => (tag.match(new RegExp(`${name}="([^"]*)"`)) || [])[1]
+const attr = (tag, name) => (tag.match(new RegExp(`${name}="([^"]*)"`, 'i')) || [])[1]
 const unescape = (s) => (s || '').replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"')
 
 const sm = await get(B + '/sitemap.xml')
@@ -36,7 +36,7 @@ for (const u of urls) {
   const canon = [...h.matchAll(/<link[^>]+rel="canonical"[^>]*>/g)].map((m) => attr(m[0], 'href'))
   if (canon.length !== 1) issue('CANONICAL_COUNT', path, String(canon.length))
   else if (new URL(canon[0], HOST).pathname !== path) issue('CANONICAL_NOT_SELF', path, canon[0])
-  const alts = Object.fromEntries([...h.matchAll(/<link[^>]+hreflang="([^"]+)"[^>]*>/g)].map((m) => [m[1], new URL(attr(m[0], 'href'), HOST).pathname]))
+  const alts = Object.fromEntries([...h.matchAll(/<link[^>]+hreflang="([^"]+)"[^>]*>/gi)].map((m) => [m[1], new URL(attr(m[0], 'href'), HOST).pathname]))
   if (!alts.en || !alts.bn || !alts['x-default']) issue('HREFLANG_MISSING', path, JSON.stringify(alts))
   if (alts[expectLang] && alts[expectLang] !== path) issue('HREFLANG_SELF_MISMATCH', path, alts[expectLang])
   const robots = (h.match(/<meta[^>]+name="robots"[^>]*>/) || [''])[0]
@@ -92,4 +92,5 @@ for (const [from, to] of [['/return-policy', '/refund-policy'], ['/bn/return-pol
 }
 console.log(`pages crawled: ${pages.size}, internal links checked: ${checked}, images: ${images.size}`)
 console.log(issues.length ? issues.join('\n') : 'no issues found')
-process.exit(0)
+// Non-zero exit so CI fails on any finding (STRICT=0 to report only).
+process.exit(issues.length && process.env.STRICT !== '0' ? 1 : 0)

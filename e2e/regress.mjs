@@ -56,7 +56,7 @@ await p.context().close()
 // 3. Product gallery dialog
 p = await page()
 await p.goto(B + '/product/pelvis-anatomical-model', { waitUntil: 'networkidle' })
-const gal = p.locator('[aria-label="Open full-screen image"]')
+const gal = p.getByRole('button', { name: /Open full-screen image/ })
 if (await gal.count()) {
   await gal.click(); await p.waitForTimeout(400)
   const dlg = await p.locator('[role="dialog"]').count()

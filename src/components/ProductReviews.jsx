@@ -105,7 +105,7 @@ export default function ProductReviews({ productId }) {
         )
       ) : (
         <p className="mt-4 text-sm text-stone">
-          <Link href={`/login?next=${encodeURIComponent(pathname || '/')}`} className="text-clay hover:underline">{t('auth.logIn')}</Link> {t('reviews.toWrite')}
+          <Link href={`/login?next=${encodeURIComponent(pathname || '/')}`} className="text-clay underline underline-offset-2">{t('auth.logIn')}</Link> {t('reviews.toWrite')}
         </p>
       )}
 

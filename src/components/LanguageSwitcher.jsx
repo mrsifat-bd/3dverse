@@ -49,7 +49,9 @@ export default function LanguageSwitcher({ variant = 'pill', className = '', onS
       type="button"
       onClick={() => switchTo(next)}
       lang={next}
-      aria-label={next === 'bn' ? 'বাংলায় দেখুন (Switch to Bangla)' : 'View in English (ইংরেজিতে দেখুন)'}
+      // The name starts with the visible label ("বাংলা" / "EN") so voice-control
+      // users can say what they see (WCAG 2.5.3).
+      aria-label={next === 'bn' ? 'বাংলা — বাংলায় দেখুন (Switch to Bangla)' : 'EN — View in English (ইংরেজিতে দেখুন)'}
       className={cn(
         'grid h-10 min-w-10 place-items-center rounded-full border border-line px-3 text-sm font-medium text-ink transition-[transform,border-color,color] duration-200 hover:-translate-y-0.5 hover:border-clay/40 hover:text-clay active:scale-90',
         className

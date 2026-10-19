@@ -29,7 +29,8 @@
     --cream: 244 241 234;
     --paper: 251 250 247;
     --ink: 44 42 38;
-    --stone: 138 133 119;
+    /* 110 106 95 (was 138 133 119): 4.5:1+ on cream/paper for WCAG AA body text. */
+    --stone: 110 106 95;
     --line: 231 226 214;
     --clay: 192 96 58;
     --clay-dark: 164 78 45;

@@ -9,7 +9,7 @@ export function RichText({ text }) {
   let m
   while ((m = re.exec(text))) {
     if (m.index > last) parts.push(text.slice(last, m.index))
-    parts.push(<Link key={m.index} href={m[2]} className="text-clay hover:underline">{m[1]}</Link>)
+    parts.push(<Link key={m.index} href={m[2]} className="text-clay underline underline-offset-2">{m[1]}</Link>)
     last = re.lastIndex
   }
   if (last < text.length) parts.push(text.slice(last))

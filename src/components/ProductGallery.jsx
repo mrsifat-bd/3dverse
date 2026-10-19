@@ -58,8 +58,9 @@ export default function ProductGallery({ images, name }) {
         onKeyDown={(e) => { if (hasImages && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(true) } }}
         role={hasImages ? 'button' : undefined}
         tabIndex={hasImages ? 0 : undefined}
-        aria-label={hasImages ? t('gallery.open') : undefined}
       >
+        {/* Name from content (photo alt + this), not an aria-label that hides the visible alt. */}
+        {hasImages && <span className="sr-only">{t('gallery.open')}</span>}
         <AnimatePresence mode="wait" initial={false}>
           <m.div
             key={active}

@@ -32,7 +32,9 @@ export default function LikeButton({ productId, showCount = true, className }) {
   }
 
   return (
-    <button onClick={onClick} aria-pressed={liked} aria-label={liked ? t('product.unlike') : t('product.like')} className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
+    <button onClick={onClick} aria-pressed={liked} className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
+      {/* Name from content ("Like 3"), so the visible count is part of it. */}
+      <span className="sr-only">{liked ? t('product.unlike') : t('product.like')}</span>
       <m.span key={liked ? 'on' : 'off'} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
         <Heart className={cn('h-5 w-5 transition-colors', liked ? 'fill-clay text-clay' : 'text-stone')} />
       </m.span>
