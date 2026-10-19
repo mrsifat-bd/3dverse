@@ -11,7 +11,8 @@ import { getSettings } from '@/lib/settings'
 import { getServerT, getContent } from '@/i18n/server'
 import { seo } from '@/i18n/seo'
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/about', params.lang, t('meta.aboutTitle'), t('meta.aboutDescription'))
 }
@@ -29,7 +30,8 @@ const TEAM = [
   { name: 'Mahbubur Rahman', roleKey: 'advisor', initials: 'MR', photo: '/team/mahbubur.jpg' },
 ]
 
-export default async function AboutPage({ params }) {
+export default async function AboutPage(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const c = getContent(lang, 'about')

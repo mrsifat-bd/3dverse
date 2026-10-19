@@ -23,7 +23,8 @@ function blurbFor(category, lang) {
   return (getContent('bn', 'categoryBlurbs') || {})[category.slug] || category.blurb
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const category = await getCategoryBySlug(params.slug)
@@ -34,7 +35,8 @@ export async function generateMetadata({ params }) {
   return seo(`/category/${category.slug}`, lang, t('meta.categoryTitle', { name }), description.slice(0, 158))
 }
 
-export default async function CategoryPage({ params }) {
+export default async function CategoryPage(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const category = await getCategoryBySlug(params.slug)
@@ -71,5 +73,5 @@ export default async function CategoryPage({ params }) {
 
       <CategoryProducts products={products.map((p) => toListProduct(p, names))} />
     </div>
-  )
+  );
 }

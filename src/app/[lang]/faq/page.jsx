@@ -3,12 +3,14 @@ import { faqFor } from '@/lib/faq'
 import { getServerT, getContent } from '@/i18n/server'
 import { seo } from '@/i18n/seo'
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/faq', params.lang, t('meta.faqTitle'), t('meta.faqDescription'))
 }
 
-export default function FaqPage({ params }) {
+export default async function FaqPage(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const c = getContent(lang, 'faqPage')
@@ -44,5 +46,5 @@ export default function FaqPage({ params }) {
         <Link href="/contact" className="text-clay hover:underline">{t('footer.contact')}</Link>
       </p>
     </div>
-  )
+  );
 }

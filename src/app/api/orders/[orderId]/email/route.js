@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export async function POST(req, { params }) {
+export async function POST(req, props) {
+  const params = await props.params;
   // AuthN + AuthZ: only allowlisted admins, verified server-side.
   const auth = await requireAdmin(req)
   if (auth.error) return json({ error: auth.error }, auth.status)

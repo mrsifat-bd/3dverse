@@ -11,7 +11,8 @@ import { InvoiceDocument } from '@/lib/invoicePdf'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(req, { params }) {
+export async function GET(req, props) {
+  const params = await props.params;
   // Any authenticated user; RLS then limits invoice/order visibility to
   // admins or the order's own customer.
   const auth = await requireUser(req)

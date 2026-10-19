@@ -12,7 +12,13 @@ export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }))
 }
 
-export default function LangLayout({ children, params }) {
+export default async function LangLayout(props) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   if (!isLocale(params.lang)) notFound()
   // Bangla pages: start the Bangla font downloads with the HTML instead of
   // after the CSS (see the font-display note in globals.css).

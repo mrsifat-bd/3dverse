@@ -8,14 +8,16 @@ import { getSettings } from '@/lib/settings'
 import { getServerT, getContent } from '@/i18n/server'
 import { seo } from '@/i18n/seo'
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/contact', params.lang, t('meta.contactTitle'), t('meta.contactDescription'))
 }
 
 const SERVICE_ICONS = [Box, Bone, Boxes, Lightbulb]
 
-export default async function ContactPage({ params }) {
+export default async function ContactPage(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const c = getContent(lang, 'contact')

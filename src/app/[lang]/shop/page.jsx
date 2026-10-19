@@ -11,12 +11,14 @@ import { seo } from '@/i18n/seo'
 // fetch) for every visit.
 export const revalidate = 60
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/shop', params.lang, t('meta.shopTitle'), t('meta.shopDescription'))
 }
 
-export default async function ShopPage({ params }) {
+export default async function ShopPage(props) {
+  const params = await props.params;
   const { lang } = params
   const [products, categories] = await Promise.all([getAllProducts(), getPublicCategories()])
   // Products are sent to the browser once; ShopView handles the URL filters.

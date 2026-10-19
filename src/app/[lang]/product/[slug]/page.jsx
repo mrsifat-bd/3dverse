@@ -30,7 +30,8 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const product = await getProductBySlug(params.slug)
@@ -57,10 +58,11 @@ export async function generateMetadata({ params }) {
       ...(image && /^https?:\/\//.test(image) ? { images: [{ url: image, alt: product.name }] } : {}),
       type: 'website',
     },
-  }
+  };
 }
 
-export default async function ProductPage({ params }) {
+export default async function ProductPage(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const product = await getProductBySlug(params.slug)
@@ -232,5 +234,5 @@ export default async function ProductPage({ params }) {
         </section>
       )}
     </div>
-  )
+  );
 }

@@ -3,12 +3,15 @@ import { CheckCircle2 } from 'lucide-react'
 import { formatPrice } from '@/lib/format'
 import { getServerT } from '@/i18n/server'
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return { title: t('success.metaTitle'), robots: { index: false, follow: false } }
 }
 
-export default function CheckoutSuccessPage({ params, searchParams }) {
+export default async function CheckoutSuccessPage(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   // Order number and transaction ID are shown exactly as issued (never translated).

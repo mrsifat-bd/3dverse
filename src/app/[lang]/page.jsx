@@ -34,12 +34,14 @@ const CATEGORY_ICONS = {
 
 export const revalidate = 60
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/', params.lang, t('meta.homeTitle'), t('meta.homeDescription'), { absoluteTitle: true })
 }
 
-export default async function Home({ params }) {
+export default async function Home(props) {
+  const params = await props.params;
   const { lang } = params
   const t = getServerT(lang)
   const blurbs = getContent(lang, 'categoryBlurbs') || {}
@@ -208,5 +210,5 @@ export default async function Home({ params }) {
         </div>
       </section>
     </div>
-  )
+  );
 }

@@ -3,12 +3,14 @@ import TrackOrder from '@/components/TrackOrder'
 import { getServerT } from '@/i18n/server'
 import { seo } from '@/i18n/seo'
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return seo('/track', params.lang, t('meta.trackTitle'), t('meta.trackDescription'))
 }
 
-export default function TrackPage({ params }) {
+export default async function TrackPage(props) {
+  const params = await props.params;
   const t = getServerT(params.lang)
   return (
     <div className="container max-w-xl py-12">
