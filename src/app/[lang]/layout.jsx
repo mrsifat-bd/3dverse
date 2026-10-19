@@ -17,9 +17,8 @@ export default function LangLayout({ children, params }) {
   // Bangla pages: start the Bangla font downloads with the HTML instead of
   // after the CSS (see the font-display note in globals.css).
   if (params.lang === 'bn') {
-    // Low priority so they never compete with the hero image for bandwidth.
     for (const w of ['400', '600']) {
-      ReactDOM.preload(`/fonts/hind-siliguri-bengali-${w}.woff2`, { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous', fetchPriority: 'low' })
+      ReactDOM.preload(`/fonts/hind-siliguri-bengali-${w}.woff2`, { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' })
     }
   }
   return (

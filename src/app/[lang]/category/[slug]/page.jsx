@@ -6,7 +6,8 @@ import { SITE_URL } from '@/lib/config'
 import { localized } from '@/lib/format'
 import CategoryProducts from '@/components/CategoryProducts'
 import { getServerT, getContent } from '@/i18n/server'
-import { alternatesFor, localizeHref } from '@/i18n/config'
+import { localizeHref } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export const revalidate = 60
 // Products/categories added after a deploy are rendered on first visit.
@@ -30,11 +31,7 @@ export async function generateMetadata({ params }) {
   const name = localized(category, 'name', lang)
   const blurb = blurbFor(category, lang)
   const description = `${blurb ? `${blurb} ` : ''}${t('meta.categoryDescription', { name: lang === 'bn' ? name : name.toLowerCase() })}`
-  return {
-    title: t('meta.categoryTitle', { name }),
-    description: description.slice(0, 158),
-    alternates: alternatesFor(`/category/${category.slug}`, lang),
-  }
+  return seo(`/category/${category.slug}`, lang, t('meta.categoryTitle', { name }), description.slice(0, 158))
 }
 
 export default async function CategoryPage({ params }) {

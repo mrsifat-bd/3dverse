@@ -3,7 +3,8 @@ import { ArrowRight, Flame, Bone, Cpu, Fish, PenTool, Lamp, Gift, Smartphone, Mo
 import { SITE_URL } from '@/lib/config'
 import { faqFor } from '@/lib/faq'
 import { getServerT, getContent } from '@/i18n/server'
-import { alternatesFor, localizeHref } from '@/i18n/config'
+import { localizeHref } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 import { localized, formatNumber } from '@/lib/format'
 import { getFeaturedProducts, toListProduct } from '@/lib/products'
 import { getPublicCategories, nonEmptyCategories } from '@/lib/categories'
@@ -35,11 +36,7 @@ export const revalidate = 60
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  // English keeps the site-wide default title/description from the root layout.
-  return {
-    ...(params.lang === 'bn' ? { title: { absolute: t('meta.homeTitle') }, description: t('meta.homeDescription') } : {}),
-    alternates: alternatesFor('/', params.lang),
-  }
+  return seo('/', params.lang, t('meta.homeTitle'), t('meta.homeDescription'), { absoluteTitle: true })
 }
 
 export default async function Home({ params }) {

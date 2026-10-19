@@ -9,11 +9,11 @@ import SocialLinks from '@/components/SocialLinks'
 import { FadeIn } from '@/components/Motion'
 import { getSettings } from '@/lib/settings'
 import { getServerT, getContent } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return { title: t('meta.aboutTitle'), description: t('meta.aboutDescription'), alternates: alternatesFor('/about', params.lang) }
+  return seo('/about', params.lang, t('meta.aboutTitle'), t('meta.aboutDescription'))
 }
 
 // Icons only; every word comes from the dictionary (content/<lang>/about).

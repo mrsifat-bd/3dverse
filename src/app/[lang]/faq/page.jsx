@@ -1,11 +1,11 @@
 import Link from '@/components/LocalizedLink'
 import { faqFor } from '@/lib/faq'
 import { getServerT, getContent } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return { title: t('meta.faqTitle'), description: t('meta.faqDescription'), alternates: alternatesFor('/faq', params.lang) }
+  return seo('/faq', params.lang, t('meta.faqTitle'), t('meta.faqDescription'))
 }
 
 export default function FaqPage({ params }) {

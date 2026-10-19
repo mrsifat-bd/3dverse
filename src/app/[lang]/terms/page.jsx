@@ -1,10 +1,10 @@
 import PolicyPage from '@/components/PolicyPage'
 import { getServerT } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return { title: t('meta.termsTitle'), description: t('meta.termsDescription'), alternates: alternatesFor('/terms', params.lang) }
+  return seo('/terms', params.lang, t('meta.termsTitle'), t('meta.termsDescription'))
 }
 
 export default function TermsPolicy({ params }) {

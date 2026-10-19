@@ -51,6 +51,7 @@ export async function generateMetadata({ params }) {
       description,
       url: alt.canonical,
       locale: INTL_LOCALE[lang].replace('-', '_'),
+      alternateLocale: [lang === 'bn' ? 'en_US' : 'bn_BD'],
       siteName: '3D Verse BD',
       // Without a product photo the site-wide share image is used instead.
       ...(image && /^https?:\/\//.test(image) ? { images: [{ url: image, alt: product.name }] } : {}),

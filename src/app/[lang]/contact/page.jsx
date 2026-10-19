@@ -6,11 +6,11 @@ import ContactInquiryForm from '@/components/ContactInquiryForm'
 import { IconWhatsapp } from '@/components/icons'
 import { getSettings } from '@/lib/settings'
 import { getServerT, getContent } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return { title: t('meta.contactTitle'), description: t('meta.contactDescription'), alternates: alternatesFor('/contact', params.lang) }
+  return seo('/contact', params.lang, t('meta.contactTitle'), t('meta.contactDescription'))
 }
 
 const SERVICE_ICONS = [Box, Bone, Boxes, Lightbulb]

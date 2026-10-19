@@ -1,15 +1,11 @@
 import { Suspense } from 'react'
 import TrackOrder from '@/components/TrackOrder'
 import { getServerT } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return {
-    title: t('meta.trackTitle'),
-    description: t('meta.trackDescription'),
-    alternates: alternatesFor('/track', params.lang),
-  }
+  return seo('/track', params.lang, t('meta.trackTitle'), t('meta.trackDescription'))
 }
 
 export default function TrackPage({ params }) {

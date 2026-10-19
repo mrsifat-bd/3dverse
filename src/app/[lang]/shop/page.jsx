@@ -3,7 +3,7 @@ import { getPublicCategories, nonEmptyCategories } from '@/lib/categories'
 import { localized } from '@/lib/format'
 import ShopView from '@/components/ShopView'
 import { getServerT } from '@/i18n/server'
-import { alternatesFor } from '@/i18n/config'
+import { seo } from '@/i18n/seo'
 
 // Static + revalidated every 60s (and on demand when an admin saves a product).
 // The ?q= / ?category= / ?popular= filters are applied in the browser, so the
@@ -13,7 +13,7 @@ export const revalidate = 60
 
 export function generateMetadata({ params }) {
   const t = getServerT(params.lang)
-  return { title: t('meta.shopTitle'), description: t('meta.shopDescription'), alternates: alternatesFor('/shop', params.lang) }
+  return seo('/shop', params.lang, t('meta.shopTitle'), t('meta.shopDescription'))
 }
 
 export default async function ShopPage({ params }) {

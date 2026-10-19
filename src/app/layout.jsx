@@ -49,7 +49,8 @@ export const metadata = {
   openGraph: {
     title: '3D Verse BD | 3D Printing in Bangladesh',
     description: 'Made-to-order 3D printed products, delivered across Bangladesh. Order online: delivery charge via bKash, product price cash on delivery.',
-    url: SITE_URL,
+    // No url here: pages set their own og:url (src/i18n/seo.js). A site-wide
+    // url made every page without its own Open Graph block point at the home page.
     siteName: '3D Verse BD',
     locale: 'en_US',
     type: 'website',
