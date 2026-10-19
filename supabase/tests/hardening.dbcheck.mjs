@@ -2,7 +2,7 @@
 // supabase/migration_hardening_2_rate_limits.sql.
 //
 // Runs against a throwaway LOCAL Postgres (never the real project):
-//   PGHOST=/tmp PGPORT=5433 PGUSER=postgres node supabase/tests/hardening.test.mjs
+//   PGHOST=/tmp PGPORT=5433 PGUSER=postgres node supabase/tests/hardening.dbcheck.mjs
 // It creates a fresh database, loads a replica of the relevant live objects
 // (supabase/tests/replica_schema.sql + the live function definitions taken
 // from the migration files), proves the old exposure exists, applies the

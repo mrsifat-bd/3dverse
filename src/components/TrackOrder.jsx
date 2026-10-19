@@ -36,7 +36,7 @@ export default function TrackOrder() {
     setBusy(true)
     const { data, error: err } = await supabase.rpc('track_order', { p_order_number: number.trim(), p_phone: p })
     setBusy(false)
-    if (err) { setError(t('track.failed')); return }
+    if (err) { setError(/RATE_LIMITED/.test(err.message || '') ? t('track.rateLimited') : t('track.failed')); return }
     if (!data) { setError(t('track.notFound')); return }
     setOrder(data)
   }

@@ -42,4 +42,6 @@ export default {
   loginRequired: 'Please log in again to place your order.',
   cartProblem: 'Some items in your cart are no longer available. Please review your cart.',
   failed: 'Could not place the order. Please try again.',
+  rateLimited: "Too many orders in a short time. Please wait a few minutes and try again.",
+  quantityInvalid: "Please check the quantities in your cart (whole numbers from 1 to 1000).",
 }

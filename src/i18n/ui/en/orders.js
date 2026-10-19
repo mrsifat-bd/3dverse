@@ -38,4 +38,5 @@ export default {
   cancelledByYou: 'You cancelled this order',
   cancelledByUs: 'This order was cancelled',
   refundNote: 'Any bKash delivery charge already paid is refunded in full.',
+  cancelRateLimited: "Too many attempts. Please wait a few minutes and try again.",
 }

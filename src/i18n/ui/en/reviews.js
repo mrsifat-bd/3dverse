@@ -26,4 +26,5 @@ export default {
   waitPhoto: 'Please wait for the photo to finish uploading.',
   loginReview: 'Please log in to review.',
   failed: 'Your review could not be submitted. Please try again.',
+  rateLimited: "Too many attempts. Please wait a while and try again.",
 }

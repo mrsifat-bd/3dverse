@@ -43,7 +43,7 @@ export default function ProductReviews({ productId }) {
       setPhoto({ url, preview, busy: false })
     } catch (err) {
       setPhoto({ url: '', preview: '', busy: false })
-      setError(err.message === 'LOGIN_REQUIRED' ? t('reviews.loginPhoto') : t('reviews.photoFailed'))
+      setError(err.message === 'LOGIN_REQUIRED' ? t('reviews.loginPhoto') : err.message === 'RATE_LIMITED' ? t('reviews.rateLimited') : t('reviews.photoFailed'))
     }
   }
 
@@ -54,7 +54,7 @@ export default function ProductReviews({ productId }) {
     if (photo.busy) { setError(t('reviews.waitPhoto')); return }
     setBusy(true)
     try { await submitReview(productId, text, name, rating, photo.url); setText(''); setRating(0); setPhoto({ url: '', preview: '', busy: false }); setDone(true) }
-    catch (err) { setError(err.message === 'LOGIN_REQUIRED' ? t('reviews.loginReview') : t('reviews.failed')) }
+    catch (err) { setError(err.message === 'LOGIN_REQUIRED' ? t('reviews.loginReview') : /RATE_LIMITED/.test(err.message || '') ? t('reviews.rateLimited') : t('reviews.failed')) }
     finally { setBusy(false) }
   }
 

@@ -18,6 +18,20 @@ export async function POST(req) {
   if (auth.error) return json({ error: auth.error }, auth.status)
   const { supabase, user } = auth
 
+  // Database-backed limit (10 photos per customer per hour), shared by every
+  // server instance. If the limiter itself is unavailable we refuse rather than
+  // allow unlimited uploads; the only exception is the function not existing
+  // yet (code deployed before migration_hardening_2), which must not break
+  // reviews.
+  const { error: rlErr } = await supabase.rpc('consume_rate_limit', { p_action: 'review_photo' })
+  if (rlErr) {
+    if (/RATE_LIMITED/.test(rlErr.message || '')) return json({ error: 'Too many photos. Please wait a while and try again.' }, 429)
+    if (rlErr.code !== 'PGRST202') {
+      console.error('review-photos: rate limiter unavailable', rlErr.code)
+      return json({ error: 'Please try again in a moment.' }, 503)
+    }
+  }
+
   const len = Number(req.headers.get('content-length') || 0)
   if (len > MAX_UPLOAD_BYTES + 64 * 1024) return json({ error: 'The photo is too large. Please use one under 4 MB.' }, 413)
 

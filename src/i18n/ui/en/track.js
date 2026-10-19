@@ -24,4 +24,5 @@ export default {
   payRejected: 'We could not verify your bKash delivery payment. Please contact us so we can sort it out.',
   payPending: 'Your bKash delivery payment is waiting to be checked by our team.',
   courier: 'Courier tracking:',
+  rateLimited: "Too many lookups for this order. Please wait 15 minutes and try again.",
 }

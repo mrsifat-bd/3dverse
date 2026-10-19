@@ -54,7 +54,7 @@ export default function MyOrdersPage() {
       reload()
       return
     }
-    const key = r.code === 'NOT_CANCELLABLE' ? 'orders.cancelTooLate' : r.code === 'NOT_AUTHENTICATED' ? 'orders.cancelLogin' : 'orders.cancelFailed'
+    const key = { NOT_CANCELLABLE: 'orders.cancelTooLate', NOT_AUTHENTICATED: 'orders.cancelLogin', RATE_LIMITED: 'orders.cancelRateLimited' }[r.code] || 'orders.cancelFailed'
     setNotice({ kind: 'error', orderId: order.id, text: t(key) })
     reload() // the order may have been verified meanwhile: show its real status
   }

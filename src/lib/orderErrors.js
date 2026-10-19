@@ -7,6 +7,9 @@ export function txnErrorKey(message = '') {
 
 export function orderErrorKey(message = '') {
   const m = String(message).toLowerCase()
+  if (m.includes('rate_limited')) return 'checkout.rateLimited'
+  if (m.includes('invalid_quantity')) return 'checkout.quantityInvalid'
+  if (m.includes('invalid_items')) return 'checkout.cartProblem'
   if (m.includes('enter your bkash')) return 'checkout.txnRequired'
   if (m.includes('bkash transaction')) return 'checkout.txnInvalid'
   if (m.includes('already') && m.includes('transaction')) return 'checkout.txnUsed'

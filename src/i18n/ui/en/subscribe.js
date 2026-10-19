@@ -8,4 +8,5 @@ export default {
   done: "Thanks, you're on the list!",
   invalidEmail: 'Please enter a valid email address.',
   failed: 'Could not subscribe right now. Please try again.',
+  rateLimited: "Too many attempts. Please try again later.",
 }

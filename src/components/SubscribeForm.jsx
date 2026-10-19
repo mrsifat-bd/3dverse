@@ -22,7 +22,7 @@ export default function SubscribeForm({ source = 'site', onDone }) {
       try { localStorage.setItem('subscribed', '1') } catch {}
       onDone && onDone()
     } else {
-      setErr(/valid email/i.test(r.error || '') ? t('subscribe.invalidEmail') : t('subscribe.failed'))
+      setErr(/valid email/i.test(r.error || '') ? t('subscribe.invalidEmail') : /RATE_LIMITED/.test(r.error || '') ? t('subscribe.rateLimited') : t('subscribe.failed'))
     }
   }
 

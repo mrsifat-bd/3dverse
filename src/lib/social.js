@@ -103,6 +103,7 @@ export async function uploadReviewPhoto(file) {
   body.append('file', small)
   const res = await fetch('/api/review-photos', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` }, body })
   const json = await res.json().catch(() => ({}))
+  if (res.status === 429) throw new Error('RATE_LIMITED')
   if (!res.ok) throw new Error(json.error || 'The photo could not be uploaded.')
   return json.url
 }

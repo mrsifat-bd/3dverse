@@ -4,6 +4,12 @@ import { firstImage, effectivePrice } from './format'
 // A cart line is enriched for display:
 // { product_id, name, slug, price, image, weight_kg, in_stock, quantity }
 
+// Same ceiling as the database (place_order): any whole number 1..1000 per
+// product. It is an anti-abuse limit, not a business rule; larger orders go
+// through WhatsApp / contact.
+export const MAX_QTY = 1000
+export const clampQty = (q) => Math.min(MAX_QTY, Math.max(1, Math.round(Number(q) || 1)))
+
 const GUEST_KEY = '3dv_cart'
 const PRODUCT_COLS = 'id,name,name_bn,slug,price,discount_percent,image_url,weight_kg,in_stock'
 
@@ -17,7 +23,7 @@ export function enrichLine(p, quantity) {
     image: firstImage(p),
     weight_kg: Number(p.weight_kg) || 0,
     in_stock: p.in_stock !== false,
-    quantity: Math.max(1, Math.round(Number(quantity) || 1)),
+    quantity: clampQty(quantity),
   }
 }
 
@@ -48,7 +54,7 @@ export async function dbGetCart() {
 export async function dbSetQty(productId, quantity) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not logged in')
-  const q = Math.max(1, Math.round(Number(quantity) || 1))
+  const q = clampQty(quantity)
   const { error } = await supabase
     .from('cart_items')
     .upsert({ user_id: user.id, product_id: productId, quantity: q }, { onConflict: 'user_id,product_id' })
@@ -60,7 +66,7 @@ export async function dbAdd(productId, addQty = 1) {
   if (!user) throw new Error('Not logged in')
   const { data: existing } = await supabase
     .from('cart_items').select('quantity').eq('user_id', user.id).eq('product_id', productId).maybeSingle()
-  const q = (existing?.quantity || 0) + Math.max(1, Math.round(Number(addQty) || 1))
+  const q = clampQty((existing?.quantity || 0) + clampQty(addQty))
   const { error } = await supabase
     .from('cart_items')
     .upsert({ user_id: user.id, product_id: productId, quantity: q }, { onConflict: 'user_id,product_id' })

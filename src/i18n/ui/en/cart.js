@@ -19,4 +19,6 @@ export default {
   paymentSplit: 'The product total ({subtotal}) is paid cash on delivery. The delivery charge ({delivery}) is prepaid via bKash at checkout.',
   proceed: 'Proceed to checkout',
   continue: 'Continue shopping',
+  qtyHint: "Type any amount up to 1000. For bigger orders, contact us.",
+  qtyInput: "Quantity for {name}",
 }

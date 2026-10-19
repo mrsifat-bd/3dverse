@@ -1,4 +1,5 @@
 'use client'
+import { clampQty } from '@/lib/cart'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -46,13 +47,13 @@ export function CartProvider({ children }) {
     if (user) { await dbAdd(product.id, qty); setLines(await dbGetCart()) }
     else setLines((prev) => {
       const i = prev.findIndex((l) => l.product_id === product.id)
-      if (i >= 0) { const copy = [...prev]; copy[i] = { ...copy[i], quantity: copy[i].quantity + qty }; return copy }
+      if (i >= 0) { const copy = [...prev]; copy[i] = { ...copy[i], quantity: clampQty(copy[i].quantity + qty) }; return copy }
       return [...prev, enrichLine(product, qty)]
     })
   }, [user])
 
   const setQty = useCallback(async (productId, qty) => {
-    const q = Math.max(1, Math.round(qty))
+    const q = clampQty(qty)
     if (user) { await dbSetQty(productId, q); setLines(await dbGetCart()) }
     else setLines((prev) => prev.map((l) => (l.product_id === productId ? { ...l, quantity: q } : l)))
   }, [user])

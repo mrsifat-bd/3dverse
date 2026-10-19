@@ -2,13 +2,14 @@
   "name": "3dverse-next",
   "version": "1.0.0",
   "private": true,
-  "description": "3DVerse — WhatsApp-order 3D printing store. Next.js + Supabase + Tailwind + shadcn/ui + Framer Motion.",
+  "description": "3DVerse \u2014 WhatsApp-order 3D printing store. Next.js + Supabase + Tailwind + shadcn/ui + Framer Motion.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:db": "node supabase/tests/hardening.dbcheck.mjs"
   },
   "dependencies": {
     "@react-pdf/renderer": "^3.4.5",

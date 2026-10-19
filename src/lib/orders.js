@@ -319,11 +319,11 @@ function adminOrderError(msg = '') {
 // The database decides (cancel_my_order): only the signed-in owner, only while
 // the order is 'new' and its payment is not verified. Returns
 // { ok: true, already } or { ok: false, code } with code one of
-// NOT_CANCELLABLE | ORDER_NOT_FOUND | NOT_AUTHENTICATED | FAILED.
+// NOT_CANCELLABLE | ORDER_NOT_FOUND | NOT_AUTHENTICATED | RATE_LIMITED | FAILED.
 export async function cancelMyOrder(orderId) {
   const { data, error } = await supabase.rpc('cancel_my_order', { p_order_id: orderId })
   if (error) {
-    const code = (String(error.message).match(/NOT_CANCELLABLE|ORDER_NOT_FOUND|NOT_AUTHENTICATED/) || ['FAILED'])[0]
+    const code = (String(error.message).match(/NOT_CANCELLABLE|ORDER_NOT_FOUND|NOT_AUTHENTICATED|RATE_LIMITED/) || ['FAILED'])[0]
     return { ok: false, code }
   }
   return { ok: true, already: Boolean(data?.already), status: data?.status || 'cancelled' }
