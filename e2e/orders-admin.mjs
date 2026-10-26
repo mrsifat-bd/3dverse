@@ -149,6 +149,21 @@ await ctx.unroute(SB + '/rest/v1/orders**')
 // ---------- 3. Admin: product image upload / replace / save ----------
 await p.goto(B + '/admin/products', { waitUntil: 'networkidle' }); await p.waitForTimeout(1000)
 ok('admin products: list renders', (await p.getByText('QA Heart Model').count()) >= 1)
+// Popular: badge + one-click star (writes ONLY is_popular) + "Popular only" filter.
+ok('popular: no badge before marking', (await p.getByText('Popular', { exact: true }).count()) === 0)
+const nUpd = db.productUpdates.length
+await p.getByRole('button', { name: 'Mark QA Heart Model as popular' }).click(); await p.waitForTimeout(700)
+const starBody = db.productUpdates[nUpd] || {}
+ok('popular: star saves only is_popular=true', JSON.stringify(starBody) === '{"is_popular":true}', JSON.stringify(starBody))
+ok('popular: badge shown after marking', (await p.getByText('Popular', { exact: true }).count()) === 1)
+await p.screenshot({ path: OUT + '/qa-popular.png' })
+await p.getByRole('button', { name: /Popular only \(1\)/ }).click(); await p.waitForTimeout(300)
+ok('popular: filter keeps the popular product', (await p.getByText('QA Heart Model').count()) === 1)
+await p.getByRole('button', { name: 'Remove QA Heart Model from popular' }).click(); await p.waitForTimeout(700)
+ok('popular: star again saves is_popular=false', JSON.stringify(db.productUpdates.at(-1)) === '{"is_popular":false}', JSON.stringify(db.productUpdates.at(-1)))
+ok('popular: filter now empty with hint', (await p.getByText(/No popular products yet/).count()) === 1)
+await p.getByRole('button', { name: /Popular only/ }).click()
+db.productUpdates.length = nUpd
 await p.goto(B + '/admin/products/p-1', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200)
 ok('edit form: existing image shown', (await p.locator('button[aria-label="Replace image"]').count()) === 1)
 await p.locator('input[type=file][multiple]').setInputFiles(S + '/fixtures/photo-a.png')

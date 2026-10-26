@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react'
 import ProductImage from '@/components/ProductImage'
 import Link from 'next/link'
-import { Pencil, Trash2, Plus, Loader2, Tags } from 'lucide-react'
+import { Pencil, Trash2, Plus, Loader2, Tags, Star } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import * as m from 'motion/react-m'
-import { listProducts, deleteProduct } from '@/lib/adminProducts'
+import { listProducts, deleteProduct, setProductPopular } from '@/lib/adminProducts'
 import { getAllCategories } from '@/lib/categories'
 import { formatPrice, firstImage } from '@/lib/format'
 import { categoryName, CATEGORIES } from '@/lib/config'
@@ -22,6 +22,8 @@ export default function ProductTable() {
   const [categories, setCategories] = useState(CATEGORIES)
   const [confirmId, setConfirmId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [popularOnly, setPopularOnly] = useState(false)
+  const [starBusy, setStarBusy] = useState(null)
 
   async function load() {
     try {
@@ -54,7 +56,26 @@ export default function ProductTable() {
     }
   }
 
+  // Flip the flag on screen first; put it back if the save fails.
+  async function togglePopular(p) {
+    if (starBusy) return
+    const next = !p.is_popular
+    setStarBusy(p.id); setError('')
+    setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_popular: next } : x)))
+    try {
+      await setProductPopular(p.id, next)
+    } catch (err) {
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_popular: !next } : x)))
+      setError(`Could not update "${p.name}": ${err.message}`)
+    } finally {
+      setStarBusy(null)
+    }
+  }
+
+  const popularCount = (products || []).filter((p) => p.is_popular).length
+
   const visible = (products || []).filter((p) => {
+    if (popularOnly && !p.is_popular) return false
     if (category !== 'all' && p.category !== category) return false
     const s = q.trim().toLowerCase()
     if (!s) return true
@@ -89,6 +110,14 @@ export default function ProductTable() {
             <option key={c.slug} value={c.slug}>{c.name}</option>
           ))}
         </Select>
+        <button
+          type="button"
+          onClick={() => setPopularOnly((v) => !v)}
+          aria-pressed={popularOnly}
+          className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors ${popularOnly ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40 hover:text-clay'}`}
+        >
+          <Star className={`h-4 w-4 ${popularOnly ? 'fill-current' : ''}`} /> Popular only ({popularCount})
+        </button>
         <span className="text-sm text-stone sm:ml-auto">{visible.length} shown</span>
       </div>
 
@@ -98,7 +127,7 @@ export default function ProductTable() {
         <div className="flex items-center gap-2 py-16 text-stone"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-paper py-16 text-center text-sm text-stone">
-          No products yet. Create your first one.
+          {popularOnly ? 'No popular products yet. Tap the star on a product to mark it popular.' : 'No products yet. Create your first one.'}
         </div>
       ) : (
         <m.div
@@ -127,7 +156,14 @@ export default function ProductTable() {
                       <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-line bg-line/40">
                         {firstImage(p) && <ProductImage src={firstImage(p)} variant="card" alt="" sizes="44px" className="object-cover" />}
                       </div>
-                      <span className="font-medium text-ink">{p.name}</span>
+                      <div className="min-w-0">
+                        <span className="font-medium text-ink">{p.name}</span>
+                        {p.is_popular && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-clay/15 px-2 py-0.5 align-middle text-[11px] font-semibold text-clay">
+                            <Star className="h-3 w-3 fill-current" aria-hidden="true" /> Popular
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="hidden p-3 text-stone sm:table-cell">{categoryName(p.category)}</td>
@@ -138,6 +174,18 @@ export default function ProductTable() {
                   </td>
                   <td className="p-3">
                     <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-pressed={!!p.is_popular}
+                        aria-label={p.is_popular ? `Remove ${p.name} from popular` : `Mark ${p.name} as popular`}
+                        title={p.is_popular ? 'Popular (click to remove)' : 'Mark as popular'}
+                        disabled={starBusy === p.id}
+                        onClick={() => togglePopular(p)}
+                        className={p.is_popular ? 'border-clay/50 text-clay' : ''}
+                      >
+                        {starBusy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className={`h-4 w-4 ${p.is_popular ? 'fill-current' : ''}`} />}
+                      </Button>
                       <Button asChild variant="ghost" size="icon"><Link href={`/admin/products/${p.id}`} aria-label="Edit"><Pencil className="h-4 w-4" /></Link></Button>
                       <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setConfirmId(p.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
