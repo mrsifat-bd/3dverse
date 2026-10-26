@@ -95,6 +95,14 @@ export async function updateProduct(id, payload) {
   return data
 }
 
+// One-click "popular" toggle from the product list. Writes only this flag, so
+// nothing else on the product (price, images, cost) can be touched by it.
+export async function setProductPopular(id, isPopular) {
+  const { error } = await supabase.from('products').update({ is_popular: Boolean(isPopular) }).eq('id', id).select('id').single()
+  if (error) throw error
+  await pingRevalidate()
+}
+
 export async function deleteProduct(id) {
   const { error } = await supabase.from('products').delete().eq('id', id)
   if (error) throw error
