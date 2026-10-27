@@ -76,6 +76,7 @@ jobs:
       - name: Public site (demo build)
         run: |
           npm run build
+          node scripts/check-pdf-trace.mjs
           (npx next start -p 3123 &) ; npx -y wait-on -t 60000 http://localhost:3123
           node e2e/regress.mjs
           node e2e/crawl.mjs

@@ -7,8 +7,13 @@ const nextConfig = {
   },
   // Keep @react-pdf/renderer (and its native/wasm deps) out of the bundler so
   // the invoice PDF route works on the Vercel Node runtime.
-  experimental: {
-    serverComponentsExternalPackages: ['@react-pdf/renderer'],
+  serverExternalPackages: ['@react-pdf/renderer'],
+  // pdfkit (used by @react-pdf 4) loads its built-in Helvetica/Courier/Times
+  // metrics with require('#standard-fonts/...'), which Next's file tracer cannot
+  // follow. Without these files in the function bundle every invoice PDF fails
+  // on Vercel with "Cannot find module .../standard-fonts/Helvetica.cjs".
+  outputFileTracingIncludes: {
+    '/api/invoices/[orderId]/pdf': ['./node_modules/pdfkit/js/standard-fonts/**/*', './node_modules/pdfkit/js/data/**/*'],
   },
   images: {
     // Serve images directly from their source (Supabase Storage CDN / static
