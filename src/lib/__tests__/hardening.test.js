@@ -25,3 +25,12 @@ describe('cart quantity clamp (same ceiling as place_order)', () => {
     expect(clampQty('abc')).toBe(1)
   })
 })
+
+import { invoiceChargesPatch } from '@/lib/invoices'
+describe('invoice follows changed charges', () => {
+  it('recomputes total like the DB (subtotal + delivery - discount, min 0)', () => {
+    expect(invoiceChargesPatch({ subtotal: 65400, delivery_charge: 600, discount: 1000 })).toEqual({ subtotal: 65400, delivery_charge: 600, discount: 1000, total: 65000 })
+    expect(invoiceChargesPatch({ subtotal: 100, delivery_charge: 0, discount: 500 }).total).toBe(0)
+    expect(invoiceChargesPatch({ subtotal: '200', delivery_charge: '', discount: null })).toEqual({ subtotal: 200, delivery_charge: 0, discount: 0, total: 200 })
+  })
+})

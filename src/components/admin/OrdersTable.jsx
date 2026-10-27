@@ -17,7 +17,7 @@ import {
   getDeliveryPayment, verifyDeliveryPayment, rejectDeliveryPayment, updateOrderFromStatus,
 } from '@/lib/orders'
 import {
-  getInvoiceByOrder, updateInvoicePayment, generateInvoiceForOrder,
+  getInvoiceByOrder, updateInvoicePayment, generateInvoiceForOrder, updateInvoiceCharges,
   invoiceMoney, PAYMENT_STATUSES, PAYMENT_METHODS, paymentStatusLabel, paymentStatusColor,
 } from '@/lib/invoices'
 import InvoicePreview from '@/components/admin/InvoicePreview'
@@ -309,6 +309,20 @@ export default function OrdersTable() {
         cod_amount: t.cod_amount,
       })
       setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, delivery_charge: Number(draft.delivery_charge) || 0, discount: Number(draft.discount) || 0, weight_kg: Number(draft.weight_kg) || 0, subtotal: t.subtotal, total: t.total, cod_amount: t.cod_amount } : o)))
+      // Keep the invoice in step with the new charges (it stores its own copy).
+      const inv = invoice?.order_id === order.id ? invoice : await getInvoiceByOrder(order.id).catch(() => null)
+      if (inv) {
+        const charges = { subtotal: t.subtotal, delivery_charge: Number(draft.delivery_charge) || 0, discount: Number(draft.discount) || 0 }
+        const changed = ['subtotal', 'delivery_charge', 'discount'].some((k) => Number(inv[k]) !== charges[k])
+        if (changed) {
+          const patch = await updateInvoiceCharges(inv.id, charges)
+          setInvoice({ ...inv, ...patch })
+          try {
+            await addOrderEvent(order.id, { type: 'note', message: `Invoice ${inv.invoice_number} updated: delivery ৳${patch.delivery_charge}, discount ৳${patch.discount}, total ৳${patch.total}`, actor: await adminEmail() })
+            setEvents(await getOrderEvents(order.id))
+          } catch {}
+        }
+      }
     } catch (e) { setRowError(e.message) } finally { setSavingMoney(false) }
   }
 
@@ -550,6 +564,7 @@ export default function OrdersTable() {
                               <div className="flex justify-between font-semibold text-ink"><span>COD total</span><span>{formatPrice(t.cod_amount)}</span></div>
                             </div>
                             <Button variant="ghost" size="sm" className="mt-3" onClick={() => saveMoney(order)} disabled={savingMoney}>{savingMoney ? 'Saving…' : 'Save charges'}</Button>
+                            {invoice?.order_id === order.id && <p className="mt-2 text-xs text-stone">Saving also updates invoice {invoice.invoice_number}.</p>}
                           </div>
 
                           <div>

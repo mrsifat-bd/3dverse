@@ -22,6 +22,7 @@ const db = {
     { id: 'o-1', order_number: '3D-20261018-001', customer_name: 'QA One', customer_phone: '01700000001', customer_address: 'Road 1, Sylhet', police_station: 'Sylhet Sadar, Sylhet', note: '', items: [{ product_id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', unit_price: 1000, qty: 1 }], status: 'new', payment_status: 'pending', delivery_charge: 70, discount: 0, weight_kg: 0.25, subtotal: 1000, total: 1070, cod_amount: 1000, created_at: '2026-10-18T05:00:00Z', steadfast_consignment_id: null, user_id: 'u-c' },
     { id: 'o-2', order_number: '3D-20261017-004', customer_name: 'QA Two', customer_phone: '01700000002', customer_address: 'Road 2, Dhaka', police_station: 'Mirpur, Dhaka', note: '', items: [{ product_id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', unit_price: 1000, qty: 2 }], status: 'confirmed', payment_status: 'verified', delivery_charge: 120, discount: 0, weight_kg: 0.5, subtotal: 2000, total: 2120, cod_amount: 2000, created_at: '2026-10-17T05:00:00Z', steadfast_consignment_id: null, user_id: 'u-c' },
   ],
+  invoices: [{ id: 'inv-2', order_id: 'o-2', invoice_number: '3D-INV-20261017-001', invoice_date: '2026-10-17T05:00:00Z', customer_name: 'QA Two', items: [{ name: 'QA Heart Model', qty: 2, unit_price: 1000 }], subtotal: 2000, delivery_charge: 120, discount: 0, total: 2120, payment_status: 'unpaid', payment_method: 'cod', paid_amount: 0 }],
   order_events: [], products: [PRODUCT], placed: [], productUpdates: [], uploads: 0, notifications: [],
 }
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -80,6 +81,10 @@ async function fake(route) {
     if (table === 'order_events') {
       if (m === 'POST') { db.order_events.push({ id: 'ev-' + db.order_events.length, created_at: new Date().toISOString(), ...body() }); return route.fulfill({ status: 201 }) }
       return json(route, db.order_events.filter((e) => e.order_id === (u.searchParams.get('order_id') || '').replace(/^eq\./, '')))
+    }
+    if (table === 'invoices') {
+      if (m === 'GET') { const oid = (u.searchParams.get('order_id') || '').replace(/^eq\./, ''); const rows = db.invoices.filter((i) => !oid || i.order_id === oid); return json(route, wantsObj ? rows[0] || null : rows) }
+      if (m === 'PATCH') { const id = eqId(u); db.invoices.filter((i) => i.id === id).forEach((i) => Object.assign(i, body())); return route.fulfill({ status: 204 }) }
     }
     if (table === 'products' && m === 'PATCH') { db.productUpdates.push(body()); return json(route, wantsObj ? { id: eqId(u) } : [{ id: eqId(u) }]) }
     if (table === 'cart_items' && m === 'GET') return json(route, [{ product_id: 'm2', quantity: 1, products: { id: 'm2', name: 'Human Heart Cross-Section Model', slug: 'human-heart-cross-section-model', price: 950, image_url: [SB + '/storage/v1/object/public/x.png'], in_stock: true, weight_kg: 0.2, discount: 0 } }])
@@ -236,6 +241,20 @@ ok('admin told the order changed', (await admin.getByText(/changed elsewhere/).c
 ok('admin list shows "Cancelled by customer"', (await admin.getByText(/Cancelled by customer/i).count()) >= 1)
 await admin.screenshot({ path: OUT + '/qa-admin-cancelled.png' })
 await admin.close()
+
+// ---------- 5. Charges change updates the invoice ----------
+await p.goto(B + '/admin/orders', { waitUntil: 'networkidle' }); await p.waitForTimeout(1000)
+await p.getByText('3D-20261017-004').first().click(); await p.waitForTimeout(1200)
+ok('charges: hint says the invoice will follow', (await p.getByText('Saving also updates invoice 3D-INV-20261017-001.').count()) === 1)
+const chargeInputs = p.locator('label:has-text("Delivery") input, label:has-text("Discount") input')
+await chargeInputs.nth(0).fill('150'); await chargeInputs.nth(1).fill('100')
+await p.getByRole('button', { name: 'Save charges' }).click(); await p.waitForTimeout(1500)
+const inv2 = db.invoices[0]
+ok('charges: invoice saved with new delivery/discount/total', inv2.delivery_charge === 150 && inv2.discount === 100 && inv2.subtotal === 2000 && inv2.total === 2050, JSON.stringify({ d: inv2.delivery_charge, x: inv2.discount, t: inv2.total }))
+ok('charges: invoice number, items and payment untouched', inv2.invoice_number === '3D-INV-20261017-001' && inv2.items.length === 1 && inv2.payment_status === 'unpaid')
+ok('charges: invoice total on screen updated', (await p.getByText('৳2,050').count()) >= 1)
+ok('charges: admin-only note logged', db.order_events.some((e) => e.order_id === 'o-2' && e.type === 'note' && /Invoice 3D-INV-20261017-001 updated/.test(e.message)))
+await p.screenshot({ path: OUT + '/qa-invoice-charges.png' })
 
 ok('no console errors during the whole flow', errs.length === 0, errs.join(' | '))
 console.log(results.join('\n'))

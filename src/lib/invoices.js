@@ -86,6 +86,24 @@ export async function updateInvoicePayment(invoiceId, { payment_status, payment_
   if (error) throw error
 }
 
+// When the admin changes delivery/discount on an invoiced order, the invoice
+// must follow: same formula as the DB when it builds an invoice
+// (subtotal + delivery - discount, never below 0). Only the money fields
+// change; invoice number, line items and payment details stay as they are.
+export function invoiceChargesPatch({ subtotal, delivery_charge, discount }) {
+  const s = Math.max(0, Number(subtotal) || 0)
+  const d = Math.max(0, Number(delivery_charge) || 0)
+  const disc = Math.max(0, Number(discount) || 0)
+  return { subtotal: s, delivery_charge: d, discount: disc, total: Math.max(0, s + d - disc) }
+}
+
+export async function updateInvoiceCharges(invoiceId, charges) {
+  const patch = invoiceChargesPatch(charges)
+  const { error } = await supabase.from('invoices').update(patch).eq('id', invoiceId)
+  if (error) throw error
+  return patch
+}
+
 // Explicit generation for an already-confirmed order (fallback; the DB trigger
 // normally creates the invoice automatically on confirm).
 export async function generateInvoiceForOrder(orderId) {
