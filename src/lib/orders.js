@@ -64,13 +64,31 @@ export function mapSteadfastToOrderStatus(deliveryStatus) {
 // ---- Money: one source of truth ------------------------------------------
 
 // COD business model: the customer pays the full total on delivery.
-export function computeTotals({ items = [], delivery_charge = 0, discount = 0 }) {
+// Shop rule: on website orders the customer pays the DELIVERY charge up front
+// by bKash, and only the product price (less any discount) is collected in
+// cash on delivery. Manual orders added by the admin have no bKash payment,
+// so the courier collects everything.
+// Website orders always belong to a customer account (place_order sets
+// user_id); manual admin orders never do.
+export function isDeliveryPrepaid(order) {
+  return Boolean(order?.user_id) && order?.payment_status !== 'rejected'
+}
+
+export function computeTotals({ items = [], delivery_charge = 0, discount = 0, deliveryPrepaid = false }) {
   const subtotal = items.reduce(
     (s, i) => s + (Number(i.unit_price) || 0) * (Number(i.qty) || 0),
     0
   )
-  const total = Math.max(0, subtotal + (Number(delivery_charge) || 0) - (Number(discount) || 0))
-  return { subtotal, total, cod_amount: total }
+  const delivery = Number(delivery_charge) || 0
+  const total = Math.max(0, subtotal + delivery - (Number(discount) || 0))
+  const cod_amount = Math.max(0, total - (deliveryPrepaid ? delivery : 0))
+  return { subtotal, total, cod_amount }
+}
+
+// The amount the courier must collect for an order, from its own fields
+// (never trusts a stored cod_amount that an older admin save may have inflated).
+export function codForOrder(order) {
+  return computeTotals({ items: order?.items || [], delivery_charge: order?.delivery_charge, discount: order?.discount, deliveryPrepaid: isDeliveryPrepaid(order) }).cod_amount
 }
 
 // ---- Validation ----------------------------------------------------------

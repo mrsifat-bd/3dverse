@@ -255,6 +255,13 @@ ok('charges: invoice number, items and payment untouched', inv2.invoice_number =
 ok('charges: invoice total on screen updated', (await p.getByText('৳2,050').count()) >= 1)
 ok('charges: admin-only note logged', db.order_events.some((e) => e.order_id === 'o-2' && e.type === 'note' && /Invoice 3D-INV-20261017-001 updated/.test(e.message)))
 await p.screenshot({ path: OUT + '/qa-invoice-charges.png' })
+// Website order: delivery was paid by bKash, so the courier collects products - discount only.
+ok('cod: website order saves courier amount without delivery', db.orders.find((o) => o.id === 'o-2').cod_amount === 1900, String(db.orders.find((o) => o.id === 'o-2').cod_amount))
+ok('cod: panel says courier collects ৳1,900', (await p.getByText('Courier collects (COD)').count()) === 1 && (await p.getByText('৳1,900').count()) >= 1)
+await p.getByRole('button', { name: 'Create Steadfast Parcel' }).first().click(); await p.waitForTimeout(500)
+const dlgText = await p.locator('div.fixed').filter({ hasText: 'Create Steadfast parcel?' }).innerText().catch(() => '')
+ok('cod: parcel dialog shows ৳1,900 (not the ৳2,050 invoice total)', /COD\s*৳1,900/.test(dlgText), dlgText.replace(/\s+/g, ' ').slice(0, 160))
+await p.getByRole('button', { name: 'Cancel' }).last().click(); await p.waitForTimeout(300)
 
 ok('no console errors during the whole flow', errs.length === 0, errs.join(' | '))
 console.log(results.join('\n'))

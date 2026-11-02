@@ -12,7 +12,7 @@ import { EMAIL_TASKS, getOrderEmailEvents, lastSentByType } from '@/lib/orderEma
 import { renderOrderEmail } from '@/lib/email/templates'
 import { useSettings } from '@/components/SettingsProvider'
 import {
-  getOrders, updateOrder, deleteOrder, addOrderEvent, getOrderEvents, computeTotals,
+  getOrders, updateOrder, deleteOrder, addOrderEvent, getOrderEvents, computeTotals, isDeliveryPrepaid, codForOrder,
   ORDER_STATUSES, orderStatusLabel, steadfastStatusLabel, trackingUrlFor,
   getDeliveryPayment, verifyDeliveryPayment, rejectDeliveryPayment, updateOrderFromStatus,
 } from '@/lib/orders'
@@ -292,7 +292,7 @@ export default function OrdersTable() {
   }
 
   function draftTotals(order) {
-    return computeTotals({ items: order.items || [], delivery_charge: draft.delivery_charge, discount: draft.discount })
+    return computeTotals({ items: order.items || [], delivery_charge: draft.delivery_charge, discount: draft.discount, deliveryPrepaid: isDeliveryPrepaid(order) })
   }
 
   async function saveMoney(order) {
@@ -561,7 +561,11 @@ export default function OrdersTable() {
                             </div>
                             <div className="mt-3 space-y-1 text-sm">
                               <div className="flex justify-between text-stone"><span>Subtotal</span><span>{formatPrice(t.subtotal)}</span></div>
-                              <div className="flex justify-between font-semibold text-ink"><span>COD total</span><span>{formatPrice(t.cod_amount)}</span></div>
+                              {isDeliveryPrepaid(order) && Number(draft.delivery_charge) > 0 && (
+                                <div className="flex justify-between text-stone"><span>Delivery (paid by bKash)</span><span>{formatPrice(Number(draft.delivery_charge) || 0)}</span></div>
+                              )}
+                              {Number(draft.discount) > 0 && <div className="flex justify-between text-stone"><span>Discount</span><span>−{formatPrice(Number(draft.discount) || 0)}</span></div>}
+                              <div className="flex justify-between font-semibold text-ink"><span>{isDeliveryPrepaid(order) ? 'Courier collects (COD)' : 'COD total'}</span><span>{formatPrice(t.cod_amount)}</span></div>
                             </div>
                             <Button variant="ghost" size="sm" className="mt-3" onClick={() => saveMoney(order)} disabled={savingMoney}>{savingMoney ? 'Saving…' : 'Save charges'}</Button>
                             {invoice?.order_id === order.id && <p className="mt-2 text-xs text-stone">Saving also updates invoice {invoice.invoice_number}.</p>}
@@ -745,7 +749,7 @@ export default function OrdersTable() {
                 <div className="flex justify-between gap-3"><span className="text-stone">Address</span><span className="ml-4 text-right font-medium text-ink">{confirmOrder.customer_address}</span></div>
                 {confirmOrder.police_station && <div className="flex justify-between gap-3"><span className="text-stone">Thana</span><span className="ml-4 text-right font-medium text-ink">{confirmOrder.police_station}</span></div>}
                 <div className="flex justify-between gap-3"><span className="text-stone">Items</span><span className="ml-4 text-right font-medium text-ink">{(confirmOrder.items || []).map((i) => `${i.name} ×${i.qty}`).join(', ')}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-stone">COD</span><span className="font-medium text-ink">{formatPrice(confirmOrder.cod_amount)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-stone">COD</span><span className="font-medium text-ink">{formatPrice(codForOrder(confirmOrder))}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">Weight</span><span className="font-medium text-ink">{confirmOrder.weight_kg} KG</span></div>
               </div>
               {rowError && <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{rowError}</p>}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/serverSupabase'
 import { createConsignment, steadfastConfigured, trackingUrl } from '@/lib/steadfast'
-import { isValidBDPhone } from '@/lib/orders'
+import { isValidBDPhone, codForOrder } from '@/lib/orders'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,7 @@ export async function POST(req) {
   const auth = await requireAdmin(req)
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
   if (!steadfastConfigured()) {
-    return NextResponse.json({ error: 'Steadfast is not configured on the server.' }, { status: 503 })
+    return NextResponse.json({ error: 'Steadfast is not connected yet: the STEADFAST_API_KEY and STEADFAST_SECRET_KEY settings are missing on the server (Vercel → Project → Settings → Environment Variables). Add them, then redeploy.' }, { status: 503 })
   }
 
   let input
@@ -47,8 +47,11 @@ export async function POST(req) {
   if (!isValidBDPhone(order.customer_phone)) {
     return NextResponse.json({ error: 'Order has an invalid phone number (need 11 digits).' }, { status: 422 })
   }
-  const cod = Number(order.cod_amount) || 0
-  if (cod < 0) return NextResponse.json({ error: 'Invalid COD amount.' }, { status: 422 })
+  // Courier collects the product price; on website orders the delivery charge
+  // was already paid by bKash. Recomputed from the order's own fields so an
+  // older inflated cod_amount can never overcharge the customer.
+  const cod = codForOrder(order)
+  if (!Number.isFinite(cod) || cod < 0) return NextResponse.json({ error: 'Invalid COD amount.' }, { status: 422 })
 
   const itemDesc = (order.items || []).map((i) => `${i.name} x${i.qty}`).join(', ').slice(0, 250)
   const invoice = order.order_number || `DV-${String(order.id).slice(0, 8)}`
@@ -90,6 +93,7 @@ export async function POST(req) {
     steadfast_created_at: nowIso,
     steadfast_updated_at: nowIso,
     status: 'sent_to_steadfast',
+    cod_amount: cod,
   }
   await supabase.from('orders').update(patch).eq('id', orderId)
   await supabase.from('order_events').insert({

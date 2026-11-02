@@ -34,3 +34,28 @@ describe('invoice follows changed charges', () => {
     expect(invoiceChargesPatch({ subtotal: '200', delivery_charge: '', discount: null })).toEqual({ subtotal: 200, delivery_charge: 0, discount: 0, total: 200 })
   })
 })
+
+import { computeTotals, isDeliveryPrepaid, codForOrder } from '@/lib/orders'
+describe('courier COD amount (delivery paid by bKash on website orders)', () => {
+  const items = [{ unit_price: 1200, qty: 1 }, { unit_price: 2100, qty: 1 }]
+  it('website order: courier collects product price only', () => {
+    const web = { user_id: 'u1', payment_status: 'verified', items, delivery_charge: 120, discount: 0 }
+    expect(isDeliveryPrepaid(web)).toBe(true)
+    expect(codForOrder(web)).toBe(3300)
+    expect(computeTotals({ items, delivery_charge: 120, discount: 0, deliveryPrepaid: true })).toEqual({ subtotal: 3300, total: 3420, cod_amount: 3300 })
+  })
+  it('website order with a discount: discount comes off the cash amount', () => {
+    expect(codForOrder({ user_id: 'u1', payment_status: 'verified', items, delivery_charge: 120, discount: 300 })).toBe(3000)
+  })
+  it('manual admin order (no customer account): courier collects everything', () => {
+    const manual = { user_id: null, payment_status: 'pending', items, delivery_charge: 120, discount: 0 }
+    expect(isDeliveryPrepaid(manual)).toBe(false)
+    expect(codForOrder(manual)).toBe(3420)
+  })
+  it('rejected bKash payment: delivery is collected in cash too', () => {
+    expect(codForOrder({ user_id: 'u1', payment_status: 'rejected', items, delivery_charge: 120, discount: 0 })).toBe(3420)
+  })
+  it('never negative', () => {
+    expect(codForOrder({ user_id: 'u1', payment_status: 'verified', items: [{ unit_price: 100, qty: 1 }], delivery_charge: 70, discount: 500 })).toBe(0)
+  })
+})
