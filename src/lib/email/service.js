@@ -18,7 +18,8 @@ function fromHeader() {
 
 // to/subject are structured fields (no raw header concatenation → no header
 // injection). Returns { ok, id, error }.
-export async function sendEmail({ to, subject, html }) {
+// attachments: [{ filename, content: Buffer }] (sent base64 to Resend).
+export async function sendEmail({ to, subject, html, attachments = [] }) {
   if (!emailConfigured()) return { ok: false, error: 'Email is not configured on the server.' }
   const recipient = String(to || '').trim()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient) || /[\r\n]/.test(recipient)) {
@@ -29,7 +30,10 @@ export async function sendEmail({ to, subject, html }) {
     const res = await fetch(RESEND_ENDPOINT, {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: fromHeader(), to: [recipient], subject: cleanSubject, html }),
+      body: JSON.stringify({
+        from: fromHeader(), to: [recipient], subject: cleanSubject, html,
+        ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: String(a.filename).replace(/[\r\n"]/g, ''), content: Buffer.from(a.content).toString('base64') })) } : {}),
+      }),
       cache: 'no-store',
     })
     const data = await res.json().catch(() => null)

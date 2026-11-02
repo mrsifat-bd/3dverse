@@ -2,6 +2,7 @@
 // import on the client (for the admin preview) and on the server (for sending).
 // Table-based layout + inline CSS for broad email-client support.
 import { SITE_URL, BUSINESS } from '@/lib/config'
+import { codForOrder, isDeliveryPrepaid } from '@/lib/orders'
 
 export const EMAIL_TYPES = ['ORDER_CONFIRMED', 'SENT_FOR_DELIVERY', 'REVIEW_REQUEST']
 
@@ -89,10 +90,24 @@ function itemsTable(order) {
     <tr><td colspan="2" style="padding:2px 0;color:${STONE};">Delivery charge</td><td align="right" style="padding:2px 0;">${taka(m.delivery)}</td></tr>
     ${m.discount > 0 ? `<tr><td colspan="2" style="padding:2px 0;color:${STONE};">Discount</td><td align="right" style="padding:2px 0;">- ${taka(m.discount)}</td></tr>` : ''}
     <tr><td colspan="2" style="padding:10px 0 0;font-weight:bold;">Total</td><td align="right" style="padding:10px 0 0;font-weight:bold;">${taka(m.total)}</td></tr>
+    ${payRows(order)}
   </table>`
 }
 
-export function orderConfirmedEmail(order) {
+// What is already paid and what the courier collects, from the latest order
+// charges (website orders: delivery was paid by bKash).
+function payRows(order) {
+  const m = money(order)
+  const prepaid = isDeliveryPrepaid(order) && m.delivery > 0
+  return `${prepaid ? `<tr><td colspan="2" style="padding:6px 0 0;color:${STONE};">Delivery charge paid (bKash)</td><td align="right" style="padding:6px 0 0;">- ${taka(m.delivery)}</td></tr>` : ''}
+    <tr><td colspan="2" style="padding:6px 0 0;font-weight:bold;color:${CLAY};">Pay on delivery (cash)</td><td align="right" style="padding:6px 0 0;font-weight:bold;color:${CLAY};">${taka(codForOrder(order))}</td></tr>`
+}
+
+function invoiceNote(invoiceNumber) {
+  return invoiceNumber ? `<p style="margin:14px 0 0;color:${STONE};font-size:13px;">Your invoice <strong>${esc(invoiceNumber)}</strong> is attached as a PDF.</p>` : ''
+}
+
+export function orderConfirmedEmail(order, { invoiceNumber = '' } = {}) {
   const inner = `
     <p style="margin:0 0 14px;">Hello ${esc(order.customer_name || 'there')},</p>
     <p style="margin:0 0 14px;">Thank you for choosing 3D Verse. We truly appreciate your order and are grateful that you chose us.</p>
@@ -104,12 +119,13 @@ export function orderConfirmedEmail(order) {
       </td></tr>
     </table>
     ${itemsTable(order)}
+    ${invoiceNote(invoiceNumber)}
     <p style="margin:18px 0 0;">We'll keep you updated as your order moves through the delivery process.</p>
     <p style="margin:14px 0 0;">Thank you for being a part of 3D Verse.</p>`
   return { subject: 'Thank You for Your Order — 3D Verse', html: emailLayout(inner, 'Your 3D Verse order is confirmed.') }
 }
 
-export function sentForDeliveryEmail(order, { trackingCode = '', trackingUrl = '' } = {}) {
+export function sentForDeliveryEmail(order, { trackingCode = '', trackingUrl = '', invoiceNumber = '' } = {}) {
   const track = trackingCode || order.steadfast_tracking_code || ''
   const inner = `
     <p style="margin:0 0 14px;">Hello ${esc(order.customer_name || 'there')},</p>
@@ -117,10 +133,12 @@ export function sentForDeliveryEmail(order, { trackingCode = '', trackingUrl = '
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;background:${CREAM};border-radius:10px;">
       <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${INK};">
         <strong>Order ID:</strong> ${esc(order.order_number || '')}<br>
-        <strong>Courier:</strong> Steadfast Courier${track ? `<br><strong>Tracking ID:</strong> ${esc(track)}` : ''}
+        <strong>Courier:</strong> Steadfast Courier${track ? `<br><strong>Tracking ID:</strong> ${esc(track)}` : ''}<br>
+        <strong>Pay on delivery (cash):</strong> ${taka(codForOrder(order))}
       </td></tr>
     </table>
     ${trackingUrl ? button('Track Your Order', trackingUrl) : (track ? '' : `<p style="margin:12px 0 0;color:${STONE};font-size:13px;">Tracking details will be available shortly.</p>`)}
+    ${invoiceNote(invoiceNumber)}
     <p style="margin:16px 0 0;">Thank you for choosing 3D Verse.</p>`
   return { subject: 'Your 3D Verse Order Is On Its Way', html: emailLayout(inner, 'Your order has been sent for delivery.') }
 }
@@ -167,8 +185,11 @@ export function newOrderAdminEmail(order, { adminOrderUrl = '' } = {}) {
 }
 
 // Single entry point used by the API route and the preview.
+// Emails that carry the latest invoice PDF as an attachment.
+export const EMAILS_WITH_INVOICE = ['ORDER_CONFIRMED', 'SENT_FOR_DELIVERY']
+
 export function renderOrderEmail(type, order, opts = {}) {
-  if (type === 'ORDER_CONFIRMED') return orderConfirmedEmail(order)
+  if (type === 'ORDER_CONFIRMED') return orderConfirmedEmail(order, opts)
   if (type === 'SENT_FOR_DELIVERY') return sentForDeliveryEmail(order, opts)
   if (type === 'REVIEW_REQUEST') return reviewRequestEmail(order, opts)
   return null

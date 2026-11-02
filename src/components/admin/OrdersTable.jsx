@@ -8,8 +8,8 @@ import {
   FileText, Download, Printer, Share2, ReceiptText, X, Plus, Mail, Send, Circle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
-import { EMAIL_TASKS, getOrderEmailEvents, lastSentByType } from '@/lib/orderEmails'
-import { renderOrderEmail } from '@/lib/email/templates'
+import { EMAIL_TASKS, getOrderEmailEvents, lastSentByType, manualDoneByType, markEmailDone, undoEmailDone } from '@/lib/orderEmails'
+import { renderOrderEmail, EMAILS_WITH_INVOICE } from '@/lib/email/templates'
 import { useSettings } from '@/components/SettingsProvider'
 import {
   getOrders, updateOrder, deleteOrder, addOrderEvent, getOrderEvents, computeTotals, isDeliveryPrepaid, codForOrder,
@@ -215,7 +215,19 @@ export default function OrdersTable() {
       trackingCode: code,
       trackingUrl: code ? trackingUrlFor(code) : '',
       reviewUrl: settings?.review_url || '',
+      invoiceNumber: EMAILS_WITH_INVOICE.includes(type) && invoice?.order_id === order.id ? invoice.invoice_number : '',
     })
+  }
+
+  // Manual tick: the admin informed the customer another way (no email sent).
+  const [tickBusy, setTickBusy] = useState('')
+  async function toggleEmailDone(order, type, isDone) {
+    setTickBusy(type); setRowError('')
+    try {
+      if (isDone) await undoEmailDone(order.id, type)
+      else await markEmailDone(order.id, type, { recipient: order.customer_email || '', by: await adminEmail() })
+      setEmailEvents(await getOrderEmailEvents(order.id))
+    } catch (e) { setRowError(e.message || 'Could not update the tick.') } finally { setTickBusy('') }
   }
 
   async function sendOrderEmail() {
@@ -691,17 +703,20 @@ export default function OrdersTable() {
                                 <div className="mt-3 space-y-3">
                                   {EMAIL_TASKS.map((task) => {
                                     const sent = lastSentByType(emailEvents)[task.type]
+                                    const manual = !sent && manualDoneByType(emailEvents)[task.type]
                                     const warn = task.warn(order)
                                     return (
                                       <div key={task.type} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div className="min-w-0">
+                                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+                                          <div className="min-w-[11rem] flex-1">
                                             <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                                              {sent ? <CheckCircle2 className="h-4 w-4 text-[#5B8A5B]" /> : <Circle className="h-4 w-4 text-stone" />}
+                                              {sent || manual ? <CheckCircle2 className="h-4 w-4 text-[#5B8A5B]" /> : <Circle className="h-4 w-4 text-stone" />}
                                               {task.label}
                                             </p>
                                             {sent ? (
-                                              <p className="mt-0.5 text-xs text-stone">Sent {fmtDate(sent.sent_at)}{sent.sent_by ? ` · by ${sent.sent_by}` : ''}</p>
+                                              <p className="mt-0.5 text-xs text-stone">Sent {fmtDate(sent.sent_at)}{sent.sent_by ? ` · by ${sent.sent_by}` : ''}{EMAILS_WITH_INVOICE.includes(task.type) ? ' · with invoice PDF' : ''}</p>
+                                            ) : manual ? (
+                                              <p className="mt-0.5 text-xs text-stone">Marked done (no email sent) · {fmtDate(manual.sent_at)}{manual.sent_by ? ` · by ${manual.sent_by}` : ''}</p>
                                             ) : (
                                               <p className="mt-0.5 text-xs text-stone">Not sent yet{warn ? ` · ${warn}` : ''}</p>
                                             )}
@@ -712,7 +727,21 @@ export default function OrdersTable() {
                                               <Button size="sm" variant="ghost" onClick={() => { setEmailErr(''); setEmailPreview({ order, type: task.type, resend: true }) }}>Send again</Button>
                                             </div>
                                           ) : (
-                                            <Button size="sm" className="shrink-0" onClick={() => { setEmailErr(''); setEmailPreview({ order, type: task.type, resend: false }) }}><Send className="h-3.5 w-3.5" /> Send email</Button>
+                                            <div className="flex shrink-0 items-center gap-1.5">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                aria-pressed={!!manual}
+                                                aria-label={manual ? `Undo: ${task.label} marked done` : `Mark ${task.label} as done without sending`}
+                                                title={manual ? 'Remove the tick' : 'Tick as done without sending an email'}
+                                                disabled={tickBusy === task.type}
+                                                onClick={() => toggleEmailDone(order, task.type, !!manual)}
+                                                className={manual ? 'border-[#5B8A5B]/50 text-[#5B8A5B]' : ''}
+                                              >
+                                                {tickBusy === task.type ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {manual ? 'Done · undo' : 'Mark done'}
+                                              </Button>
+                                              <Button size="sm" onClick={() => { setEmailErr(''); setEmailPreview({ order, type: task.type, resend: false }) }}><Send className="h-3.5 w-3.5" /> Send email</Button>
+                                            </div>
                                           )}
                                         </div>
                                       </div>
@@ -856,6 +885,9 @@ export default function OrdersTable() {
                       <div className="mt-3 space-y-1 text-sm">
                         <div className="flex gap-2"><span className="w-20 shrink-0 text-stone">Recipient</span><span className="font-medium text-ink">{emailPreview.order.customer_email}</span></div>
                         <div className="flex gap-2"><span className="w-20 shrink-0 text-stone">Subject</span><span className="font-medium text-ink">{built?.subject}</span></div>
+                        {EMAILS_WITH_INVOICE.includes(emailPreview.type) && (
+                          <div className="flex gap-2"><span className="w-20 shrink-0 text-stone">Attachment</span><span className="font-medium text-ink">{invoice?.order_id === emailPreview.order.id ? `${invoice.invoice_number}.pdf (built from the latest invoice when you press Send)` : 'None (no invoice yet)'}</span></div>
+                        )}
                       </div>
                       <div className="mt-3 overflow-hidden rounded-xl border border-line">
                         <iframe title="Email preview" sandbox="" srcDoc={built?.html || ''} className="h-[400px] w-full bg-white" />

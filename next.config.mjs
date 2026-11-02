@@ -14,6 +14,8 @@ const nextConfig = {
   // on Vercel with "Cannot find module .../standard-fonts/Helvetica.cjs".
   outputFileTracingIncludes: {
     '/api/invoices/[orderId]/pdf': ['./node_modules/pdfkit/js/standard-fonts/**/*', './node_modules/pdfkit/js/data/**/*'],
+    // Customer emails attach the invoice PDF too.
+    '/api/orders/[orderId]/email': ['./node_modules/pdfkit/js/standard-fonts/**/*', './node_modules/pdfkit/js/data/**/*'],
   },
   images: {
     // Serve images directly from their source (Supabase Storage CDN / static

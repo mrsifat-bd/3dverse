@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/serverSupabase'
 import { emailConfigured, sendEmail } from '@/lib/email/service'
-import { EMAIL_TYPES, renderOrderEmail } from '@/lib/email/templates'
+import { EMAIL_TYPES, EMAILS_WITH_INVOICE, renderOrderEmail } from '@/lib/email/templates'
+import { buildInvoicePdf } from '@/lib/invoicePdfBuild'
 import { getSettings } from '@/lib/settings'
 import { trackingUrl } from '@/lib/steadfast'
 
@@ -47,15 +48,31 @@ export async function POST(req, props) {
   // Build template inputs from real order data (no hardcoding, no invented URLs).
   let reviewUrl = ''
   try { reviewUrl = (await getSettings())?.review_url || '' } catch {}
+  // Attach the invoice PDF built NOW from the current invoice row, so any
+  // charge/payment changes made before sending are included.
+  const attachments = []
+  let invoiceNumber = ''
+  if (EMAILS_WITH_INVOICE.includes(emailType)) {
+    const pdf = await buildInvoicePdf({ supabase, orderId, origin: new URL(req.url).origin })
+    if (pdf.buffer) {
+      attachments.push({ filename: pdf.filename, content: pdf.buffer })
+      invoiceNumber = pdf.invoice.invoice_number
+    } else if (pdf.status !== 404) {
+      // An invoice exists but its PDF failed: don't send an email that is missing it.
+      return json({ error: 'Could not attach the invoice PDF, so the email was not sent. Please try again.' }, 500)
+    }
+  }
+
   const trackingCode = order.steadfast_tracking_code || ''
   const rendered = renderOrderEmail(emailType, order, {
     trackingCode,
     trackingUrl: trackingCode ? trackingUrl(trackingCode) : '',
     reviewUrl,
+    invoiceNumber,
   })
   if (!rendered) return json({ error: 'Unknown email type.' }, 422)
 
-  const result = await sendEmail({ to: recipient, subject: rendered.subject, html: rendered.html })
+  const result = await sendEmail({ to: recipient, subject: rendered.subject, html: rendered.html, attachments })
 
   // Record the attempt — only 'sent' on a real provider success.
   const nowIso = new Date().toISOString()
@@ -71,7 +88,7 @@ export async function POST(req, props) {
   }).select('id, email_type, status, sent_at, sent_by, recipient_email').single()
 
   if (!result.ok) return json({ error: 'Failed to send email. Please try again.' }, 502)
-  return json({ ok: true, event })
+  return json({ ok: true, event, attached: invoiceNumber ? `${invoiceNumber}.pdf` : null })
 }
 
 function json(obj, status = 200) {

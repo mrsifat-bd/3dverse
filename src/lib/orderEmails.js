@@ -34,3 +34,29 @@ export function lastSentByType(events) {
   }
   return map
 }
+
+// Latest manual "done" tick per type (admin informed the customer another way).
+export function manualDoneByType(events) {
+  const map = {}
+  for (const e of events || []) {
+    if (e.status === 'manual' && !map[e.email_type]) map[e.email_type] = e
+  }
+  return map
+}
+
+// Tick a task as done without sending an email. Stored next to real sends
+// (status 'manual'), so it never counts as an email that was delivered.
+export async function markEmailDone(orderId, emailType, { recipient = '', by = '' } = {}) {
+  const { error } = await supabase.from('order_email_events').insert({
+    order_id: orderId, email_type: emailType, recipient_email: recipient,
+    status: 'manual', sent_at: new Date().toISOString(), sent_by: by,
+  })
+  if (error) throw error
+}
+
+// Remove the manual tick (only manual ticks; real send records are kept).
+export async function undoEmailDone(orderId, emailType) {
+  const { error } = await supabase.from('order_email_events').delete()
+    .eq('order_id', orderId).eq('email_type', emailType).eq('status', 'manual')
+  if (error) throw error
+}

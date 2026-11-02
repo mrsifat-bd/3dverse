@@ -20,10 +20,10 @@ const PRODUCT = { id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', pri
 const db = {
   orders: [
     { id: 'o-1', order_number: '3D-20261018-001', customer_name: 'QA One', customer_phone: '01700000001', customer_address: 'Road 1, Sylhet', police_station: 'Sylhet Sadar, Sylhet', note: '', items: [{ product_id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', unit_price: 1000, qty: 1 }], status: 'new', payment_status: 'pending', delivery_charge: 70, discount: 0, weight_kg: 0.25, subtotal: 1000, total: 1070, cod_amount: 1000, created_at: '2026-10-18T05:00:00Z', steadfast_consignment_id: null, user_id: 'u-c' },
-    { id: 'o-2', order_number: '3D-20261017-004', customer_name: 'QA Two', customer_phone: '01700000002', customer_address: 'Road 2, Dhaka', police_station: 'Mirpur, Dhaka', note: '', items: [{ product_id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', unit_price: 1000, qty: 2 }], status: 'confirmed', payment_status: 'verified', delivery_charge: 120, discount: 0, weight_kg: 0.5, subtotal: 2000, total: 2120, cod_amount: 2000, created_at: '2026-10-17T05:00:00Z', steadfast_consignment_id: null, user_id: 'u-c' },
+    { id: 'o-2', order_number: '3D-20261017-004', customer_name: 'QA Two', customer_email: 'qa.two@example.com', customer_phone: '01700000002', customer_address: 'Road 2, Dhaka', police_station: 'Mirpur, Dhaka', note: '', items: [{ product_id: 'p-1', name: 'QA Heart Model', slug: 'qa-heart-model', unit_price: 1000, qty: 2 }], status: 'confirmed', payment_status: 'verified', delivery_charge: 120, discount: 0, weight_kg: 0.5, subtotal: 2000, total: 2120, cod_amount: 2000, created_at: '2026-10-17T05:00:00Z', steadfast_consignment_id: null, user_id: 'u-c' },
   ],
   invoices: [{ id: 'inv-2', order_id: 'o-2', invoice_number: '3D-INV-20261017-001', invoice_date: '2026-10-17T05:00:00Z', customer_name: 'QA Two', items: [{ name: 'QA Heart Model', qty: 2, unit_price: 1000 }], subtotal: 2000, delivery_charge: 120, discount: 0, total: 2120, payment_status: 'unpaid', payment_method: 'cod', paid_amount: 0 }],
-  order_events: [], products: [PRODUCT], placed: [], productUpdates: [], uploads: 0, notifications: [],
+  email_events: [], order_events: [], products: [PRODUCT], placed: [], productUpdates: [], uploads: 0, notifications: [],
 }
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 const eqId = (u) => (u.searchParams.get('id') || '').replace(/^eq\./, '')
@@ -81,6 +81,12 @@ async function fake(route) {
     if (table === 'order_events') {
       if (m === 'POST') { db.order_events.push({ id: 'ev-' + db.order_events.length, created_at: new Date().toISOString(), ...body() }); return route.fulfill({ status: 201 }) }
       return json(route, db.order_events.filter((e) => e.order_id === (u.searchParams.get('order_id') || '').replace(/^eq\./, '')))
+    }
+    if (table === 'order_email_events') {
+      const oid = (u.searchParams.get('order_id') || '').replace(/^eq\./, ''); const st = (u.searchParams.get('status') || '').replace(/^eq\./, ''); const ty = (u.searchParams.get('email_type') || '').replace(/^eq\./, '')
+      if (m === 'GET') return json(route, db.email_events.filter((e) => e.order_id === oid).slice().reverse())
+      if (m === 'POST') { db.email_events.push({ id: 'em-' + db.email_events.length, created_at: new Date().toISOString(), ...body() }); return route.fulfill({ status: 201 }) }
+      if (m === 'DELETE') { db.email_events = db.email_events.filter((e) => !(e.order_id === oid && (!ty || e.email_type === ty) && (!st || e.status === st))); return route.fulfill({ status: 204 }) }
     }
     if (table === 'invoices') {
       if (m === 'GET') { const oid = (u.searchParams.get('order_id') || '').replace(/^eq\./, ''); const rows = db.invoices.filter((i) => !oid || i.order_id === oid); return json(route, wantsObj ? rows[0] || null : rows) }
@@ -263,6 +269,17 @@ await p.getByRole('button', { name: 'Create Steadfast Parcel' }).first().click()
 const dlgText = await p.locator('div.fixed').filter({ hasText: 'Create Steadfast parcel?' }).innerText().catch(() => '')
 ok('steadfast: dialog shows read-only connection check', (await p.getByText('Steadfast connected').count()) === 1)
 ok('cod: parcel dialog shows ৳1,900 (not the ৳2,050 invoice total)', /COD\s*৳1,900/.test(dlgText), dlgText.replace(/\s+/g, ' ').slice(0, 160))
+await p.getByRole('button', { name: 'Cancel' }).last().click(); await p.waitForTimeout(300)
+// ---------- 6. Customer emails: manual tick + invoice attachment in preview ----------
+ok('emails: "Mark done" offered for each email', (await p.getByRole('button', { name: /^Mark .* as done without sending$/ }).count()) === 3)
+await p.getByRole('button', { name: 'Mark Order Confirmed as done without sending' }).click(); await p.waitForTimeout(700)
+ok('emails: tick saved as manual (not as a sent email)', db.email_events.length === 1 && db.email_events[0].status === 'manual' && db.email_events[0].email_type === 'ORDER_CONFIRMED', JSON.stringify(db.email_events))
+ok('emails: shows "Marked done (no email sent)"', (await p.getByText(/Marked done \(no email sent\)/).count()) === 1)
+await p.getByRole('button', { name: 'Undo: Order Confirmed marked done' }).click(); await p.waitForTimeout(700)
+ok('emails: undo removes the tick', db.email_events.length === 0 && (await p.getByText(/Marked done \(no email sent\)/).count()) === 0)
+await p.getByRole('button', { name: 'Send email' }).first().click(); await p.waitForTimeout(600)
+ok('emails: preview lists the latest invoice PDF as attachment', (await p.getByText(/3D-INV-20261017-001\.pdf \(built from the latest invoice/).count()) === 1)
+await p.screenshot({ path: OUT + '/qa-email-preview.png' })
 await p.getByRole('button', { name: 'Cancel' }).last().click(); await p.waitForTimeout(300)
 
 ok('no console errors during the whole flow', errs.length === 0, errs.join(' | '))
