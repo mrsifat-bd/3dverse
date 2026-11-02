@@ -19,6 +19,7 @@ function fakeFetch(url, init = {}) {
   if (u.origin === SB && u.pathname === '/rest/v1/orders' && method === 'PATCH') { Object.assign(order, body); return json([]) }
   if (u.origin === SB && u.pathname === '/rest/v1/order_events') return json([], 201)
   if (u.href === SF + '/create_order') return json(sfResponse.body, sfResponse.status)
+  if (u.href === SF + '/get_balance') return json(sfResponse.balance || { status: 200, current_balance: 5000 }, sfResponse.balanceStatus || 200)
   return json({ message: 'unexpected ' + u.href }, 500)
 }
 
@@ -100,6 +101,30 @@ describe('create Steadfast parcel', () => {
     order.steadfast_consignment_id = '999'
     const r = await post()
     expect(r.status).toBe(409)
+    expect(calls.some((c) => c.url.startsWith(SF))).toBe(false)
+  })
+})
+
+describe('Steadfast connection check (read-only)', () => {
+  async function check() {
+    const { GET } = await import('@/app/api/steadfast/check/route.js')
+    const res = await GET(new Request('https://3dversebd.com/api/steadfast/check', { headers: { Authorization: 'Bearer test-token' } }))
+    return { status: res.status, body: await res.json() }
+  }
+  it('reports connected with the balance and never creates anything', async () => {
+    const r = await check()
+    expect(r.body).toEqual({ ok: true, balance: 5000 })
+    expect(calls.some((c) => c.url === SF + '/create_order')).toBe(false)
+    expect(calls.find((c) => c.url === SF + '/get_balance').method).toBe('GET')
+  })
+  it('reports wrong keys', async () => {
+    sfResponse.balanceStatus = 401; sfResponse.balance = { message: 'Unauthorized' }
+    expect((await check()).body).toEqual({ ok: false, error: 'Unauthorized' })
+  })
+  it('reports missing keys without calling Steadfast', async () => {
+    delete process.env.STEADFAST_SECRET_KEY
+    const r = await check()
+    expect(r.body.ok).toBe(false)
     expect(calls.some((c) => c.url.startsWith(SF))).toBe(false)
   })
 })

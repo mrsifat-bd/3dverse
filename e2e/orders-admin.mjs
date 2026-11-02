@@ -258,8 +258,10 @@ await p.screenshot({ path: OUT + '/qa-invoice-charges.png' })
 // Website order: delivery was paid by bKash, so the courier collects products - discount only.
 ok('cod: website order saves courier amount without delivery', db.orders.find((o) => o.id === 'o-2').cod_amount === 1900, String(db.orders.find((o) => o.id === 'o-2').cod_amount))
 ok('cod: panel says courier collects ৳1,900', (await p.getByText('Courier collects (COD)').count()) === 1 && (await p.getByText('৳1,900').count()) >= 1)
-await p.getByRole('button', { name: 'Create Steadfast Parcel' }).first().click(); await p.waitForTimeout(500)
+await p.route(B + '/api/steadfast/check', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, balance: 5000 }) }))
+await p.getByRole('button', { name: 'Create Steadfast Parcel' }).first().click(); await p.waitForTimeout(900)
 const dlgText = await p.locator('div.fixed').filter({ hasText: 'Create Steadfast parcel?' }).innerText().catch(() => '')
+ok('steadfast: dialog shows read-only connection check', (await p.getByText('Steadfast connected').count()) === 1)
 ok('cod: parcel dialog shows ৳1,900 (not the ৳2,050 invoice total)', /COD\s*৳1,900/.test(dlgText), dlgText.replace(/\s+/g, ' ').slice(0, 160))
 await p.getByRole('button', { name: 'Cancel' }).last().click(); await p.waitForTimeout(300)
 

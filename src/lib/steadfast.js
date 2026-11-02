@@ -76,3 +76,9 @@ export async function createConsignment({ invoice, recipient_name, recipient_pho
 export async function statusByConsignmentId(cid) {
   return request(`/status_by_cid/${encodeURIComponent(cid)}`)
 }
+
+// GET /get_balance: read-only. Used to confirm the API key/secret work
+// without creating anything.
+export async function getBalance() {
+  return request('/get_balance')
+}

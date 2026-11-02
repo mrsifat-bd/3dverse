@@ -117,6 +117,7 @@ export default function OrdersTable() {
   const [draft, setDraft] = useState({ delivery_charge: 0, discount: 0, weight_kg: 0.5 })
   const [savingMoney, setSavingMoney] = useState(false)
   const [confirmOrder, setConfirmOrder] = useState(null) // order pending parcel creation
+  const [sfCheck, setSfCheck] = useState(null) // read-only Steadfast connection check for the dialog
   const [creating, setCreating] = useState(false)
   const [refreshingId, setRefreshingId] = useState(null)
   const [rowError, setRowError] = useState('')
@@ -138,6 +139,25 @@ export default function OrdersTable() {
     try { setOrders(await getOrders()) } catch (e) { setError(e.message); setOrders([]) }
   }, [])
   useEffect(() => { load() }, [load])
+
+  // When the parcel dialog opens, check (read-only) that the Steadfast keys work.
+  useEffect(() => {
+    if (!confirmOrder) { setSfCheck(null); return }
+    let alive = true
+    setSfCheck({ state: 'checking' })
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const token = data?.session?.access_token
+        const res = await fetch('/api/steadfast/check', { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: 'no-store' })
+        const j = await res.json().catch(() => ({}))
+        if (alive) setSfCheck(j.ok ? { state: 'ok', balance: j.balance } : { state: 'error', error: j.error || 'Could not check Steadfast.' })
+      } catch {
+        if (alive) setSfCheck({ state: 'error', error: 'Could not check Steadfast.' })
+      }
+    })()
+    return () => { alive = false }
+  }, [confirmOrder])
 
   async function authFetch(path, body) {
     const { data } = await supabase.auth.getSession()
@@ -752,6 +772,9 @@ export default function OrdersTable() {
                 <div className="flex justify-between gap-3"><span className="text-stone">COD</span><span className="font-medium text-ink">{formatPrice(codForOrder(confirmOrder))}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-stone">Weight</span><span className="font-medium text-ink">{confirmOrder.weight_kg} KG</span></div>
               </div>
+              {sfCheck?.state === 'checking' && <p className="mt-3 flex items-center gap-2 text-xs text-stone"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking Steadfast connection…</p>}
+              {sfCheck?.state === 'ok' && <p className="mt-3 text-xs text-ink"><span className="font-medium text-[#2E8B54]">Steadfast connected</span>{sfCheck.balance != null ? ` · balance ${formatPrice(sfCheck.balance)}` : ''}</p>}
+              {sfCheck?.state === 'error' && <p className="mt-3 text-xs text-destructive">Steadfast: {sfCheck.error}</p>}
               {rowError && <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{rowError}</p>}
               <div className="mt-5 flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setConfirmOrder(null)} disabled={creating}>Cancel</Button>
