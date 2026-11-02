@@ -19,7 +19,7 @@ const nav = [
   { href: '/admin/orders', label: 'Orders', Icon: ShoppingBag },
   { href: '/admin/comments', label: 'Reviews', Icon: MessageSquare },
   { href: '/admin/leads', label: 'Leads', Icon: Users },
-  { href: '/admin/subscribers', label: 'Subscribers', Icon: Mail },
+  { href: '/admin/subscribers', label: 'Customers', Icon: Mail },
   { href: '/admin/settings', label: 'Settings', Icon: Settings },
 ]
 

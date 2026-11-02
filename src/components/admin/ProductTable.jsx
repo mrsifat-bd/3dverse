@@ -73,10 +73,11 @@ export default function ProductTable() {
   }
 
   const popularCount = (products || []).filter((p) => p.is_popular).length
+  const catNames = Object.fromEntries(categories.map((c) => [c.slug, c.name]))
 
   const visible = (products || []).filter((p) => {
     if (popularOnly && !p.is_popular) return false
-    if (category !== 'all' && p.category !== category) return false
+    if (category !== 'all' && p.category !== category && !(p.extra_categories || []).includes(category)) return false
     const s = q.trim().toLowerCase()
     if (!s) return true
     return (
@@ -166,7 +167,12 @@ export default function ProductTable() {
                       </div>
                     </div>
                   </td>
-                  <td className="hidden p-3 text-stone sm:table-cell">{categoryName(p.category)}</td>
+                  <td className="hidden p-3 text-stone sm:table-cell">
+                    {categoryName(p.category, catNames)}
+                    {(p.extra_categories || []).length > 0 && (
+                      <span className="mt-0.5 block text-xs" title={(p.extra_categories || []).map((c) => categoryName(c, catNames)).join(', ')}>+ {(p.extra_categories || []).map((c) => categoryName(c, catNames)).join(', ')}</span>
+                    )}
+                  </td>
                   <td className="p-3 text-ink">{formatPrice(p.price)}</td>
                   <td className="hidden p-3 text-stone md:table-cell">{p.production_cost != null && p.production_cost !== '' ? formatPrice(p.production_cost) : '—'}</td>
                   <td className="hidden p-3 sm:table-cell">

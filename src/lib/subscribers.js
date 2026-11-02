@@ -30,3 +30,15 @@ export async function deleteSubscriber(id) {
   const { error } = await supabase.from('subscribers').delete().eq('id', id)
   if (error) throw error
 }
+
+// Everyone who created an account on the site (admin only; read-only RPC).
+export async function getRegisteredCustomers() {
+  const { data, error } = await supabase.rpc('admin_customers')
+  if (error) {
+    if (error.code === 'PGRST202' || /admin_customers/.test(error.message || '')) {
+      throw new Error('Registered customers need a one-time database update (migration_categories_customers.sql).')
+    }
+    throw error
+  }
+  return data || []
+}

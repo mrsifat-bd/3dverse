@@ -6,8 +6,24 @@ import { MOCK_PRODUCTS } from './mockData'
 // SECURITY: public reads NEVER use `select *`. `production_cost` is an internal,
 // admin-only column that the anon role has no column privilege on — selecting it
 // (or `*`) as anon would error. Every public query below lists explicit columns.
-const PUBLIC_COLUMNS =
+const BASE_COLUMNS =
   'id,name,slug,price,description,category,tags,image_url,in_stock,created_at,discount_percent,review_url,extra_link,extra_link_label,faqs,is_popular,weight_kg,name_bn,description_bn'
+// extra_categories: more categories the product also appears in (besides `category`).
+const PUBLIC_COLUMNS = BASE_COLUMNS + ',extra_categories'
+
+// Runs a products query with PUBLIC_COLUMNS; if the database does not have the
+// extra_categories column yet (migration not applied), retries without it so
+// the shop never breaks because of deploy order.
+async function selectProducts(build) {
+  let res = await build(PUBLIC_COLUMNS)
+  if (res.error && /extra_categories/.test(res.error.message || '')) res = await build(BASE_COLUMNS)
+  return res
+}
+
+// True when the product belongs to the category, as its main or an extra one.
+export function inCategory(p, slug) {
+  return p?.category === slug || (Array.isArray(p?.extra_categories) && p.extra_categories.includes(slug))
+}
 
 // Products WITH a photo always rank above products without one, so the shop
 // never leads with empty placeholder cards.
@@ -26,10 +42,10 @@ const byPopular = (a, b) =>
 
 export async function getAllProducts() {
   if (!isSupabaseConfigured) return [...MOCK_PRODUCTS].sort(byPopular)
-  const { data, error } = await supabase
+  const { data, error } = await selectProducts((cols) => supabase
     .from('products')
-    .select(PUBLIC_COLUMNS)
-    .order('created_at', { ascending: false })
+    .select(cols)
+    .order('created_at', { ascending: false }))
   if (error) {
     console.error('getAllProducts:', error.message)
     return [...MOCK_PRODUCTS].sort(byPopular)
@@ -39,7 +55,7 @@ export async function getAllProducts() {
 
 export async function getProductBySlug(slug) {
   if (!isSupabaseConfigured) return MOCK_PRODUCTS.find((p) => p.slug === slug) || null
-  const { data, error } = await supabase.from('products').select(PUBLIC_COLUMNS).eq('slug', slug).maybeSingle()
+  const { data, error } = await selectProducts((cols) => supabase.from('products').select(cols).eq('slug', slug).maybeSingle())
   if (error) {
     console.error('getProductBySlug:', error.message)
     return null
@@ -49,12 +65,12 @@ export async function getProductBySlug(slug) {
 
 export async function getProductsByCategory(category) {
   const all = await getAllProducts()
-  return all.filter((p) => p.category === category).sort(byPopular)
+  return all.filter((p) => inCategory(p, category)).sort(byPopular)
 }
 
 export async function getRelatedProducts(product, limit = 4) {
   const all = await getAllProducts()
-  return all.filter((p) => p.id !== product.id && p.category === product.category).slice(0, limit)
+  return all.filter((p) => p.id !== product.id && inCategory(p, product.category)).slice(0, limit)
 }
 
 // Featured = popular items first, then newest in-stock.
@@ -129,7 +145,8 @@ export async function getReviewSummary(productId) {
 
 // Pure client-side helpers for search/sort (used by interactive components).
 export function searchProducts(products, query) {
-  const q = (query || '').trim().toLowerCase()
+  // '#skull' searches the same as 'skull' (tags are written as hashtags).
+  const q = (query || '').trim().replace(/^#+/, '').toLowerCase()
   if (!q) return products
   return products.filter((p) => {
     const haystack = [p.name, p.name_bn, p.description, p.category, p.category_name, ...(Array.isArray(p.tags) ? p.tags : [])].filter(Boolean)

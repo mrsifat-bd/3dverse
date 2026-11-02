@@ -36,12 +36,13 @@ async function getGeo() {
 }
 
 // Fire-and-forget lead capture on a product interaction (client only).
-export async function recordLead({ action = 'view', product }) {
+// geo: false skips the IP-location lookup (used for add-to-cart).
+export async function recordLead({ action = 'view', product, geo: withGeo = true }) {
   if (!isSupabaseConfigured || typeof window === 'undefined') return
   try {
     const ua = navigator.userAgent || ''
     const { device, browser, os } = parseUA(ua)
-    const geo = await getGeo()
+    const geo = withGeo ? await getGeo() : {}
     await supabase.from('leads').insert({
       action,
       product_id: String(product?.id || ''),

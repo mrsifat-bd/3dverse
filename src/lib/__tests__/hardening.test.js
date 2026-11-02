@@ -59,3 +59,20 @@ describe('courier COD amount (delivery paid by bKash on website orders)', () => 
     expect(codForOrder({ user_id: 'u1', payment_status: 'verified', items: [{ unit_price: 100, qty: 1 }], delivery_charge: 70, discount: 500 })).toBe(0)
   })
 })
+
+import { parseTags, tagText } from '@/lib/format'
+import { searchProducts } from '@/lib/products'
+describe('product tags accept #hashtags', () => {
+  it('parses commas, hashtags and mixes', () => {
+    expect(parseTags('skull, anatomy, medical')).toEqual(['skull', 'anatomy', 'medical'])
+    expect(parseTags('#skull #anatomy #medical')).toEqual(['skull', 'anatomy', 'medical'])
+    expect(parseTags('#skull, bone model,#Skull')).toEqual(['skull', 'bone model'])
+    expect(parseTags(['#a', 'b'])).toEqual(['a', 'b'])
+    expect(parseTags('  ,  # ,')).toEqual([])
+  })
+  it('shows old "#tag" values once and searches by #tag', () => {
+    expect(tagText('##skull')).toBe('skull')
+    const list = [{ name: 'X', tags: ['skull'] }, { name: 'Y', tags: ['pen'] }]
+    expect(searchProducts(list, '#skull').map((p) => p.name)).toEqual(['X'])
+  })
+})

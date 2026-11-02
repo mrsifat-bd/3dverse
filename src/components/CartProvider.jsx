@@ -2,6 +2,7 @@
 import { clampQty } from '@/lib/cart'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { recordLead } from '@/lib/leads'
 import {
   readGuestCart, writeGuestCart, clearGuestCart,
   dbGetCart, dbAdd, dbSetQty, dbRemove, dbClear, dbMergeGuest,
@@ -44,6 +45,12 @@ export function CartProvider({ children }) {
   useEffect(() => { if (!user) writeGuestCart(lines) }, [lines, user])
 
   const add = useCallback(async (product, qty = 1) => {
+    // Dashboard funnel: count one "added to cart" per product per visit
+    // (no location lookup; never blocks adding).
+    try {
+      const key = 'lead_cart_' + (product?.slug || product?.id)
+      if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); recordLead({ action: 'add_to_cart', product, geo: false }) }
+    } catch {}
     if (user) { await dbAdd(product.id, qty); setLines(await dbGetCart()) }
     else setLines((prev) => {
       const i = prev.findIndex((l) => l.product_id === product.id)

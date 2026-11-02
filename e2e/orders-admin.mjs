@@ -40,6 +40,7 @@ async function fake(route) {
     const fn = p.split('/').pop()
     if (fn === 'is_admin') return json(route, true)
     if (fn === 'admin_products') return json(route, db.products)
+    if (fn === 'admin_customers') return json(route, [{ id: 'c1', email: 'rony@example.com', full_name: 'Rony', phone: '01754797399', provider: 'email', email_confirmed: true, created_at: '2026-10-30T10:00:00Z', last_sign_in_at: '2026-11-01T10:00:00Z', order_count: 1, last_order_at: '2026-10-31T10:00:00Z' }])
     if (fn === 'admin_product') return json(route, db.products.filter((x) => x.id === body().p_id))
     if (fn === 'cancel_my_order') {
       const o = db.orders.find((x) => x.id === body().p_order_id)
@@ -82,6 +83,8 @@ async function fake(route) {
       if (m === 'POST') { db.order_events.push({ id: 'ev-' + db.order_events.length, created_at: new Date().toISOString(), ...body() }); return route.fulfill({ status: 201 }) }
       return json(route, db.order_events.filter((e) => e.order_id === (u.searchParams.get('order_id') || '').replace(/^eq\./, '')))
     }
+    if (table === 'page_views' && m === 'GET') { const t = Date.now(); return json(route, [...Array(40)].map((_, i) => ({ created_at: new Date(t - (i % 9) * 86400000).toISOString(), visitor_id: 'v' + (i % 13), path: i % 3 ? '/shop' : '/', device: i % 4 ? 'Mobile' : 'Desktop' }))) }
+    if (table === 'leads' && m === 'GET') { const t = Date.now(); return json(route, [...Array(12)].map((_, i) => ({ id: 'l' + i, created_at: new Date(t - i * 3600000).toISOString(), action: i % 4 ? 'view' : 'add_to_cart', product_id: 'p-1', product_name: 'QA Heart Model' }))) }
     if (table === 'order_email_events') {
       const oid = (u.searchParams.get('order_id') || '').replace(/^eq\./, ''); const st = (u.searchParams.get('status') || '').replace(/^eq\./, ''); const ty = (u.searchParams.get('email_type') || '').replace(/^eq\./, '')
       if (m === 'GET') return json(route, db.email_events.filter((e) => e.order_id === oid).slice().reverse())
@@ -188,11 +191,36 @@ ok('replace: still 2 images after replacing one', thumbs === 2, String(thumbs))
 const shimmerLeft = await p.locator('.img-loading').count()
 ok('image loading shimmer cleared after load', shimmerLeft === 0, String(shimmerLeft))
 await p.screenshot({ path: OUT + '/qa-images.png' })
+// Tags as #hashtags, extra categories, Bangla draft (Gemini route mocked).
+await p.fill('#tags', '#skull #anatomy, bone model')
+ok('tags: preview shows parsed hashtags', (await p.getByLabel('Tags that will be saved').innerText()).replace(/\s+/g, ' ').trim() === '#skull #anatomy #bone model')
+await p.getByRole('checkbox', { name: 'Gifts' }).check()
+await p.route(B + '/api/admin/bangla-description', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name_bn: 'কিউএ হার্ট মডেল', description_bn: 'পড়াশোনার জন্য ৩ডি প্রিন্ট করা হার্ট মডেল।' }) }))
+await p.getByRole('button', { name: /Generate Bangla from English/ }).click(); await p.waitForTimeout(700)
+ok('bangla: draft fills the Bangla fields for review', (await p.inputValue('#description_bn')) === 'পড়াশোনার জন্য ৩ডি প্রিন্ট করা হার্ট মডেল।' && (await p.inputValue('#name_bn')) === 'কিউএ হার্ট মডেল')
+await p.screenshot({ path: OUT + '/qa-product-form.png', fullPage: true })
 await p.getByRole('button', { name: 'Save changes' }).click()
 await p.waitForURL('**/admin/products', { timeout: 8000 }).catch(() => {})
 const saved = db.productUpdates.at(-1)?.image_url || []
 ok('save: product saved with upload-1 as main and old image replaced by upload-2', saved.length === 2 && /qa-upload-1/.test(saved[0]) && /qa-upload-2/.test(saved[1]) && !saved.some((u) => /old\.webp/.test(u)), JSON.stringify(saved))
 ok('save: returned to product list', p.url().endsWith('/admin/products'))
+const savedP = db.productUpdates.at(-1) || {}
+ok('save: tags stored clean', JSON.stringify(savedP.tags) === '["skull","anatomy","bone model"]', JSON.stringify(savedP.tags))
+ok('save: extra category stored', JSON.stringify(savedP.extra_categories) === '["gifts"]', JSON.stringify(savedP.extra_categories))
+ok('save: Bangla saved only after review + Save', savedP.description_bn === 'পড়াশোনার জন্য ৩ডি প্রিন্ট করা হার্ট মডেল।')
+
+// ---------- Customers tab + dashboard charts ----------
+await p.goto(B + '/admin/subscribers', { waitUntil: 'networkidle' }); await p.waitForTimeout(800)
+await p.getByRole('tab', { name: /Registered customers/ }).click(); await p.waitForTimeout(400)
+ok('customers: registered accounts listed with orders', (await p.getByText('rony@example.com').count()) === 1 && (await p.getByText('1 account · 1 placed an order').count()) === 1)
+await p.screenshot({ path: OUT + '/qa-customers.png' })
+await p.goto(B + '/admin', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500)
+for (const h of ['Website traffic', 'Sales', 'Orders per day', 'Leads overview', 'Most viewed products', 'Orders by status', 'Devices']) ok(`dashboard: "${h}" chart shown`, (await p.getByRole('heading', { name: h, exact: true }).count()) === 1)
+ok('dashboard: no WhatsApp leads wording', (await p.getByText(/WhatsApp order leads/).count()) === 0)
+ok('dashboard: funnel counts views and cart adds', (await p.getByText('Added to cart').count()) >= 1 && (await p.getByText('Product views').count()) >= 1)
+await p.getByRole('button', { name: '7 days' }).click(); await p.waitForTimeout(300)
+ok('dashboard: period switch works', (await p.getByRole('button', { name: '7 days' }).getAttribute('aria-pressed')) === 'true')
+await p.screenshot({ path: OUT + '/qa-dashboard.png', fullPage: true })
 // ---------- 4. Customer cancels before verification (+ admin consistency) ----------
 const newId = db.orders.find((o) => o.order_number === '3D-20261018-002')?.id
 db.orders.find((o) => o.id === 'o-2').user_id = USER.id

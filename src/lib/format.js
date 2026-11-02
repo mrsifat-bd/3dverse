@@ -101,3 +101,23 @@ export function slugify(text) {
 export function textLang(text = '') {
   return /[ঀ-৿]/.test(String(text)) ? 'bn' : 'en'
 }
+
+// Product tags from the admin field. Accepts "skull, anatomy", "#skull #anatomy"
+// or a mix ("#skull, bone model"). Multi-word tags work with commas. Returns
+// clean tags without '#', duplicates removed (case-insensitive), max 30.
+export function parseTags(input) {
+  const raw = Array.isArray(input) ? input.join(',') : String(input || '')
+  const parts = raw.includes('#') ? raw.split(/[#,]+/) : raw.split(',')
+  const seen = new Set()
+  const out = []
+  for (const p of parts) {
+    const t = p.replace(/^#+/, '').replace(/\s+/g, ' ').trim().slice(0, 40)
+    const k = t.toLowerCase()
+    if (t && !seen.has(k)) { seen.add(k); out.push(t) }
+    if (out.length >= 30) break
+  }
+  return out
+}
+
+// A tag as stored (older ones may still start with '#') -> plain text.
+export const tagText = (t) => String(t || '').replace(/^#+/, '').trim()

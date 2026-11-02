@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowRight, Star } from 'lucide-react'
 import { getProductBySlug, getRelatedProducts, getAllSlugs, productSeoTitle, getReviewSummary, toListProduct } from '@/lib/products'
 import { getCategoryNames } from '@/lib/categories'
-import { formatPrice, formatNumber, allImages, firstImage, hasDiscount, effectivePrice, productVideoUrl, localized } from '@/lib/format'
+import { formatPrice, formatNumber, allImages, firstImage, hasDiscount, effectivePrice, productVideoUrl, localized, tagText } from '@/lib/format'
 import { categoryName, SITE_URL } from '@/lib/config'
 import ProductGallery from '@/components/ProductGallery'
 import ProductCard from '@/components/ProductCard'
@@ -176,7 +176,7 @@ export default async function ProductPage(props) {
 
           {Array.isArray(product.tags) && product.tags.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">
-              {product.tags.map((tag) => (
+              {product.tags.map(tagText).filter(Boolean).map((tag) => (
                 <Link key={tag} href={`/shop?q=${encodeURIComponent(tag)}`} lang="en" className="rounded-full border border-line bg-paper px-3 py-1 text-xs text-stone hover:border-clay/40 hover:text-clay">#{tag}</Link>
               ))}
             </div>

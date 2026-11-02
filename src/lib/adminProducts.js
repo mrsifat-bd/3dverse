@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 import { compressImage } from './imageCompress'
-import { slugify } from './format'
+import { slugify, parseTags } from './format'
 
 // Admin CRUD + image upload. All calls require an authenticated session;
 // RLS on the server enforces that anonymous users cannot write.
@@ -31,12 +31,10 @@ function normalise(payload) {
     name_bn: payload.name_bn?.trim() || null,
     description_bn: payload.description_bn?.trim() || null,
     category: payload.category || 'miscellaneous',
-    tags: Array.isArray(payload.tags)
-      ? payload.tags
-      : String(payload.tags || '')
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
+    // Also shown in these categories (never repeats the main one).
+    extra_categories: [...new Set((Array.isArray(payload.extra_categories) ? payload.extra_categories : []).map(String).filter(Boolean))]
+      .filter((c) => c !== (payload.category || 'miscellaneous')),
+    tags: parseTags(payload.tags),
     image_url: Array.isArray(payload.image_url) ? payload.image_url : [],
     in_stock: Boolean(payload.in_stock),
     is_popular: Boolean(payload.is_popular),
@@ -81,15 +79,25 @@ async function pingRevalidate() {
 // Writes return only `id`: after the production_cost lockdown the authenticated
 // role has no SELECT on that column, so a full `.select()` representation would
 // be denied. The admin form only needs to know the write succeeded.
+// If the database doesn't have extra_categories yet, save everything else.
+async function withoutMissingColumn(run, row) {
+  let res = await run(row)
+  if (res.error && /extra_categories/.test(res.error.message || '')) {
+    const { extra_categories, ...rest } = row
+    res = await run(rest)
+  }
+  return res
+}
+
 export async function createProduct(payload) {
-  const { data, error } = await supabase.from('products').insert(normalise(payload)).select('id').single()
+  const { data, error } = await withoutMissingColumn((row) => supabase.from('products').insert(row).select('id').single(), normalise(payload))
   if (error) throw error
   await pingRevalidate()
   return data
 }
 
 export async function updateProduct(id, payload) {
-  const { data, error } = await supabase.from('products').update(normalise(payload)).eq('id', id).select('id').single()
+  const { data, error } = await withoutMissingColumn((row) => supabase.from('products').update(row).eq('id', id).select('id').single(), normalise(payload))
   if (error) throw error
   await pingRevalidate()
   return data

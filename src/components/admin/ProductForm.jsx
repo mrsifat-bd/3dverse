@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from 'react'
 import ProductImage from '@/components/ProductImage'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, X, Loader2, Plus, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { ImagePlus, X, Loader2, Plus, RefreshCw, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 import { createProduct, updateProduct, uploadImage, isAcceptedImageFile, MAX_INPUT_IMAGE_BYTES } from '@/lib/adminProducts'
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@/lib/config'
 import { getAllCategories } from '@/lib/categories'
-import { slugify } from '@/lib/format'
+import { slugify, parseTags, tagText } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +28,8 @@ export default function ProductForm({ initial }) {
     name_bn: initial?.name_bn || '',
     description_bn: initial?.description_bn || '',
     category: initial?.category || FALLBACK_CATEGORIES[0].slug,
-    tags: Array.isArray(initial?.tags) ? initial.tags.join(', ') : initial?.tags || '',
+    extra_categories: Array.isArray(initial?.extra_categories) ? initial.extra_categories : [],
+    tags: Array.isArray(initial?.tags) ? initial.tags.map((t) => '#' + tagText(t)).join(' ') : initial?.tags || '',
     in_stock: initial?.in_stock ?? true,
     is_popular: initial?.is_popular ?? false,
     weight_kg: initial?.weight_kg ?? '',
@@ -60,6 +62,30 @@ export default function ProductForm({ initial }) {
   useEffect(() => () => { filesRef.current.clear() }, [])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Bangla draft from the English text (Gemini, server-side). Fills the Bangla
+  // fields for the admin to review; nothing is saved until "Save".
+  const [bnState, setBnState] = useState({ busy: false, msg: '', err: '' })
+  const [bnOpen, setBnOpen] = useState(Boolean(initial?.name_bn || initial?.description_bn))
+  async function generateBangla() {
+    setBnState({ busy: true, msg: '', err: '' })
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      const res = await fetch('/api/admin/bangla-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ name: form.name, description: form.description, category: categories.find((c) => c.slug === form.category)?.name || form.category }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(j.error || 'Could not generate the Bangla text.')
+      setForm((f) => ({ ...f, name_bn: f.name_bn || j.name_bn || '', description_bn: j.description_bn }))
+      setBnOpen(true)
+      setBnState({ busy: false, msg: 'Bangla draft added below. Read it, fix anything, then Save.', err: '' })
+    } catch (e) {
+      setBnState({ busy: false, msg: '', err: e.message })
+    }
+  }
   // Shop rule: filament grams = price ÷ 6; parcel weight = filament + 80 g packaging.
   const suggestedWeight = Number(form.price) > 0 ? Math.round(((Number(form.price) / 6) + 80)) / 1000 : null
   const [weightTouched, setWeightTouched] = useState(Boolean(initial?.weight_kg) && Number(initial?.weight_kg) !== 0.5)
@@ -221,9 +247,16 @@ export default function ProductForm({ initial }) {
       <div className="space-y-1.5">
         <Label htmlFor="description">Description</Label>
         <Textarea id="description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={5} />
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Button type="button" variant="ghost" size="sm" onClick={generateBangla} disabled={bnState.busy || form.description.trim().length < 10}>
+            {bnState.busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Writing Bangla…</> : <><Sparkles className="h-4 w-4" /> {form.description_bn ? 'Rewrite Bangla from English' : 'Generate Bangla from English'}</>}
+          </Button>
+          {bnState.msg && <span className="text-xs text-[#2E8B54]">{bnState.msg}</span>}
+          {bnState.err && <span className="text-xs text-destructive">{bnState.err}</span>}
+        </div>
       </div>
 
-      <details className="rounded-xl border border-line p-3" open={Boolean(form.name_bn || form.description_bn)}>
+      <details className="rounded-xl border border-line p-3" open={bnOpen} onToggle={(e) => setBnOpen(e.currentTarget.open)}>
         <summary className="cursor-pointer text-sm font-medium">বাংলা — Bangla name &amp; description <span className="font-normal text-stone">(optional)</span></summary>
         <div className="mt-3 space-y-3">
           <div className="space-y-1.5">
@@ -241,10 +274,27 @@ export default function ProductForm({ initial }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="category">Category</Label>
-          <Select id="category" className="w-full rounded-lg" value={form.category} onChange={(e) => set('category', e.target.value)}>
+          <Select id="category" className="w-full rounded-lg" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, extra_categories: f.extra_categories.filter((c) => c !== e.target.value) }))}>
             {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </Select>
+          <p className="text-xs text-stone">Main category (breadcrumb, related products).</p>
         </div>
+        <fieldset className="space-y-1.5 sm:col-span-2">
+          <legend className="text-sm font-medium text-ink">Also show in</legend>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {categories.filter((c) => c.slug !== form.category).map((c) => {
+              const on = form.extra_categories.includes(c.slug)
+              return (
+                <label key={c.slug} className={cn('inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors', on ? 'border-clay bg-clay/10 text-ink' : 'border-line text-stone hover:border-clay/40')}>
+                  <input type="checkbox" className="accent-[rgb(var(--clay))]" checked={on}
+                    onChange={() => set('extra_categories', on ? form.extra_categories.filter((x) => x !== c.slug) : [...form.extra_categories, c.slug])} />
+                  {c.name}
+                </label>
+              )
+            })}
+          </div>
+          <p className="text-xs text-stone">The product also appears on these category pages.</p>
+        </fieldset>
         <div className="space-y-1.5">
           <Label htmlFor="weight_kg">Weight (kg)</Label>
           <Input id="weight_kg" type="number" min="0" step="0.001"
@@ -263,8 +313,13 @@ export default function ProductForm({ initial }) {
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tags">Tags (comma-separated)</Label>
-          <Input id="tags" value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="skull, anatomy, medical" />
+          <Label htmlFor="tags">Tags (#hashtags or comma-separated)</Label>
+          <Input id="tags" value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="#skull #anatomy #medical" />
+          {parseTags(form.tags).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1" aria-label="Tags that will be saved">
+              {parseTags(form.tags).map((t) => <span key={t} className="rounded-full border border-line px-2 py-0.5 text-xs text-stone">#{t}</span>)}
+            </div>
+          )}
         </div>
       </div>
 
