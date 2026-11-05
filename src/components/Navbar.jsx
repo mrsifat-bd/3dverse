@@ -19,8 +19,7 @@ import { dropdown } from '@/lib/motion'
 const navItems = [
   { href: '/', key: 'home' },
   { href: '/shop', key: 'shop' },
-  { href: '/category/medical-bone-models', key: 'medical' },
-  { href: '/skeleton-builder', key: 'builder' },
+  { href: '/category/bones', key: 'bones' },
   { href: '/about', key: 'about' },
   { href: '/contact', key: 'contact' },
 ]
@@ -53,7 +52,9 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
-  const isActive = (href) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
+  // The skeleton builder lives inside Bones, so Bones stays highlighted there.
+  const isActive = (href) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href) || (href === '/category/bones' && pathname.startsWith('/skeleton-builder'))
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/85 backdrop-blur-md">

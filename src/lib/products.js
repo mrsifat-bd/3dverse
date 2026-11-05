@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { MOCK_PRODUCTS } from './mockData'
+import { previewProduct, PREVIEW_SPLIT } from './categorySplit'
 
 // Data-access layer. Server-safe. Uses Supabase when configured, else mock data.
 //
@@ -17,6 +18,9 @@ const PUBLIC_COLUMNS = BASE_COLUMNS + ',extra_categories'
 async function selectProducts(build) {
   let res = await build(PUBLIC_COLUMNS)
   if (res.error && /extra_categories/.test(res.error.message || '')) res = await build(BASE_COLUMNS)
+  // Preview deployments only: show the Medical / Bones split before the
+  // database migration (see lib/categorySplit.js). Production: unchanged.
+  if (PREVIEW_SPLIT && !res.error && res.data) res = { ...res, data: Array.isArray(res.data) ? res.data.map(previewProduct) : previewProduct(res.data) }
   return res
 }
 
@@ -104,6 +108,7 @@ export function toListProduct(p, categoryNames) {
     price: p.price,
     description: p.description,
     category: p.category,
+    ...(Array.isArray(p.extra_categories) && p.extra_categories.length ? { extra_categories: p.extra_categories } : {}),
     category_name: categoryNames?.[p.category] || p.category_name || undefined,
     tags: p.tags,
     image_url: Array.isArray(img) ? img.slice(0, 1) : img,
@@ -118,7 +123,7 @@ export function toListProduct(p, categoryNames) {
 // (The site layout appends " | 3D Verse BD".)
 export function productSeoTitle(p) {
   let name = String(p?.name || '').trim()
-  if (p?.category === 'medical-bone-models' && !/model|set|skeleton|kit/i.test(name)) name += ' Model'
+  if (['bones', 'medical', 'medical-bone-models'].includes(p?.category) && !/model|set|skeleton|kit/i.test(name)) name += ' Model'
   return /3d/i.test(name) ? name : `${name} 3D Printed`
 }
 

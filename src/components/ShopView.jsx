@@ -3,12 +3,15 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ShopBrowser from './ShopBrowser'
 import { useT } from '@/i18n/client'
+import { CATEGORY_REDIRECTS } from '@/lib/categorySplit'
 
 const DEFAULTS = { q: '', category: 'all', popular: false }
 
 function readParams(sp) {
   const p = sp.get('popular')
-  return { q: sp.get('q') || '', category: sp.get('category') || 'all', popular: p === '1' || p === 'true' }
+  const c = sp.get('category') || 'all'
+  // Old links like ?category=medical-bone-models open the category that replaced it.
+  return { q: sp.get('q') || '', category: CATEGORY_REDIRECTS[c] || c, popular: p === '1' || p === 'true' }
 }
 
 // Reads ?q= ?category= ?popular= and reports changes. It is the only part that

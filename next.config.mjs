@@ -41,6 +41,8 @@ const nextConfig = {
   async redirects() {
     const legacy = [
       ['/category/i', '/category/islamic-items'],
+      // Nov 2026: "Medical & Bone Models" split into Medical and Bones; most of it was bones.
+      ['/category/medical-bone-models', '/category/bones'],
       ['/product/porsche-911-gt3-rs-wall-art', '/product/gt-sports-car-wall-art'],
       ['/privacy', '/privacy-policy'],
       ['/refund', '/refund-policy'],

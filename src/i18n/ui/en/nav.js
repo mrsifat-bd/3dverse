@@ -2,7 +2,8 @@
 export default {
   home: 'Home',
   shop: 'Shop',
-  medical: 'Medical & Bone Models',
+  bones: 'Bones',
+  medical: 'Medical',
   builder: '3D Skeleton Builder',
   about: 'About',
   contact: 'Contact',

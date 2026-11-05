@@ -7,8 +7,8 @@ import { nonEmptyCategories } from '../categories'
 
 describe('SEO product titles', () => {
   it('adds "Model" for medical items and "3D Printed" when missing', () => {
-    expect(productSeoTitle({ name: 'Human Heart', category: 'medical-bone-models' })).toBe('Human Heart Model 3D Printed')
-    expect(productSeoTitle({ name: 'Full Set Bones', category: 'medical-bone-models' })).toBe('Full Set Bones 3D Printed')
+    expect(productSeoTitle({ name: 'Human Heart', category: 'medical' })).toBe('Human Heart Model 3D Printed')
+    expect(productSeoTitle({ name: 'Full Set Bones', category: 'bones' })).toBe('Full Set Bones 3D Printed')
     expect(productSeoTitle({ name: 'Laptop Stand', category: 'desk-accessories' })).toBe('Laptop Stand 3D Printed')
     expect(productSeoTitle({ name: '3D Logo Sign', category: 'gifts' })).toBe('3D Logo Sign')
   })

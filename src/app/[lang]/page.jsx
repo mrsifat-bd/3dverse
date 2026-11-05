@@ -1,5 +1,5 @@
 import Link from '@/components/LocalizedLink'
-import { ArrowRight, Flame, Bone, Cpu, Fish, PenTool, Lamp, Gift, Smartphone, Moon, Monitor, Sprout, Frame } from 'lucide-react'
+import { ArrowRight, Flame, Bone, Stethoscope, Cpu, Fish, PenTool, Lamp, Gift, Smartphone, Moon, Monitor, Sprout, Frame } from 'lucide-react'
 import { SITE_URL } from '@/lib/config'
 import { faqFor } from '@/lib/faq'
 import { getServerT, getContent } from '@/i18n/server'
@@ -16,7 +16,8 @@ import { IconWhatsapp } from '@/components/icons'
 import { FadeIn, Stagger, StaggerItem } from '@/components/Motion'
 
 const CATEGORY_ICONS = {
-  'medical-bone-models': Bone,
+  bones: Bone,
+  medical: Stethoscope,
   gadgets: Cpu,
   aquarium: Fish,
   'desk-accessories': PenTool,

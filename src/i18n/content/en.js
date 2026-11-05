@@ -57,6 +57,12 @@ export default {
 
   category: {
     note: 'Made to order and delivered across Bangladesh. Order online: delivery charge via bKash, product price cash on delivery.',
+    builderBadge: 'Interactive 3D',
+    builderTitle: 'Build Your Own Human Skeleton',
+    builderText: 'Explore individual bones, select your preferred configuration and build your own human skeleton with our interactive 3D builder.',
+    builderCta: 'Open Skeleton Builder',
+    builderSets: 'Half Set {half} · Full Set {full}',
+    allBones: 'All bone products',
   },
 
   faqPage: {

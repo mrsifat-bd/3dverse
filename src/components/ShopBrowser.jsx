@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { Search, Flame } from 'lucide-react'
-import { searchProducts, sortProducts } from '@/lib/products'
+import { searchProducts, sortProducts, inCategory } from '@/lib/products'
 import ProductGrid from './ProductGrid'
 import { Select } from './ui/select'
 import { useLang, useT } from '@/i18n/client'
@@ -19,10 +19,12 @@ export default function ShopBrowser({ products, categories = [], initialQuery = 
   const visible = useMemo(() => {
     let list = products
     if (popularOnly) list = list.filter((p) => p.is_popular)
-    if (category !== 'all') list = list.filter((p) => p.category === category)
+    if (category !== 'all') list = list.filter((p) => inCategory(p, category))
     list = searchProducts(list, query)
     return sortProducts(list, sort)
   }, [products, query, category, sort, popularOnly])
+  // Live product count per category (main or extra category), from the list itself.
+  const counts = useMemo(() => Object.fromEntries(categories.map((c) => [c.slug, products.filter((p) => inCategory(p, c.slug)).length])), [products, categories])
 
   return (
     <div>
@@ -49,9 +51,9 @@ export default function ShopBrowser({ products, categories = [], initialQuery = 
             <Flame className="h-4 w-4" /> {t('product.popular')}
           </button>
           <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t('shop.category')}>
-            <option value="all">{t('shop.allCategories')}</option>
+            <option value="all">{t('shop.allCategories')} ({formatNumber(products.length, lang)})</option>
             {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>{localized(c, 'name', lang)}</option>
+              <option key={c.slug} value={c.slug}>{localized(c, 'name', lang)} ({formatNumber(counts[c.slug] || 0, lang)})</option>
             ))}
           </Select>
           <Select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t('shop.sort')}>

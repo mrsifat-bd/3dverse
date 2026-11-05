@@ -25,11 +25,12 @@ export const BUSINESS = {
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://3dversebd.com'
 
-// Review / demo video playlist, shown on Medical & Bone Models product pages.
+// Review / demo video playlist, shown on Medical and Bones product pages.
 export const REVIEW_URL = 'https://www.youtube.com/watch?v=gKxe9yfNt8c&list=PLTfEbDVspMGw'
 
 export const CATEGORIES = [
-  { slug: 'medical-bone-models', name: 'Medical & Bone Models', name_bn: 'মেডিকেল ও বোন মডেল', blurb: 'Anatomical skull parts, vertebrae, skeletons and study sets for students and clinics.' },
+  { slug: 'medical', name: 'Medical', name_bn: 'মেডিকেল', blurb: 'Anatomy models, organ models and accessories for medical and dental students, doctors and clinics.' },
+  { slug: 'bones', name: 'Bones', name_bn: 'হাড়', blurb: 'Individual human bones, vertebrae, ribs, skull bones, complete bone sets and skeletons for study.' },
   { slug: 'gadgets', name: 'Gadgets', name_bn: 'গ্যাজেট', blurb: 'Mounts, cases, racks and functional tech accessories.' },
   { slug: 'aquarium', name: 'Aquarium', name_bn: 'অ্যাকুয়ারিয়াম', blurb: 'Decorative caves, formations and aquascaping pieces.' },
   { slug: 'desk-accessories', name: 'Desk & Accessories', name_bn: 'ডেস্ক ও অ্যাক্সেসরিজ', blurb: 'Pen holders, stands, organisers and everyday desk essentials.' },

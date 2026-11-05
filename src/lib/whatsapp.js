@@ -11,7 +11,7 @@ export function buildWhatsappOrderUrl(product, settings = {}) {
 
   const reviewUrl =
     product.review_url ||
-    (product.category === 'medical-bone-models' ? settings.review_url || REVIEW_URL : '')
+    (['bones', 'medical', 'medical-bone-models'].includes(product.category) ? settings.review_url || REVIEW_URL : '')
   const reviewLine = reviewUrl ? `রিভিউ ভিডিও: ${reviewUrl}\n` : ''
 
   const message =

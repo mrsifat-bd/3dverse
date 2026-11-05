@@ -81,6 +81,7 @@ jobs:
           node e2e/regress.mjs
           node e2e/crawl.mjs
           node e2e/a11y.mjs
+          node e2e/categories.mjs
           pkill -f "next start" || true
           pkill -f next-server || true
       - name: Orders, admin and skeleton builder (fake backend build)

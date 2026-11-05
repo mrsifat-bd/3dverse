@@ -5,6 +5,7 @@ import { getPublicCategories, getCategoryBySlug } from '@/lib/categories'
 import { SITE_URL } from '@/lib/config'
 import { localized } from '@/lib/format'
 import CategoryProducts from '@/components/CategoryProducts'
+import BuilderFeatureCard from '@/components/skeleton/BuilderFeatureCard'
 import { getServerT, getContent } from '@/i18n/server'
 import { localizeHref } from '@/i18n/config'
 import { seo } from '@/i18n/seo'
@@ -70,6 +71,10 @@ export default async function CategoryPage(props) {
         {blurb && <p className="mt-1 max-w-xl text-sm text-stone">{blurb}</p>}
         <p className="mt-2 max-w-xl text-sm text-stone">{t('category.note')}</p>
       </header>
+
+      {/* Bones: the 3D Skeleton Builder sits on top; every bone product stays below. */}
+      {category.slug === 'bones' && <BuilderFeatureCard lang={lang} />}
+      {category.slug === 'bones' && <h2 className="mb-4 font-display text-xl font-semibold text-ink">{t('category.allBones')}</h2>}
 
       <CategoryProducts products={products.map((p) => toListProduct(p, names))} />
     </div>

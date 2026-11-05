@@ -1,11 +1,23 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { CATEGORIES as FALLBACK } from './config'
+import { arrangeCategories, PREVIEW_SPLIT } from './categorySplit'
+import { getAllProducts } from './products'
 
 // Public: active categories from the DB, ordered by how many active products
 // each has (most first; name A→Z as a stable tie-breaker). Counting is done in
 // the database (aggregate RPC) so we never pull the whole catalog to the client.
 // Falls back to a plain sort, then the built-in list, if anything is unavailable.
+// Medical and Bones are listed first; a category whose URL now redirects
+// (the old "Medical & Bone Models") is never listed. See lib/categorySplit.js.
 export async function getPublicCategories() {
+  return arrange(await loadPublicCategories())
+}
+
+async function arrange(cats) {
+  return arrangeCategories(cats, PREVIEW_SPLIT ? await getAllProducts() : null)
+}
+
+async function loadPublicCategories() {
   if (!isSupabaseConfigured) return FALLBACK
   try {
     const { data, error } = await supabase.rpc('public_categories_ranked')

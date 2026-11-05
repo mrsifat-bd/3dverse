@@ -45,7 +45,7 @@ export default async function SkeletonBuilderPage(props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <nav className="mb-4 flex items-center gap-1 text-xs text-stone" aria-label={t('common.breadcrumb')}>
         <Link href="/" className="hover:text-clay">{t('nav.home')}</Link><span>/</span>
-        <Link href="/category/medical-bone-models" className="hover:text-clay">{t('nav.medical')}</Link><span>/</span>
+        <Link href="/category/bones" className="hover:text-clay">{t('nav.bones')}</Link><span>/</span>
         <span className="text-ink">{t('builder.breadcrumb')}</span>
       </nav>
       <header className="mb-5 max-w-3xl">
