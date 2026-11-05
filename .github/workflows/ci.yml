@@ -82,14 +82,17 @@ jobs:
           node e2e/crawl.mjs
           node e2e/a11y.mjs
           pkill -f "next start" || true
-      - name: Orders and admin (fake backend build)
+          pkill -f next-server || true
+      - name: Orders, admin and skeleton builder (fake backend build)
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://qafake.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon
+          # Own port, so a demo server left from the step above can never answer.
+          BASE_URL: http://localhost:3124
         run: |
           echo "127.0.0.1 qafake.supabase.co" | sudo tee -a /etc/hosts
           npm run build
-          (npx next start -p 3123 &) ; npx -y wait-on -t 60000 http://localhost:3123
+          (npx next start -p 3124 &) ; npx -y wait-on -t 60000 http://localhost:3124
           node e2e/orders-admin.mjs
           node e2e/skeleton.mjs
       - uses: actions/upload-artifact@v4
