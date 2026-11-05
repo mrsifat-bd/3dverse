@@ -239,3 +239,9 @@
    until they come near the viewport. "auto" remembers the real height once
    rendered, so scrolling back does not jump. */
 .cv-auto { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+
+/* Skeleton Builder: thin scrollbars in the theme colours (macOS "always show
+   scrollbars" otherwise draws a white bar in dark mode), hidden on chip rows. */
+.sk-scroll { scrollbar-width: thin; scrollbar-color: rgb(var(--stone) / 0.5) transparent; }
+.sk-noscrollbar { scrollbar-width: none; }
+.sk-noscrollbar::-webkit-scrollbar { display: none; }

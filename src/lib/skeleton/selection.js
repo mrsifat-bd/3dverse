@@ -83,7 +83,9 @@ export function meshRoles(catalog, pieces, focusKey) {
     for (const n of names) if (roles[n] !== 'selected') roles[n] = role
   }
   if (focusKey && idx.items[focusKey]) {
-    for (const names of Object.values(idx.items[focusKey].meshes || {})) for (const n of names) roles[n] = 'focus'
+    // The bone being looked at is tinted only where it is not already chosen,
+    // so an unchosen side never looks selected.
+    for (const names of Object.values(idx.items[focusKey].meshes || {})) for (const n of names) if (!roles[n]) roles[n] = 'focus'
   }
   return roles
 }

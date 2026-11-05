@@ -30,6 +30,13 @@ async function fetchLiveCatalog() {
     }
   } catch { return null }
 }
+// Bangla labels for the bone groups in the list (catalogue keeps English).
+const GROUPS_BN = {
+  Base: 'বেস', 'Skull Bones': 'খুলির হাড়', 'Vertebrae & Hyoid': 'কশেরুকা ও হাইঅয়েড',
+  'Shoulder Girdle': 'শোল্ডার গার্ডল', Arm: 'বাহু', Forearm: 'অগ্রবাহু', Hand: 'হাত',
+  'Pelvic Girdle': 'পেলভিক গার্ডল', 'Lumbar Vertebrae': 'লাম্বার কশেরুকা', 'Lower Limb': 'পা',
+  'Sternum & Ribs': 'স্টার্নাম ও পাঁজর', 'Thoracic Vertebrae': 'থোরাসিক কশেরুকা',
+}
 const nm = (o, lang) => (lang === 'bn' && o?.name_bn ? o.name_bn : o?.name_en || '')
 
 function readDraft() {
@@ -177,7 +184,7 @@ export default function SkeletonBuilder({ catalog: initialCatalog, sections, liv
       {!pieces.length ? (
         <p className="mt-4 text-sm leading-relaxed text-stone">{t('builder.empty')}</p>
       ) : (
-        <div className={`mt-3 space-y-3 text-sm ${compact ? '' : 'max-h-[46vh] overflow-y-auto pr-1'}`}>
+        <div className={`mt-3 space-y-3 text-sm ${compact ? '' : 'sk-scroll max-h-[46vh] overflow-y-auto pr-1'}`}>
           {setLine && (
             <div className="rounded-xl border border-clay/30 bg-clay/5 p-3">
               <div className="flex items-start justify-between gap-2">
@@ -292,14 +299,14 @@ export default function SkeletonBuilder({ catalog: initialCatalog, sections, liv
 
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[300px_minmax(0,1fr)_340px]">
         {/* Bone list */}
-        <section aria-label={t('builder.sections')} className="order-2 min-w-0 rounded-2xl border border-line bg-paper p-3 lg:order-1 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
+        <section aria-label={t('builder.sections')} className="sk-scroll order-2 min-w-0 rounded-2xl border border-line bg-paper p-3 lg:order-1 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
           <label className="relative block">
             <span className="sr-only">{t('builder.search')}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('builder.searchPlaceholder')}
               className="h-10 w-full rounded-xl border border-line bg-cream/60 pl-9 pr-3 text-sm text-ink placeholder:text-stone focus:border-clay/50 focus:outline-none" />
           </label>
-          <div className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label={t('builder.sections')}>
+          <div className="sk-noscrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label={t('builder.sections')}>
             {[{ key: 'all', name_en: t('builder.allSections'), name_bn: t('builder.allSections') }, ...sections].map((s) => (
               <button key={s.key} type="button" role="tab" aria-selected={section === s.key} onClick={() => setSection(s.key)}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${section === s.key ? 'border-clay bg-clay text-paper' : 'border-line text-ink hover:border-clay/40'}`}>
@@ -317,7 +324,7 @@ export default function SkeletonBuilder({ catalog: initialCatalog, sections, liv
                   <h3 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-clay">{nm(s, lang)}</h3>
                   {groups.map((g) => (
                     <div key={g} className="mt-1.5">
-                      {groups.length > 1 && <p className="px-1 text-[11px] text-stone">{g}</p>}
+                      {groups.length > 1 && <p className="px-1 text-[11px] text-stone">{lang === 'bn' ? GROUPS_BN[g] || g : g}</p>}
                       <ul className="mt-1 space-y-1">
                         {rows.filter((r) => r.grp === g).map((it) => (
                           <BoneRow key={it.key} it={it} lang={lang} t={t} money={money} option={optionOf(pieces, it)} focused={focus === it.key}
@@ -393,7 +400,7 @@ export default function SkeletonBuilder({ catalog: initialCatalog, sections, liv
       {sheet && (
         <div className="fixed inset-0 z-50 flex items-end lg:hidden" role="dialog" aria-modal="true" aria-label={t('builder.summary')}>
           <button type="button" className="absolute inset-0 bg-black/40" aria-label={t('builder.close')} onClick={() => setSheet(false)} />
-          <div className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-paper p-5 pb-8">
+          <div className="sk-scroll relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-paper p-5 pb-8">
             <button type="button" onClick={() => setSheet(false)} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-line" aria-label={t('builder.close')}><X className="h-4 w-4" /></button>
             {renderSummary(true)}
           </div>

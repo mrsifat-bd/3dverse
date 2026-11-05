@@ -17,7 +17,7 @@ const COLORS = {
   pool: new THREE.Color('#d98f6d'),
   group: new THREE.Color('#b3532f'),
   hover: new THREE.Color('#f0b28f'),
-  focus: new THREE.Color('#8a3d1f'),
+  focus: new THREE.Color('#e9c46a'),
 }
 
 // Camera presets (the model is 1.7 m tall, feet at y = 0, facing +z).
