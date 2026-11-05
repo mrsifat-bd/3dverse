@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:db": "node supabase/tests/hardening.dbcheck.mjs && node supabase/tests/categories_customers.dbcheck.mjs"
+    "test:db": "node supabase/tests/hardening.dbcheck.mjs && node supabase/tests/categories_customers.dbcheck.mjs && node supabase/tests/skeleton.dbcheck.mjs"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
