@@ -30,7 +30,7 @@ export async function generateMetadata(props) {
   const t = getServerT(lang)
   const category = await getCategoryBySlug(params.slug)
   if (!category) return { title: t('meta.notFoundTitle'), robots: { index: false } }
-  const name = localized(category, 'name', lang)
+  const name = (getContent(lang, 'categorySeoNames') || {})[category.slug] || localized(category, 'name', lang)
   const blurb = blurbFor(category, lang)
   const description = `${blurb ? `${blurb} ` : ''}${t('meta.categoryDescription', { name: lang === 'bn' ? name : name.toLowerCase() })}`
   return seo(`/category/${category.slug}`, lang, t('meta.categoryTitle', { name }), description.slice(0, 158))

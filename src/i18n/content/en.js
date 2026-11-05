@@ -54,6 +54,8 @@ export default {
 
   // Bangla category descriptions live in content/bn.js; English uses the database text.
   categoryBlurbs: {},
+  // Name used in a category's page title / description when the plain name reads badly there.
+  categorySeoNames: { medical: 'Medical & Anatomy Models', bones: 'Human Bone Models' },
 
   category: {
     note: 'Made to order and delivered across Bangladesh. Order online: delivery charge via bKash, product price cash on delivery.',

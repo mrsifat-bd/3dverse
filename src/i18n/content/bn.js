@@ -52,6 +52,8 @@ export default {
     step3: 'আমরা অর্ডার নিশ্চিত করে ডেলিভারি দেব। পণ্যের দাম দেবেন হাতে পেয়ে।',
   },
 
+  categorySeoNames: { medical: 'মেডিকেল ও অ্যানাটমি মডেল', bones: 'মানুষের হাড়ের মডেল' },
+
   // Category descriptions (the database has English only). Missing slug -> English.
   categoryBlurbs: {
     medical: 'মেডিকেল ও ডেন্টাল শিক্ষার্থী, ডাক্তার ও ক্লিনিকের জন্য অ্যানাটমি মডেল, অঙ্গের মডেল আর দরকারি অ্যাক্সেসরিজ।',
