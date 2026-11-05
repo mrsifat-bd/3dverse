@@ -75,7 +75,7 @@ function itemsTable(order) {
     const qty = Math.max(1, Math.round(Number(i.qty ?? i.quantity) || 1))
     const unit = Number(i.unit_price ?? i.unit_price_snapshot) || 0
     return `<tr>
-      <td style="padding:8px 0;border-bottom:1px solid ${LINE};">${esc(i.name || i.product_name_snapshot || 'Item')}</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${LINE};">${esc(i.name || i.product_name_snapshot || 'Item')}${Array.isArray(i.details) && i.details.length ? `<div style="margin-top:4px;font-size:12px;line-height:1.5;color:${STONE};">${i.details.map((d) => esc(String(d))).join('<br>')}</div>` : ''}</td>
       <td align="center" style="padding:8px 0;border-bottom:1px solid ${LINE};color:${STONE};">${qty}</td>
       <td align="right" style="padding:8px 0;border-bottom:1px solid ${LINE};">${taka(unit * qty)}</td>
     </tr>`

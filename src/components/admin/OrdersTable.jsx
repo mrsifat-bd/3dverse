@@ -579,7 +579,15 @@ export default function OrdersTable() {
                             <p className="text-xs uppercase tracking-wide text-stone">Items</p>
                             <ul className="mt-1 space-y-1 text-sm">
                               {(order.items || []).map((i, idx) => (
-                                <li key={idx} className="flex justify-between gap-3 text-ink"><span className="truncate">{i.name} × {i.qty}</span><span className="shrink-0 text-stone">{formatPrice((Number(i.unit_price) || 0) * (Number(i.qty) || 0))}</span></li>
+                                <li key={idx} className="text-ink">
+                                  <div className="flex justify-between gap-3"><span className={i.kind === 'skeleton' ? 'font-medium' : 'truncate'}>{i.name} × {i.qty}</span><span className="shrink-0 text-stone">{formatPrice((Number(i.unit_price) || 0) * (Number(i.qty) || 0))}</span></div>
+                                  {Array.isArray(i.details) && i.details.length > 0 && (
+                                    <details className="mt-1 rounded-lg bg-cream/60 px-2.5 py-1.5 text-xs text-stone" open>
+                                      <summary className="cursor-pointer text-ink">Skeleton builder selection ({i.details.length} lines)</summary>
+                                      <ul className="mt-1 space-y-0.5">{i.details.map((d, k) => <li key={k}>{d}</li>)}</ul>
+                                    </details>
+                                  )}
+                                </li>
                               ))}
                             </ul>
                           </div>

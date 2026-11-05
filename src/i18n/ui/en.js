@@ -2,6 +2,7 @@
 // Interface text, one file per area. Generated list; add a file and import it here.
 import account from './en/account'
 import auth from './en/auth'
+import builder from './en/builder'
 import cart from './en/cart'
 import checkout from './en/checkout'
 import common from './en/common'
@@ -20,4 +21,4 @@ import subscribe from './en/subscribe'
 import success from './en/success'
 import track from './en/track'
 
-export default { account, auth, cart, checkout, common, footer, form, gallery, home, inquiry, nav, notFound, orders, product, reviews, shop, subscribe, success, track }
+export default { account, auth, builder, cart, checkout, common, footer, form, gallery, home, inquiry, nav, notFound, orders, product, reviews, shop, subscribe, success, track }

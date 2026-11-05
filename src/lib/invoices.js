@@ -55,7 +55,8 @@ export function invoiceItems(inv) {
   return items.map((i) => {
     const qty = Math.max(1, Math.round(Number(i.qty ?? i.quantity) || 1))
     const unit = Number(i.unit_price ?? i.unit_price_snapshot) || 0
-    return { name: i.name || i.product_name_snapshot || 'Item', qty, unit, total: unit * qty }
+    const details = Array.isArray(i.details) ? i.details.map(String) : []
+    return { name: i.name || i.product_name_snapshot || 'Item', qty, unit, total: unit * qty, details }
   })
 }
 

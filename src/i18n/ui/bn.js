@@ -2,6 +2,7 @@
 // Interface text, one file per area. Generated list; add a file and import it here.
 import account from './bn/account'
 import auth from './bn/auth'
+import builder from './bn/builder'
 import cart from './bn/cart'
 import checkout from './bn/checkout'
 import common from './bn/common'
@@ -20,4 +21,4 @@ import subscribe from './bn/subscribe'
 import success from './bn/success'
 import track from './bn/track'
 
-export default { account, auth, cart, checkout, common, footer, form, gallery, home, inquiry, nav, notFound, orders, product, reviews, shop, subscribe, success, track }
+export default { account, auth, builder, cart, checkout, common, footer, form, gallery, home, inquiry, nav, notFound, orders, product, reviews, shop, subscribe, success, track }

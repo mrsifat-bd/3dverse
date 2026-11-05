@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Tags, ShoppingBag, MessageSquare, Users, Mail, Settings, LogOut, Home, Loader2, Calculator } from 'lucide-react'
+import { LayoutDashboard, Package, Tags, ShoppingBag, MessageSquare, Users, Mail, Settings, LogOut, Home, Loader2, Calculator, Bone } from 'lucide-react'
 import { useAuth, signIn, signOut } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { BUSINESS } from '@/lib/config'
@@ -17,6 +17,7 @@ const nav = [
   { href: '/admin/products', label: 'Products', Icon: Package },
   { href: '/admin/cost-estimator', label: 'Cost Estimator', Icon: Calculator },
   { href: '/admin/orders', label: 'Orders', Icon: ShoppingBag },
+  { href: '/admin/skeleton', label: 'Skeleton Builder', Icon: Bone },
   { href: '/admin/comments', label: 'Reviews', Icon: MessageSquare },
   { href: '/admin/leads', label: 'Leads', Icon: Users },
   { href: '/admin/subscribers', label: 'Customers', Icon: Mail },

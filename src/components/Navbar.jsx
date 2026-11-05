@@ -20,6 +20,7 @@ const navItems = [
   { href: '/', key: 'home' },
   { href: '/shop', key: 'shop' },
   { href: '/category/medical-bone-models', key: 'medical' },
+  { href: '/skeleton-builder', key: 'builder' },
   { href: '/about', key: 'about' },
   { href: '/contact', key: 'contact' },
 ]

@@ -3,6 +3,7 @@ export default {
   home: 'হোম',
   shop: 'শপ',
   medical: 'মেডিকেল ও বোন মডেল',
+  builder: '৩ডি স্কেলেটন বিল্ডার',
   about: 'আমাদের কথা',
   contact: 'যোগাযোগ',
   account: 'অ্যাকাউন্ট',

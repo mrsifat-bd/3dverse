@@ -79,7 +79,7 @@ export default function InvoicePreview({ invoice, order }) {
           <tbody>
             {items.map((it, i) => (
               <tr key={i} className={i % 2 === 1 ? 'bg-cream/60' : ''}>
-                <td className="px-3 py-2 align-top text-ink">{it.name}</td>
+                <td className="px-3 py-2 align-top text-ink">{it.name}{it.details?.length ? <ul className="mt-1 space-y-0.5 text-[11px] text-stone">{it.details.map((d, k) => <li key={k}>{d}</li>)}</ul> : null}</td>
                 <td className="px-3 py-2 text-center align-top text-ink">{it.qty}</td>
                 <td className="px-3 py-2 text-right align-top text-ink">{formatPrice(it.unit)}</td>
                 <td className="px-3 py-2 text-right align-top font-medium text-ink">{formatPrice(it.total)}</td>

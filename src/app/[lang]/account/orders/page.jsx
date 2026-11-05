@@ -126,6 +126,12 @@ export default function MyOrdersPage() {
                             <p className="mt-1 text-ink">{o.customer_name} · {o.customer_phone}</p>
                             <p className="text-stone">{o.customer_address}</p>
                           </div>
+                          {(o.items || []).filter((i) => Array.isArray(i.details) && i.details.length).map((i, k) => (
+                            <details key={k} className="rounded-xl border border-line p-3 text-xs text-stone">
+                              <summary className="cursor-pointer text-sm text-ink">{localized(i, 'name', lang)}</summary>
+                              <ul className="mt-2 space-y-0.5">{i.details.map((d, n) => <li key={n}>{d}</li>)}</ul>
+                            </details>
+                          ))}
                           <div className="rounded-xl border border-line p-3">
                             <div className="flex justify-between"><span className="text-stone">{t('checkout.subtotalCod')}</span><span className="text-ink">{formatPrice(o.cod_amount, lang)}</span></div>
                             <div className="flex justify-between"><span className="text-stone">{t('orders.deliveryBkash')}</span><span className="text-ink">{formatPrice(o.delivery_charge, lang)}</span></div>

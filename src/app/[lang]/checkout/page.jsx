@@ -9,7 +9,9 @@ import { Loader2, Copy, Check, ArrowRight, ArrowLeft, ClipboardPaste } from 'luc
 import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/components/CartProvider'
 import { getMyProfile } from '@/lib/profile'
-import { placeOrder, isValidBDPhone } from '@/lib/orders'
+import { placeOrder, isValidBDPhone, skeletonCheckoutReady } from '@/lib/orders'
+import { isSkeletonLine } from '@/lib/cart'
+import SkeletonLineDetails from '@/components/skeleton/SkeletonLineDetails'
 import { validateBkashTransactionId } from '@/lib/bkash'
 import Link from '@/components/LocalizedLink'
 import { localDeliveryCharge } from '@/lib/delivery'
@@ -40,6 +42,12 @@ export default function CheckoutPage() {
   const [txnError, setTxnError] = useState('')
   const [copied, setCopied] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Builder lines can only be ordered once the database prices them at checkout.
+  const [skReady, setSkReady] = useState(null)
+  const hasSkeleton = (cart?.lines || []).some(isSkeletonLine)
+  const skInvalid = (cart?.lines || []).some((l) => isSkeletonLine(l) && !l.valid)
+  useEffect(() => { if (hasSkeleton) skeletonCheckoutReady().then(setSkReady) }, [hasSkeleton])
+  const skBlocked = hasSkeleton && (skReady === false || skInvalid)
 
   // FORMAT check only — never a payment verification.
   const txnCheck = validateBkashTransactionId(form.transaction_id)
@@ -121,6 +129,7 @@ export default function CheckoutPage() {
     const txn = validateBkashTransactionId(form.transaction_id)
     if (!txn.ok) { setTxnError(t(txnErrorKey(txn.error))); return }
     setTxnError('')
+    if (skBlocked) { setError(skInvalid ? t('builder.invalidSelection') : t('builder.checkoutClosed')); return }
     setBusy(true)
     const r = await placeOrder({
       customer_name: form.customer_name,
@@ -129,7 +138,7 @@ export default function CheckoutPage() {
       police_station: form.police_station,
       note: form.note,
       transaction_id: txn.value,
-      items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+      items: lines.map((l) => (isSkeletonLine(l) ? { kind: 'skeleton', config: l.config, quantity: 1 } : { product_id: l.product_id, quantity: l.quantity })),
     })
     setBusy(false)
     if (!r.ok) {
@@ -171,13 +180,19 @@ export default function CheckoutPage() {
             <div className="rounded-2xl border border-line bg-paper p-6">
               <h2 className="font-display text-lg font-semibold text-ink">{t('cart.summary')}</h2>
               <ul className="mt-4 divide-y divide-line">
-                {lines.map((l) => (
+                {lines.map((l) => isSkeletonLine(l) ? (
+                  <li key={l.product_id} className="flex items-start justify-between gap-3 py-3 text-sm">
+                    <div className="min-w-0"><span className="text-ink">{localized(l, 'name', lang)}</span><SkeletonLineDetails line={l} /></div>
+                    <span className="shrink-0 font-medium text-ink">{money(l.price)}</span>
+                  </li>
+                ) : (
                   <li key={l.product_id} className="flex items-center justify-between gap-3 py-3 text-sm">
                     <span className="min-w-0 truncate text-ink">{localized(l, 'name', lang)} <span className="text-stone">× {formatNumber(l.quantity, lang)}</span></span>
                     <span className="shrink-0 font-medium text-ink">{money(l.price * l.quantity)}</span>
                   </li>
                 ))}
               </ul>
+              {skBlocked && <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive" role="alert">{skInvalid ? t('builder.invalidSelection') : t('builder.checkoutClosed')}</p>}
               <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
                 <div className="flex justify-between text-stone"><span>{t('checkout.subtotalCod')}</span><span className="text-ink">{money(subtotal)}</span></div>
                 <div className="flex justify-between text-stone"><span>{t('checkout.deliveryPrepaid')}</span><span className="text-ink">{form.police_station ? money(delivery) : `${money(localDeliveryCharge(weight, 'Sylhet Sadar, Sylhet'))}–${money(delivery)}`}</span></div>

@@ -1,0 +1,31 @@
+3D Verse BD — Interactive Skeleton Builder: 3D model credit and licence
+=======================================================================
+
+Files: /models/skeleton-hi.glb, /models/skeleton-lo.glb, /models/skeleton-front.webp
+
+These files are an adaptation of:
+
+  Z-Anatomy — The libre 3D atlas of anatomy — CC-BY-SA 4.0
+  https://github.com/Z-Anatomy/Models-of-human-anatomy
+  which is based on
+  BodyParts3D — The Database Center for Life Science (DBCLS)
+  (listed by Z-Anatomy as CC-BY-SA 2.1 Japan; DBCLS now publishes BodyParts3D
+  under CC Attribution 4.0 International)
+  https://dbarchive.biosciencedbc.jp/en/bodyparts3d/
+
+Changes made by 3D Verse BD (November 2026):
+  - Only the skeletal system was used. Muscles, organs, nerves, cartilages of
+    the larynx and nose, auditory ossicles, sinuses, text labels and every
+    non-commercial Z-Anatomy component (inner ear, kidney) were removed.
+  - Teeth were merged into the maxillae and the mandible; hand bones and foot
+    bones were merged into one object per side; objects were renamed.
+  - Meshes were simplified (decimated), quantised and compressed (meshopt).
+
+Licence of these adapted files:
+  Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+You may share and adapt these files, including commercially, as long as you
+give appropriate credit (as above) and share your adaptations under the same
+licence. The licence covers these 3D files only — not the rest of the 3D Verse
+website, its prices, photos or printed products.

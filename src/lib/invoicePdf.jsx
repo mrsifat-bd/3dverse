@@ -112,8 +112,14 @@ export function InvoiceDocument({ brand, invoice, items, mnt, dateStr, statusLab
             <Text style={[s.thText, s.cTotal]}>Total</Text>
           </View>
           {items.map((it, i) => (
-            <View key={i} style={[s.tr, i % 2 === 1 ? s.trAlt : null]} wrap={false}>
-              <Text style={s.cProduct}>{it.name}</Text>
+            <View key={i} style={[s.tr, i % 2 === 1 ? s.trAlt : null]} wrap={Boolean(it.details?.length)}>
+              <View style={s.cProduct}>
+                <Text>{it.name}</Text>
+                {(it.details || []).map((d, k) => (
+                  // Helvetica has no ৳ glyph: amounts in the breakdown are written as "Tk".
+                  <Text key={k} style={{ fontSize: 7.5, color: '#6E6A5F', marginTop: k === 0 ? 3 : 0.5 }}>{String(d).replace(/৳/g, 'Tk ')}</Text>
+                ))}
+              </View>
               <Text style={s.cQty}>{it.qty}</Text>
               <Text style={s.cUnit}>{money(it.unit)}</Text>
               <Text style={s.cTotal}>{money(it.total)}</Text>

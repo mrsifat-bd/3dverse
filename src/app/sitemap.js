@@ -17,6 +17,7 @@ const STATIC_PAGES = [
   ['/privacy-policy', 0.2, 'yearly'],
   ['/terms', 0.2, 'yearly'],
   ['/track', 0.3, 'yearly'],
+  ['/skeleton-builder', 0.8, 'weekly'],
 ]
 
 // Every page exists in English (existing URL) and Bangla (/bn/...). Both are

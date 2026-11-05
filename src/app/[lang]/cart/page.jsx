@@ -7,7 +7,8 @@ import { AnimatePresence } from 'motion/react'
 import * as m from 'motion/react-m'
 import { Loader2, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
 import { useCart } from '@/components/CartProvider'
-import { MAX_QTY, clampQty } from '@/lib/cart'
+import { MAX_QTY, clampQty, isSkeletonLine } from '@/lib/cart'
+import SkeletonLineDetails from '@/components/skeleton/SkeletonLineDetails'
 import { localDeliveryCharge } from '@/lib/delivery'
 import { formatPrice } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -55,7 +56,25 @@ export default function CartPage() {
         {/* Lines */}
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {lines.map((l) => (
+            {lines.map((l) => isSkeletonLine(l) ? (
+              <m.div
+                key={l.product_id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, borderWidth: 0, transition: { duration: 0.2 } }}
+                className="flex items-start gap-4 rounded-2xl border border-clay/30 bg-paper p-4"
+              >
+                <Link href="/skeleton-builder" className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-cream">
+                  <img src={l.image} alt="" loading="lazy" decoding="async" className="h-14 w-auto object-contain" />
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link href="/skeleton-builder" className="font-medium text-ink hover:text-clay">{localized(l, 'name', lang)}</Link>
+                  <SkeletonLineDetails line={l} />
+                </div>
+                <div className="w-20 text-right text-sm font-semibold text-ink">{money(l.price)}</div>
+                <button onClick={() => cart.remove(l.product_id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone hover:bg-line/60 hover:text-destructive" aria-label={t('cart.remove', { name: localized(l, 'name', lang) })}><Trash2 className="h-4 w-4" /></button>
+              </m.div>
+            ) : (
               <m.div
                 key={l.product_id}
                 initial={{ opacity: 0, y: 8 }}

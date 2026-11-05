@@ -84,12 +84,16 @@ export async function dbClear() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
   await supabase.from('cart_items').delete().eq('user_id', user.id)
+  await supabase.from('skeleton_carts').delete().eq('user_id', user.id)
 }
 
 // Merge a guest cart into the logged-in cart (adds quantities).
 export async function dbMergeGuest(guestLines) {
   for (const line of guestLines || []) {
-    try { await dbAdd(line.product_id, line.quantity) } catch {}
+    try {
+      if (isSkeletonLine(line)) await dbSetSkeleton(line.config)
+      else await dbAdd(line.product_id, line.quantity)
+    } catch {}
   }
 }
 
@@ -99,4 +103,67 @@ export function cartTotals(lines) {
   const weight = lines.reduce((w, l) => w + (Number(l.weight_kg) || 0) * (Number(l.quantity) || 0), 0)
   const count = lines.reduce((c, l) => c + (Number(l.quantity) || 0), 0)
   return { subtotal, weight, count }
+}
+
+// ---- Interactive Skeleton Builder line ------------------------------------
+// One builder configuration per cart. Its price is NEVER taken from the
+// browser: it always comes from the database function skeleton_quote(), and
+// checkout re-prices it again inside place_order().
+export const SKELETON_LINE_ID = 'skeleton-builder'
+const SKELETON_IMAGE = '/models/skeleton-front.webp'
+
+export function isSkeletonLine(l) {
+  return l?.kind === 'skeleton' || l?.product_id === SKELETON_LINE_ID
+}
+
+export async function serverSkeletonQuote(config) {
+  if (!supabase) return { ok: false, error: 'not_configured' }
+  const { data, error } = await supabase.rpc('skeleton_quote', { p_config: { pieces: config?.pieces || [] } })
+  if (error) return { ok: false, error: error.message }
+  return data || { ok: false, error: 'no_quote' }
+}
+
+export function skeletonLine(config, q) {
+  const set = q?.set
+  return {
+    product_id: SKELETON_LINE_ID,
+    kind: 'skeleton',
+    name: 'Interactive Skeleton Builder' + (set === 'full' ? ' — Complete Full Set' : set === 'half' ? ' — Complete Half Set' : ''),
+    name_bn: 'ইন্টারঅ্যাক্টিভ স্কেলেটন বিল্ডার' + (set === 'full' ? ' — কমপ্লিট ফুল সেট' : set === 'half' ? ' — কমপ্লিট হাফ সেট' : ''),
+    slug: null,
+    href: '/skeleton-builder',
+    image: SKELETON_IMAGE,
+    price: q?.ok ? Number(q.total) || 0 : 0,
+    weight_kg: q?.ok ? Number(q.weight_kg) || 0 : 0,
+    in_stock: true,
+    quantity: 1,
+    valid: Boolean(q?.ok && Number(q.total) > 0),
+    config: { pieces: config?.pieces || [] },
+    quote: q?.ok ? q : null,
+  }
+}
+
+// Re-price a stored builder line (guest carts store only the configuration).
+export async function refreshSkeletonLine(line) {
+  return skeletonLine(line.config, await serverSkeletonQuote(line.config))
+}
+
+export async function dbGetSkeleton() {
+  const { data, error } = await supabase.from('skeleton_carts').select('config').maybeSingle()
+  if (error || !data) return null
+  return refreshSkeletonLine({ config: data.config })
+}
+
+export async function dbSetSkeleton(config) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not logged in')
+  const { error } = await supabase.from('skeleton_carts')
+    .upsert({ user_id: user.id, config: { pieces: config?.pieces || [] }, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
+export async function dbClearSkeleton() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('skeleton_carts').delete().eq('user_id', user.id)
 }

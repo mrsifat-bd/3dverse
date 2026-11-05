@@ -142,6 +142,13 @@ export async function createOrder(input) {
 
 // Customer checkout: places the order via the security-definer place_order RPC
 // (server recomputes all money; COD = product subtotal, delivery prepaid via bKash).
+// True once the database can price builder lines at checkout (migration part 2).
+export async function skeletonCheckoutReady() {
+  if (!isSupabaseConfigured) return false
+  const { data, error } = await supabase.rpc('skeleton_checkout_ready')
+  return !error && data === true
+}
+
 export async function placeOrder({ customer_name, customer_phone, customer_address, police_station, note, items, transaction_id }) {
   if (!isSupabaseConfigured) return { ok: false, error: 'Ordering is not available right now.' }
   // Cart lines carry `quantity`; the shared validator counts `qty`. Without this
@@ -160,7 +167,10 @@ export async function placeOrder({ customer_name, customer_phone, customer_addre
     p_phone: normalisePhone(customer_phone),
     p_address: customer_address.trim(),
     p_note: (note || '').trim(),
-    p_items: items.map((i) => ({ product_id: i.product_id, quantity: Math.max(1, Math.round(Number(i.quantity) || 1)) })),
+    // A skeleton builder line sends only its configuration; the database prices it.
+    p_items: items.map((i) => (i.kind === 'skeleton'
+      ? { kind: 'skeleton', config: { pieces: Array.isArray(i.config?.pieces) ? i.config.pieces : [] } }
+      : { product_id: i.product_id, quantity: Math.max(1, Math.round(Number(i.quantity) || 1)) })),
     p_transaction_id: txn.value,
     p_police_station: (police_station || '').trim(),
   })
